@@ -1,0 +1,133 @@
+// Prisma schema for HENRYS application
+// Supports SQLite locally and Postgres in production via env-driven provider selection.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  GUEST
+  APPLICANT
+  MEMBER
+  HOST
+  ADMIN
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  WAITLIST
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id             String           @id @default(cuid())
+  email          String           @unique
+  emailVerified  DateTime?
+  name           String?
+  image          String?
+  role           Role             @default(GUEST)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  memberProfile  MemberProfile?
+  applications   Application[]    @relation("ApplicantSubmissions")
+  reviews        Application[]    @relation("ApplicationReviews")
+  sessions       Session[]
+  inviteCodes    InviteCode[]     @relation("InviteCreator")
+}
+
+model Application {
+  id          String             @id @default(cuid())
+  email       String
+  fullName    String
+  status      ApplicationStatus  @default(SUBMITTED)
+  createdAt   DateTime           @default(now())
+  reviewedAt  DateTime?
+  reviewerId  String?
+  reviewer    User?              @relation("ApplicationReviews", fields: [reviewerId], references: [id])
+  applicantId String?
+  applicant   User?              @relation("ApplicantSubmissions", fields: [applicantId], references: [id])
+  notes       String?
+  payload     Json
+  inviteCodes InviteCode[]
+
+  @@index([email])
+  @@map("applications")
+}
+
+model MemberProfile {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id])
+  fullName              String
+  age                   Int?
+  city                  String?
+  occupation            String?
+  linkedinUrl           String?
+  instagramUrl          String?
+  about                 String?
+  threeWords            String?
+  perfectSaturday       String?
+  dietaryPreferences    String?
+  alcoholPreferences    String?
+  vibeEnergy            Int?
+  dealBreakers          String[]  @default([])
+  personalityTags       String[]  @default([])
+  dietaryNotes          String?
+  availabilityWindows   Json?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model InviteCode {
+  id             String     @id @default(cuid())
+  code           String     @unique
+  applicationId  String?
+  application    Application? @relation(fields: [applicationId], references: [id])
+  createdById    String?
+  createdBy      User?      @relation("InviteCreator", fields: [createdById], references: [id])
+  userId         String?
+  user           User?      @relation(fields: [userId], references: [id])
+  expiresAt      DateTime?
+  redeemedAt     DateTime?
+  createdAt      DateTime   @default(now())
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, token])
+}
+
+model Event {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  name          String
+  summary       String
+  startAt       DateTime
+  endAt         DateTime
+  venue         String?
+  capacity      Int       @default(40)
+  details       String?
+  visibility    Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

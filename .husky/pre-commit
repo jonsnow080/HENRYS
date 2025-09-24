@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/h"
+
+banned_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.(png|jpe?g|gif|webp|ico|mp4|webm|ttf|otf|woff2?|sqlite|db|wasm)$' || true)
+
+if [ -n "$banned_files" ]; then
+  echo "Binary files are not allowed; use SVG or remote URLs." >&2
+  echo "$banned_files" >&2
+  exit 1
+fi

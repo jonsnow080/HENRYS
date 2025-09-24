@@ -1,0 +1,886 @@
+import { ApplicationStatus, Role } from "@/lib/prisma-constants";
+
+type ApplicationPayload = Record<string, unknown>;
+
+type StringFilter =
+  | string
+  | {
+      contains?: string;
+      mode?: "insensitive" | "default";
+    };
+
+type IdFilter = string | { in?: string[] };
+
+type StatusFilter = ApplicationStatus | { in?: ApplicationStatus[] };
+
+type ApplicationWhere = {
+  id?: IdFilter;
+  email?: StringFilter;
+  fullName?: StringFilter;
+  notes?: StringFilter;
+  status?: StatusFilter;
+  OR?: ApplicationWhere[];
+};
+
+type OrderRule = Record<string, "asc" | "desc">;
+
+type OrderBy = OrderRule | OrderRule[] | undefined;
+
+type ReviewerSelection = {
+  select?: {
+    name?: boolean;
+    email?: boolean;
+  };
+};
+
+type ApplicationInclude = {
+  reviewer?: ReviewerSelection;
+};
+
+type ApplicationArgs = {
+  where?: ApplicationWhere;
+  orderBy?: OrderBy;
+  include?: ApplicationInclude;
+};
+
+type ApplicationCreateArgs = {
+  data: {
+    email: string;
+    fullName: string;
+    payload?: ApplicationPayload;
+    status?: ApplicationStatus;
+    notes?: string | null;
+  };
+  include?: ApplicationInclude;
+};
+
+type ApplicationUpdateArgs = {
+  where: { id: string };
+  data: Partial<{
+    email: string;
+    fullName: string;
+    payload: ApplicationPayload;
+    status: ApplicationStatus;
+    notes: string | null;
+    reviewedAt: Date | null;
+    reviewerId: string | null;
+    applicantId: string | null;
+    createdAt: Date;
+  }>;
+  include?: ApplicationInclude;
+};
+
+type UserWhere = {
+  id?: string;
+  email?: string;
+};
+
+type UserCreateArgs = {
+  data: {
+    email: string;
+    name?: string | null;
+    role?: Role;
+  };
+};
+
+type UserUpdateArgs = {
+  where: UserWhere;
+  data: {
+    email?: string;
+    name?: string | null;
+    role?: Role;
+  };
+};
+
+type SessionCreateArgs = {
+  data: {
+    sessionToken: string;
+    userId: string;
+    expires: Date;
+  };
+};
+
+type SessionUpdateArgs = {
+  where: { sessionToken: string };
+  data: Partial<{
+    sessionToken: string;
+    userId: string;
+    expires: Date;
+  }>;
+};
+
+type SessionDeleteArgs = {
+  where: { sessionToken: string };
+};
+
+type SessionFindUniqueArgs = {
+  where: { sessionToken: string };
+  include?: { user?: boolean };
+};
+
+type SessionDeleteManyArgs = {
+  where?: { user?: { email?: string } };
+};
+
+type VerificationTokenCreateArgs = {
+  data: {
+    identifier: string;
+    token: string;
+    expires: Date;
+  };
+};
+
+type VerificationTokenDeleteArgs = {
+  where: { identifier_token: { identifier: string; token: string } };
+};
+
+type InviteCodeCreateArgs = {
+  data: {
+    code: string;
+    applicationId: string;
+    userId: string;
+    expiresAt: Date;
+  };
+};
+
+type MemberProfileUpsertArgs = {
+  where: { userId: string };
+  create: Record<string, unknown>;
+  update: Record<string, unknown>;
+};
+
+type AccountCreateArgs = {
+  data: {
+    provider: string;
+    providerAccountId: string;
+    type?: string;
+    userId: string;
+    refresh_token?: string | null;
+    access_token?: string | null;
+    expires_at?: number | null;
+    token_type?: string | null;
+    scope?: string | null;
+    id_token?: string | null;
+    session_state?: string | null;
+    oauth_token_secret?: string | null;
+    oauth_token?: string | null;
+  };
+};
+
+type AccountDeleteArgs = {
+  where: { provider_providerAccountId: string };
+};
+
+type AccountFindUniqueArgs = {
+  where: { provider_providerAccountId: string };
+  include?: { user?: boolean };
+};
+
+type AccountFindFirstArgs = {
+  where: { providerAccountId?: string; provider?: string };
+};
+
+type AuthenticatorCreateArgs = {
+  data: {
+    id?: string;
+    credentialID: string;
+    userId: string;
+    providerAccountId?: string | null;
+    credentialPublicKey?: Buffer | Uint8Array | null;
+    counter?: number;
+    credentialDeviceType?: string | null;
+    credentialBackedUp?: boolean;
+    transports?: string | null;
+  };
+};
+
+type AuthenticatorUpdateArgs = {
+  where: { credentialID: string };
+  data: Partial<{ counter: number }>;
+};
+
+type AuthenticatorFindManyArgs = {
+  where: { userId: string };
+};
+
+type ApplicationStub = {
+  id: string;
+  email: string;
+  fullName: string;
+  status: ApplicationStatus;
+  payload: ApplicationPayload;
+  notes: string | null;
+  createdAt: Date;
+  reviewedAt: Date | null;
+  reviewerId: string | null;
+  applicantId: string | null;
+};
+
+type UserStub = {
+  id: string;
+  email: string;
+  name: string | null;
+  role: Role;
+};
+
+type MemberProfileStub = {
+  id: string;
+  userId: string;
+  data: Record<string, unknown>;
+};
+
+type InviteCodeStub = {
+  id: string;
+  code: string;
+  applicationId: string;
+  userId: string;
+  expiresAt: Date;
+};
+
+type SessionStub = {
+  id: string;
+  sessionToken: string;
+  userId: string;
+  expires: Date;
+};
+
+type VerificationTokenStub = {
+  identifier: string;
+  token: string;
+  expires: Date;
+};
+
+type AccountStub = {
+  provider_providerAccountId: string;
+  provider: string;
+  providerAccountId: string;
+  type?: string;
+  userId: string;
+  refresh_token?: string | null;
+  access_token?: string | null;
+  expires_at?: number | null;
+  token_type?: string | null;
+  scope?: string | null;
+  id_token?: string | null;
+  session_state?: string | null;
+  oauth_token_secret?: string | null;
+  oauth_token?: string | null;
+};
+
+type AuthenticatorStub = {
+  id: string;
+  credentialID: string;
+  userId: string;
+  providerAccountId?: string | null;
+  credentialPublicKey?: Buffer | Uint8Array | null;
+  counter: number;
+  credentialDeviceType?: string | null;
+  credentialBackedUp?: boolean;
+  transports?: string | null;
+};
+
+const stubData = {
+  applications: [] as ApplicationStub[],
+  users: [] as UserStub[],
+  memberProfiles: [] as MemberProfileStub[],
+  inviteCodes: [] as InviteCodeStub[],
+  sessions: [] as SessionStub[],
+  verificationTokens: [] as VerificationTokenStub[],
+  accounts: [] as AccountStub[],
+  authenticators: [] as AuthenticatorStub[],
+};
+
+let idCounter = 0;
+
+function nextId(prefix: string): string {
+  idCounter += 1;
+  return `${prefix}-${idCounter}`;
+}
+
+function clonePayload(payload: ApplicationPayload): ApplicationPayload {
+  return JSON.parse(JSON.stringify(payload)) as ApplicationPayload;
+}
+
+function cloneApplication(application: ApplicationStub): ApplicationStub {
+  return {
+    ...application,
+    createdAt: new Date(application.createdAt.getTime()),
+    reviewedAt: application.reviewedAt ? new Date(application.reviewedAt.getTime()) : null,
+    payload: clonePayload(application.payload),
+  };
+}
+
+function cloneUser(user: UserStub): UserStub {
+  return { ...user };
+}
+
+function matchesId(value: string | null, filter?: IdFilter): boolean {
+  if (!filter) return true;
+  if (typeof filter === "string") {
+    return value === filter;
+  }
+  if (!value) return false;
+  if (filter.in && Array.isArray(filter.in)) {
+    return filter.in.includes(value);
+  }
+  return true;
+}
+
+function matchesString(value: string | null, filter?: StringFilter): boolean {
+  if (!filter) return true;
+  if (!value) return false;
+  if (typeof filter === "string") {
+    return value === filter;
+  }
+  if (filter.contains) {
+    const mode = filter.mode === "insensitive" ? "insensitive" : "default";
+    const haystack = mode === "insensitive" ? value.toLowerCase() : value;
+    const needle = mode === "insensitive" ? filter.contains.toLowerCase() : filter.contains;
+    return haystack.includes(needle);
+  }
+  return true;
+}
+
+function matchesStatus(value: ApplicationStatus, filter?: StatusFilter): boolean {
+  if (!filter) return true;
+  if (typeof filter === "string") {
+    return value === filter;
+  }
+  if (filter.in && Array.isArray(filter.in)) {
+    return filter.in.includes(value);
+  }
+  return true;
+}
+
+function matchesWhere(application: ApplicationStub, where?: ApplicationWhere): boolean {
+  if (!where) return true;
+  if (where.OR && Array.isArray(where.OR) && where.OR.length > 0) {
+    const matchesAny = where.OR.some((clause) => matchesWhere(application, clause));
+    if (!matchesAny) return false;
+  }
+  if (where.id && !matchesId(application.id, where.id)) return false;
+  if (where.email && !matchesString(application.email, where.email)) return false;
+  if (where.fullName && !matchesString(application.fullName, where.fullName)) return false;
+  if (where.notes && !matchesString(application.notes, where.notes)) return false;
+  if (where.status && !matchesStatus(application.status, where.status)) return false;
+  return true;
+}
+
+function compareValues(a: unknown, b: unknown, direction: "asc" | "desc"): number {
+  if (a === b) return 0;
+  let comparison = 0;
+  if (a instanceof Date && b instanceof Date) {
+    comparison = a.getTime() - b.getTime();
+  } else if (typeof a === "string" && typeof b === "string") {
+    comparison = a.localeCompare(b);
+  } else if (typeof a === "number" && typeof b === "number") {
+    comparison = a - b;
+  }
+  return direction === "desc" ? -comparison : comparison;
+}
+
+function applyOrder(applications: ApplicationStub[], orderBy: OrderBy): ApplicationStub[] {
+  if (!orderBy) return [...applications];
+  const rules = Array.isArray(orderBy) ? orderBy : [orderBy];
+  return [...applications].sort((a, b) => {
+    for (const rule of rules) {
+      const [[field, direction]] = Object.entries(rule) as [string, "asc" | "desc"][];
+      const aValue = (a as Record<string, unknown>)[field];
+      const bValue = (b as Record<string, unknown>)[field];
+      const result = compareValues(aValue, bValue, direction);
+      if (result !== 0) {
+        return result;
+      }
+    }
+    return 0;
+  });
+}
+
+function selectReviewer(user: UserStub | null, selection?: ReviewerSelection): { name: string | null; email: string | null } | null {
+  if (!user) return null;
+  const shouldIncludeName = selection?.select?.name ?? true;
+  const shouldIncludeEmail = selection?.select?.email ?? true;
+  return {
+    name: shouldIncludeName ? user.name : null,
+    email: shouldIncludeEmail ? user.email : null,
+  };
+}
+
+function hydrateApplication(application: ApplicationStub, include?: ApplicationInclude): ApplicationStub & {
+  reviewer?: { name: string | null; email: string | null } | null;
+} {
+  const clone = cloneApplication(application);
+  if (include?.reviewer) {
+    const reviewer = stubData.users.find((user) => user.id === application.reviewerId) ?? null;
+    return {
+      ...clone,
+      reviewer: selectReviewer(reviewer, include.reviewer),
+    };
+  }
+  return clone;
+}
+
+function ensureDefaultData() {
+  if (stubData.users.length > 0 || stubData.applications.length > 0) return;
+
+  const adminUser: UserStub = {
+    id: "user-admin",
+    email: "admin@henrys.club",
+    name: "Avery Admin",
+    role: Role.ADMIN,
+  };
+
+  const memberUser: UserStub = {
+    id: "user-member",
+    email: "member@henrys.club",
+    name: "Morgan Member",
+    role: Role.MEMBER,
+  };
+
+  stubData.users.push(adminUser, memberUser);
+
+  const basePayload: ApplicationPayload = {
+    fullName: "Sample Applicant",
+    email: "sample@henrys.club",
+    age: 29,
+    city: "London",
+    occupation: "Product Manager",
+    linkedin: "https://www.linkedin.com/in/sample",
+    instagram: "",
+    motivation: "I am excited to meet thoughtful people in the city and share new experiences.",
+    threeWords: "Curious, generous, adventurous",
+    perfectSaturday: "Morning pilates, afternoon gallery hopping, and a late dinner at a cozy spot.",
+    dietary: "Vegetarian",
+    dietaryNotes: "",
+    alcohol: "Wine with dinner",
+    vibe: 6,
+    availability: "Weekends and some weeknights",
+    dealBreakers: ["Smoking"],
+    consentCode: "on",
+    consentData: "on",
+  };
+
+  const submitted = createStubApplication({
+    id: "app-submitted",
+    email: "jane@example.com",
+    fullName: "Jane Summer",
+    status: ApplicationStatus.SUBMITTED,
+    payload: { ...basePayload, email: "jane@example.com", fullName: "Jane Summer" },
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+  });
+
+  const waitlisted = createStubApplication({
+    id: "app-waitlist",
+    email: "taylor@example.com",
+    fullName: "Taylor Moon",
+    status: ApplicationStatus.WAITLIST,
+    payload: { ...basePayload, email: "taylor@example.com", fullName: "Taylor Moon" },
+    notes: "Fantastic energy, keep warm for next salon.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+    reviewedAt: new Date(Date.now() - 1000 * 60 * 60 * 12),
+    reviewerId: adminUser.id,
+  });
+
+  stubData.applications.push(submitted, waitlisted);
+}
+
+function createStubApplication(overrides: Partial<ApplicationStub> = {}): ApplicationStub {
+  const now = new Date();
+  const payload: ApplicationPayload = overrides.payload
+    ? clonePayload(overrides.payload)
+    : ({} as ApplicationPayload);
+  return {
+    id: overrides.id ?? nextId("application"),
+    email: overrides.email ?? "applicant@henrys.club",
+    fullName: overrides.fullName ?? "Sample Applicant",
+    status: overrides.status ?? ApplicationStatus.SUBMITTED,
+    payload,
+    notes: overrides.notes ?? null,
+    createdAt: overrides.createdAt ? new Date(overrides.createdAt.getTime()) : now,
+    reviewedAt: overrides.reviewedAt ? new Date(overrides.reviewedAt.getTime()) : null,
+    reviewerId: overrides.reviewerId ?? null,
+    applicantId: overrides.applicantId ?? null,
+  };
+}
+
+function resolveUser(where: UserWhere): UserStub | null {
+  ensureDefaultData();
+  if (where.id) {
+    return stubData.users.find((user) => user.id === where.id) ?? null;
+  }
+  if (where.email) {
+    return stubData.users.find((user) => user.email === where.email) ?? null;
+  }
+  return null;
+}
+
+class PrismaClientStub {
+  constructor() {
+    ensureDefaultData();
+  }
+
+  application = {
+    findFirst: async (args?: ApplicationArgs) => {
+      const [first] = await this.application.findMany(args);
+      return first ?? null;
+    },
+    findMany: async (args?: ApplicationArgs) => {
+      ensureDefaultData();
+      const filtered = stubData.applications.filter((application) => matchesWhere(application, args?.where));
+      const sorted = applyOrder(filtered, args?.orderBy);
+      return sorted.map((application) => hydrateApplication(application, args?.include));
+    },
+    findUnique: async (args: { where: ApplicationWhere; include?: ApplicationInclude }) => {
+      const match = stubData.applications.find((application) => matchesWhere(application, args.where));
+      return match ? hydrateApplication(match, args.include) : null;
+    },
+    update: async (args: ApplicationUpdateArgs) => {
+      const target = stubData.applications.find((application) => application.id === args.where.id);
+      if (!target) {
+        throw new Error(`Application with id ${args.where.id} not found in stub.`);
+      }
+      if (args.data.email !== undefined) target.email = args.data.email;
+      if (args.data.fullName !== undefined) target.fullName = args.data.fullName;
+      if (args.data.payload !== undefined) target.payload = clonePayload(args.data.payload);
+      if (args.data.status !== undefined) target.status = args.data.status;
+      if (args.data.notes !== undefined) target.notes = args.data.notes ?? null;
+      if (args.data.reviewedAt !== undefined) {
+        target.reviewedAt = args.data.reviewedAt ? new Date(args.data.reviewedAt.getTime()) : null;
+      }
+      if (args.data.reviewerId !== undefined) {
+        target.reviewerId = args.data.reviewerId;
+      }
+      if (args.data.applicantId !== undefined) {
+        target.applicantId = args.data.applicantId;
+      }
+      if (args.data.createdAt !== undefined) {
+        target.createdAt = new Date(args.data.createdAt.getTime());
+      }
+      return hydrateApplication(target, args.include);
+    },
+    create: async (args: ApplicationCreateArgs) => {
+      const application = createStubApplication({
+        email: args.data.email,
+        fullName: args.data.fullName,
+        payload: (args.data.payload ?? {}) as ApplicationPayload,
+        status: args.data.status ?? ApplicationStatus.SUBMITTED,
+        notes: args.data.notes ?? null,
+      });
+      stubData.applications.push(application);
+      return hydrateApplication(application, args.include);
+    },
+    count: async (args?: { where?: ApplicationWhere }) => {
+      ensureDefaultData();
+      return stubData.applications.filter((application) => matchesWhere(application, args?.where)).length;
+    },
+  };
+
+  user = {
+    findUnique: async (args: { where: UserWhere }) => {
+      const user = resolveUser(args.where);
+      return user ? cloneUser(user) : null;
+    },
+    findFirst: async (args?: { where?: UserWhere }) => {
+      if (!args?.where) {
+        return stubData.users.length ? cloneUser(stubData.users[0]!) : null;
+      }
+      const user = resolveUser(args.where);
+      return user ? cloneUser(user) : null;
+    },
+    findMany: async () => stubData.users.map((user) => cloneUser(user)),
+    create: async (args: UserCreateArgs) => {
+      const existing = stubData.users.find((user) => user.email === args.data.email);
+      if (existing) {
+        return cloneUser(existing);
+      }
+      const user: UserStub = {
+        id: nextId("user"),
+        email: args.data.email,
+        name: args.data.name ?? null,
+        role: args.data.role ?? Role.MEMBER,
+      };
+      stubData.users.push(user);
+      return cloneUser(user);
+    },
+    update: async (args: UserUpdateArgs) => {
+      const target = resolveUser(args.where);
+      if (!target) {
+        throw new Error("User not found in stub");
+      }
+      if (args.data.email !== undefined) target.email = args.data.email;
+      if (args.data.name !== undefined) target.name = args.data.name ?? null;
+      if (args.data.role !== undefined) target.role = args.data.role;
+      return cloneUser(target);
+    },
+    delete: async (args: { where: UserWhere }) => {
+      const user = resolveUser(args.where);
+      if (!user) {
+        throw new Error("User not found in stub");
+      }
+      stubData.users = stubData.users.filter((candidate) => candidate.id !== user.id);
+      return cloneUser(user);
+    },
+  };
+
+  memberProfile = {
+    upsert: async (args: MemberProfileUpsertArgs) => {
+      ensureDefaultData();
+      let profile = stubData.memberProfiles.find((entry) => entry.userId === args.where.userId);
+      if (profile) {
+        profile.data = { ...profile.data, ...args.update };
+      } else {
+        profile = {
+          id: nextId("profile"),
+          userId: args.where.userId,
+          data: { ...args.create },
+        };
+        stubData.memberProfiles.push(profile);
+      }
+      return { ...profile };
+    },
+  };
+
+  inviteCode = {
+    create: async (args: InviteCodeCreateArgs) => {
+      const invite: InviteCodeStub = {
+        id: nextId("invite"),
+        code: args.data.code,
+        applicationId: args.data.applicationId,
+        userId: args.data.userId,
+        expiresAt: new Date(args.data.expiresAt.getTime()),
+      };
+      stubData.inviteCodes.push(invite);
+      return { ...invite };
+    },
+  };
+
+  verificationToken = {
+    create: async (args: VerificationTokenCreateArgs) => {
+      const token: VerificationTokenStub = {
+        identifier: args.data.identifier,
+        token: args.data.token,
+        expires: new Date(args.data.expires.getTime()),
+      };
+      stubData.verificationTokens.push(token);
+      return { ...token };
+    },
+    delete: async (args: VerificationTokenDeleteArgs) => {
+      const index = stubData.verificationTokens.findIndex(
+        (candidate) =>
+          candidate.identifier === args.where.identifier_token.identifier &&
+          candidate.token === args.where.identifier_token.token,
+      );
+      if (index === -1) {
+        const error = new Error("P2025");
+        (error as Error & { code?: string }).code = "P2025";
+        throw error;
+      }
+      const [removed] = stubData.verificationTokens.splice(index, 1);
+      return { ...removed };
+    },
+  };
+
+  session = {
+    create: async (args: SessionCreateArgs) => {
+      const session: SessionStub = {
+        id: nextId("session"),
+        sessionToken: args.data.sessionToken,
+        userId: args.data.userId,
+        expires: new Date(args.data.expires.getTime()),
+      };
+      stubData.sessions.push(session);
+      return { ...session };
+    },
+    update: async (args: SessionUpdateArgs) => {
+      const target = stubData.sessions.find((session) => session.sessionToken === args.where.sessionToken);
+      if (!target) {
+        throw new Error("Session not found in stub");
+      }
+      if (args.data.sessionToken !== undefined) target.sessionToken = args.data.sessionToken;
+      if (args.data.userId !== undefined) target.userId = args.data.userId;
+      if (args.data.expires !== undefined) target.expires = new Date(args.data.expires.getTime());
+      return { ...target };
+    },
+    delete: async (args: SessionDeleteArgs) => {
+      const index = stubData.sessions.findIndex((session) => session.sessionToken === args.where.sessionToken);
+      if (index === -1) {
+        throw new Error("Session not found in stub");
+      }
+      const [removed] = stubData.sessions.splice(index, 1);
+      return { ...removed };
+    },
+    findUnique: async (args: SessionFindUniqueArgs) => {
+      const session = stubData.sessions.find((entry) => entry.sessionToken === args.where.sessionToken);
+      if (!session) return null;
+      if (args.include?.user) {
+        const user = stubData.users.find((candidate) => candidate.id === session.userId) ?? null;
+        return {
+          ...session,
+          user: user ? cloneUser(user) : null,
+        };
+      }
+      return { ...session };
+    },
+    deleteMany: async (args?: SessionDeleteManyArgs) => {
+      if (!args?.where?.user?.email) {
+        const count = stubData.sessions.length;
+        stubData.sessions = [];
+        return { count };
+      }
+      const matchingUserIds = stubData.users
+        .filter((user) => user.email === args.where?.user?.email)
+        .map((user) => user.id);
+      const before = stubData.sessions.length;
+      stubData.sessions = stubData.sessions.filter((session) => !matchingUserIds.includes(session.userId));
+      return { count: before - stubData.sessions.length };
+    },
+  };
+
+  account = {
+    create: async (args: AccountCreateArgs) => {
+      const compositeId = `${args.data.provider}_${args.data.providerAccountId}`;
+      const account: AccountStub = {
+        provider_providerAccountId: compositeId,
+        provider: args.data.provider,
+        providerAccountId: args.data.providerAccountId,
+        type: args.data.type,
+        userId: args.data.userId,
+        refresh_token: args.data.refresh_token,
+        access_token: args.data.access_token,
+        expires_at: args.data.expires_at,
+        token_type: args.data.token_type,
+        scope: args.data.scope,
+        id_token: args.data.id_token,
+        session_state: args.data.session_state,
+        oauth_token_secret: args.data.oauth_token_secret,
+        oauth_token: args.data.oauth_token,
+      };
+      stubData.accounts.push(account);
+      return { ...account };
+    },
+    delete: async (args: AccountDeleteArgs) => {
+      const index = stubData.accounts.findIndex(
+        (account) => account.provider_providerAccountId === args.where.provider_providerAccountId,
+      );
+      if (index === -1) {
+        throw new Error("Account not found in stub");
+      }
+      const [removed] = stubData.accounts.splice(index, 1);
+      return { ...removed };
+    },
+    findUnique: async (args: AccountFindUniqueArgs) => {
+      const account = stubData.accounts.find(
+        (entry) => entry.provider_providerAccountId === args.where.provider_providerAccountId,
+      );
+      if (!account) return null;
+      if (args.include?.user) {
+        const user = stubData.users.find((candidate) => candidate.id === account.userId) ?? null;
+        return { ...account, user: user ? cloneUser(user) : null };
+      }
+      return { ...account };
+    },
+    findFirst: async (args: AccountFindFirstArgs) => {
+      const account = stubData.accounts.find((entry) => {
+        if (args.where.provider && entry.provider !== args.where.provider) return false;
+        if (args.where.providerAccountId && entry.providerAccountId !== args.where.providerAccountId) return false;
+        return true;
+      });
+      return account ? { ...account } : null;
+    },
+  };
+
+  authenticator = {
+    create: async (args: AuthenticatorCreateArgs) => {
+      const authenticator: AuthenticatorStub = {
+        id: args.data.id ?? nextId("authenticator"),
+        credentialID: args.data.credentialID,
+        userId: args.data.userId,
+        providerAccountId: args.data.providerAccountId ?? null,
+        credentialPublicKey: args.data.credentialPublicKey ?? null,
+        counter: args.data.counter ?? 0,
+        credentialDeviceType: args.data.credentialDeviceType ?? null,
+        credentialBackedUp: args.data.credentialBackedUp ?? false,
+        transports: args.data.transports ?? null,
+      };
+      stubData.authenticators.push(authenticator);
+      return { ...authenticator };
+    },
+    findUnique: async (args: { where: { credentialID: string } }) => {
+      const authenticator = stubData.authenticators.find(
+        (entry) => entry.credentialID === args.where.credentialID,
+      );
+      return authenticator ? { ...authenticator } : null;
+    },
+    findMany: async (args: AuthenticatorFindManyArgs) => {
+      return stubData.authenticators
+        .filter((entry) => entry.userId === args.where.userId)
+        .map((entry) => ({ ...entry }));
+    },
+    update: async (args: AuthenticatorUpdateArgs) => {
+      const authenticator = stubData.authenticators.find(
+        (entry) => entry.credentialID === args.where.credentialID,
+      );
+      if (!authenticator) {
+        throw new Error("Authenticator not found in stub");
+      }
+      if (args.data.counter !== undefined) {
+        authenticator.counter = args.data.counter;
+      }
+      return { ...authenticator };
+    },
+  };
+
+  async $transaction<T>(callback: (client: this) => Promise<T>): Promise<T> {
+    return callback(this);
+  }
+
+  async $disconnect(): Promise<void> {
+    // no-op for stub
+  }
+}
+
+const preferRealClient = process.env.USE_PRISMA_CLIENT === "true";
+
+const PrismaClientCtor = await (async () => {
+  if (!preferRealClient) {
+    return PrismaClientStub;
+  }
+  try {
+    const prismaModule = await import("@prisma/client");
+    return prismaModule.PrismaClient;
+  } catch {
+    return PrismaClientStub;
+  }
+})();
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: InstanceType<typeof PrismaClientCtor> | undefined;
+};
+function instantiatePrismaClient(): InstanceType<typeof PrismaClientCtor> {
+  if (PrismaClientCtor === PrismaClientStub) {
+    return new PrismaClientStub() as InstanceType<typeof PrismaClientCtor>;
+  }
+
+  try {
+    return new PrismaClientCtor({
+      log:
+        process.env.NODE_ENV === "development"
+          ? ["query", "error", "warn"]
+          : ["error"],
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("@prisma/client did not initialize")) {
+      return new PrismaClientStub() as InstanceType<typeof PrismaClientCtor>;
+    }
+    throw error;
+  }
+}
+
+const prismaClient = globalForPrisma.prisma ?? instantiatePrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prismaClient;
+}
+
+export const prisma = prismaClient;
