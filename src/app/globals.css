@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --background: 255 255 255;
+  --foreground: 20 23 30;
+  --muted: 243 244 246;
+  --muted-foreground: 99 102 111;
+  --border: 228 228 231;
+  --card: 255 255 255;
+  --card-foreground: 20 23 30;
+  --ring: 17 24 39;
+  --accent: 208 215 255;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: 8 10 16;
+  --foreground: 237 237 237;
+  --muted: 27 34 46;
+  --muted-foreground: 166 173 187;
+  --border: 40 48 61;
+  --card: 16 19 27;
+  --card-foreground: 237 237 237;
+  --ring: 129 140 248;
+  --accent: 94 234 212;
+}
+
+@theme inline {
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-border: rgb(var(--border));
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-ring: rgb(var(--ring));
+  --font-sans: "Inter", "Helvetica Neue", "Segoe UI", "Arial", sans-serif;
+  --font-mono: "Menlo", "Consolas", "Liberation Mono", monospace;
+}
+
+body {
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgba(129, 140, 248, 0.2);
+}
