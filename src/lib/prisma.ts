@@ -250,6 +250,175 @@ type VerificationTokenStub = {
   expires: Date;
 };
 
+type MembershipPlanStub = {
+  id: string;
+  name: string;
+  stripePriceId: string;
+  perksJSON: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type SubscriptionStub = {
+  id: string;
+  userId: string;
+  planId: string;
+  status: string;
+  currentPeriodEnd: Date | null;
+  stripeCustomerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type PaymentStub = {
+  id: string;
+  userId: string;
+  eventId: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  stripePaymentIntentId: string;
+  receiptUrl: string | null;
+  description: string | null;
+  createdAt: Date;
+};
+
+type EventStub = {
+  id: string;
+  slug: string;
+  name: string;
+  summary: string;
+  startAt: Date;
+  endAt: Date;
+  venue: string | null;
+  capacity: number;
+  details: string | null;
+  visibility: boolean;
+  priceCents: number;
+  currency: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type EventRsvpStub = {
+  id: string;
+  userId: string;
+  eventId: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type MembershipPlanFindUniqueArgs = {
+  where: { id?: string; stripePriceId?: string };
+};
+
+type MembershipPlanFindManyArgs = {
+  where?: { id?: string; stripePriceId?: string };
+};
+
+type MembershipPlanUpsertArgs = {
+  where: { stripePriceId: string };
+  create: {
+    name: string;
+    stripePriceId: string;
+    perksJSON: unknown;
+  };
+  update: {
+    name?: string;
+    perksJSON?: unknown;
+  };
+};
+
+type SubscriptionFindFirstArgs = {
+  where?: SubscriptionWhere;
+};
+
+type SubscriptionFindManyArgs = {
+  where?: SubscriptionWhere;
+};
+
+type SubscriptionUpsertArgs = {
+  where: { stripeCustomerId: string };
+  create: {
+    userId: string;
+    planId: string;
+    status: string;
+    currentPeriodEnd?: Date | null;
+    stripeCustomerId: string;
+  };
+  update: {
+    userId?: string;
+    planId?: string;
+    status?: string;
+    currentPeriodEnd?: Date | null;
+  };
+};
+
+type SubscriptionUpdateArgs = {
+  where: SubscriptionWhere;
+  data: {
+    userId?: string;
+    planId?: string;
+    status?: string;
+    currentPeriodEnd?: Date | null;
+  };
+};
+
+type PaymentFindUniqueArgs = {
+  where: { stripePaymentIntentId: string };
+};
+
+type PaymentFindManyArgs = {
+  where?: PaymentWhere;
+  orderBy?: { createdAt?: "asc" | "desc" } | { createdAt?: "asc" | "desc" }[];
+};
+
+type PaymentCreateArgs = {
+  data: {
+    userId: string;
+    eventId?: string | null;
+    amount: number;
+    currency: string;
+    status: string;
+    stripePaymentIntentId: string;
+    receiptUrl?: string | null;
+    description?: string | null;
+    createdAt?: Date;
+  };
+};
+
+type PaymentUpdateArgs = {
+  where: { stripePaymentIntentId: string };
+  data: {
+    status?: string;
+    receiptUrl?: string | null;
+    description?: string | null;
+  };
+};
+
+type EventFindManyArgs = {
+  where?: EventWhere;
+};
+
+type EventFindUniqueArgs = {
+  where: EventWhere;
+};
+
+type EventRsvpFindFirstArgs = {
+  where?: EventRsvpWhere;
+};
+
+type EventRsvpFindUniqueArgs = {
+  where: { userId_eventId: { userId: string; eventId: string } };
+};
+
+type EventRsvpUpsertArgs = {
+  where: { userId_eventId: { userId: string; eventId: string } };
+  create: { userId: string; eventId: string; status?: string };
+  update: { status?: string };
+};
+
 type AccountStub = {
   provider_providerAccountId: string;
   provider: string;
@@ -288,6 +457,11 @@ const stubData = {
   verificationTokens: [] as VerificationTokenStub[],
   accounts: [] as AccountStub[],
   authenticators: [] as AuthenticatorStub[],
+  membershipPlans: [] as MembershipPlanStub[],
+  subscriptions: [] as SubscriptionStub[],
+  payments: [] as PaymentStub[],
+  events: [] as EventStub[],
+  eventRsvps: [] as EventRsvpStub[],
 };
 
 let idCounter = 0;
@@ -312,6 +486,51 @@ function cloneApplication(application: ApplicationStub): ApplicationStub {
 
 function cloneUser(user: UserStub): UserStub {
   return { ...user };
+}
+
+function cloneMembershipPlan(plan: MembershipPlanStub): MembershipPlanStub {
+  return {
+    ...plan,
+    createdAt: new Date(plan.createdAt.getTime()),
+    updatedAt: new Date(plan.updatedAt.getTime()),
+    perksJSON: JSON.parse(JSON.stringify(plan.perksJSON)),
+  };
+}
+
+function cloneSubscription(subscription: SubscriptionStub): SubscriptionStub {
+  return {
+    ...subscription,
+    currentPeriodEnd: subscription.currentPeriodEnd
+      ? new Date(subscription.currentPeriodEnd.getTime())
+      : null,
+    createdAt: new Date(subscription.createdAt.getTime()),
+    updatedAt: new Date(subscription.updatedAt.getTime()),
+  };
+}
+
+function clonePayment(payment: PaymentStub): PaymentStub {
+  return {
+    ...payment,
+    createdAt: new Date(payment.createdAt.getTime()),
+  };
+}
+
+function cloneEvent(event: EventStub): EventStub {
+  return {
+    ...event,
+    startAt: new Date(event.startAt.getTime()),
+    endAt: new Date(event.endAt.getTime()),
+    createdAt: new Date(event.createdAt.getTime()),
+    updatedAt: new Date(event.updatedAt.getTime()),
+  };
+}
+
+function cloneEventRsvp(rsvp: EventRsvpStub): EventRsvpStub {
+  return {
+    ...rsvp,
+    createdAt: new Date(rsvp.createdAt.getTime()),
+    updatedAt: new Date(rsvp.updatedAt.getTime()),
+  };
 }
 
 function matchesId(value: string | null, filter?: IdFilter): boolean {
@@ -352,6 +571,21 @@ function matchesStatus(value: ApplicationStatus, filter?: StatusFilter): boolean
   return true;
 }
 
+function matchesStringValue(
+  value: string | null,
+  filter?: string | { in?: string[] },
+): boolean {
+  if (!filter) return true;
+  if (!value) return false;
+  if (typeof filter === "string") {
+    return value === filter;
+  }
+  if (filter.in && Array.isArray(filter.in)) {
+    return filter.in.includes(value);
+  }
+  return true;
+}
+
 function matchesWhere(application: ApplicationStub, where?: ApplicationWhere): boolean {
   if (!where) return true;
   if (where.OR && Array.isArray(where.OR) && where.OR.length > 0) {
@@ -363,6 +597,67 @@ function matchesWhere(application: ApplicationStub, where?: ApplicationWhere): b
   if (where.fullName && !matchesString(application.fullName, where.fullName)) return false;
   if (where.notes && !matchesString(application.notes, where.notes)) return false;
   if (where.status && !matchesStatus(application.status, where.status)) return false;
+  return true;
+}
+
+type SubscriptionWhere = {
+  id?: string;
+  userId?: string;
+  planId?: string;
+  stripeCustomerId?: string;
+  status?: string | { in?: string[] };
+};
+
+function matchesSubscription(subscription: SubscriptionStub, where?: SubscriptionWhere): boolean {
+  if (!where) return true;
+  if (where.id && subscription.id !== where.id) return false;
+  if (where.userId && subscription.userId !== where.userId) return false;
+  if (where.planId && subscription.planId !== where.planId) return false;
+  if (where.stripeCustomerId && subscription.stripeCustomerId !== where.stripeCustomerId) return false;
+  if (!matchesStringValue(subscription.status, where.status)) return false;
+  return true;
+}
+
+type PaymentWhere = {
+  userId?: string;
+  stripePaymentIntentId?: string;
+  eventId?: string;
+};
+
+function matchesPayment(payment: PaymentStub, where?: PaymentWhere): boolean {
+  if (!where) return true;
+  if (where.userId && payment.userId !== where.userId) return false;
+  if (where.stripePaymentIntentId && payment.stripePaymentIntentId !== where.stripePaymentIntentId)
+    return false;
+  if (where.eventId && payment.eventId !== where.eventId) return false;
+  return true;
+}
+
+type EventWhere = {
+  id?: string;
+  slug?: string;
+  visibility?: boolean;
+};
+
+function matchesEvent(event: EventStub, where?: EventWhere): boolean {
+  if (!where) return true;
+  if (where.id && event.id !== where.id) return false;
+  if (where.slug && event.slug !== where.slug) return false;
+  if (where.visibility !== undefined && event.visibility !== where.visibility) return false;
+  return true;
+}
+
+type EventRsvpWhere = {
+  id?: string;
+  userId?: string;
+  eventId?: string;
+};
+
+function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean {
+  if (!where) return true;
+  if (where.id && rsvp.id !== where.id) return false;
+  if (where.userId && rsvp.userId !== where.userId) return false;
+  if (where.eventId && rsvp.eventId !== where.eventId) return false;
   return true;
 }
 
@@ -482,6 +777,53 @@ function ensureDefaultData() {
   });
 
   stubData.applications.push(submitted, waitlisted);
+
+  if (stubData.membershipPlans.length === 0) {
+    const monthly: MembershipPlanStub = {
+      id: "plan-monthly",
+      name: "Founding Monthly",
+      stripePriceId:
+        process.env.STRIPE_FOUNDING_MONTHLY_PRICE_ID ?? "price_founding_monthly",
+      perksJSON: ["Priority RSVPs", "Members-only salons"],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const annual: MembershipPlanStub = {
+      id: "plan-annual",
+      name: "Founding Annual",
+      stripePriceId:
+        process.env.STRIPE_FOUNDING_ANNUAL_PRICE_ID ?? "price_founding_annual",
+      perksJSON: ["Priority RSVPs", "Guest invitations", "Founders' supper"],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    stubData.membershipPlans.push(monthly, annual);
+  }
+
+  if (stubData.events.length === 0) {
+    const now = Date.now();
+    const sampleEvent: EventStub = {
+      id: "event-salon",
+      slug: "founders-salon",
+      name: "Founders' Salon",
+      summary: "An evening of slow dating and brilliant conversation.",
+      startAt: new Date(now + 1000 * 60 * 60 * 24 * 5),
+      endAt: new Date(now + 1000 * 60 * 60 * 24 * 5 + 1000 * 60 * 120),
+      venue: "Soho loft",
+      capacity: 30,
+      details:
+        "Dress sharp, bring stories. This salon welcomes founders, creatives, and the wildly curious.",
+      visibility: true,
+      priceCents: 4500,
+      currency: "usd",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    stubData.events.push(sampleEvent);
+  }
 }
 
 function createStubApplication(overrides: Partial<ApplicationStub> = {}): ApplicationStub {
@@ -677,6 +1019,233 @@ class PrismaClientStub {
       }
       const [removed] = stubData.verificationTokens.splice(index, 1);
       return { ...removed };
+    },
+  };
+
+  membershipPlan = {
+    findMany: async (args?: MembershipPlanFindManyArgs) => {
+      ensureDefaultData();
+      let plans = stubData.membershipPlans;
+      if (args?.where) {
+        plans = plans.filter((plan) => {
+          if (args.where?.id && plan.id !== args.where.id) return false;
+          if (args.where?.stripePriceId && plan.stripePriceId !== args.where.stripePriceId) return false;
+          return true;
+        });
+      }
+      return plans.map((plan) => cloneMembershipPlan(plan));
+    },
+    findUnique: async (args: MembershipPlanFindUniqueArgs) => {
+      ensureDefaultData();
+      const plan = stubData.membershipPlans.find((entry) => {
+        if (args.where.id && entry.id === args.where.id) return true;
+        if (args.where.stripePriceId && entry.stripePriceId === args.where.stripePriceId) return true;
+        return false;
+      });
+      return plan ? cloneMembershipPlan(plan) : null;
+    },
+    upsert: async (args: MembershipPlanUpsertArgs) => {
+      ensureDefaultData();
+      let plan = stubData.membershipPlans.find(
+        (entry) => entry.stripePriceId === args.where.stripePriceId,
+      );
+      if (plan) {
+        if (args.update.name !== undefined) plan.name = args.update.name;
+        if (args.update.perksJSON !== undefined)
+          plan.perksJSON = JSON.parse(JSON.stringify(args.update.perksJSON));
+        plan.updatedAt = new Date();
+      } else {
+        plan = {
+          id: nextId("plan"),
+          name: args.create.name,
+          stripePriceId: args.create.stripePriceId,
+          perksJSON: JSON.parse(JSON.stringify(args.create.perksJSON)),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        stubData.membershipPlans.push(plan);
+      }
+      return cloneMembershipPlan(plan);
+    },
+  };
+
+  subscription = {
+    findFirst: async (args?: SubscriptionFindFirstArgs) => {
+      ensureDefaultData();
+      const subscription = stubData.subscriptions.find((entry) =>
+        matchesSubscription(entry, args?.where),
+      );
+      return subscription ? cloneSubscription(subscription) : null;
+    },
+    findMany: async (args?: SubscriptionFindManyArgs) => {
+      ensureDefaultData();
+      const matches = stubData.subscriptions.filter((entry) =>
+        matchesSubscription(entry, args?.where),
+      );
+      return matches.map((entry) => cloneSubscription(entry));
+    },
+    upsert: async (args: SubscriptionUpsertArgs) => {
+      ensureDefaultData();
+      let subscription = stubData.subscriptions.find(
+        (entry) => entry.stripeCustomerId === args.where.stripeCustomerId,
+      );
+      if (subscription) {
+        if (args.update.userId !== undefined) subscription.userId = args.update.userId;
+        if (args.update.planId !== undefined) subscription.planId = args.update.planId;
+        if (args.update.status !== undefined) subscription.status = args.update.status;
+        if (args.update.currentPeriodEnd !== undefined) {
+          subscription.currentPeriodEnd = args.update.currentPeriodEnd
+            ? new Date(args.update.currentPeriodEnd.getTime())
+            : null;
+        }
+        subscription.updatedAt = new Date();
+      } else {
+        subscription = {
+          id: nextId("subscription"),
+          userId: args.create.userId,
+          planId: args.create.planId,
+          status: args.create.status,
+          currentPeriodEnd: args.create.currentPeriodEnd
+            ? new Date(args.create.currentPeriodEnd.getTime())
+            : null,
+          stripeCustomerId: args.create.stripeCustomerId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        stubData.subscriptions.push(subscription);
+      }
+      return cloneSubscription(subscription);
+    },
+    update: async (args: SubscriptionUpdateArgs) => {
+      ensureDefaultData();
+      const subscription = stubData.subscriptions.find((entry) =>
+        matchesSubscription(entry, args.where),
+      );
+      if (!subscription) {
+        throw new Error("Subscription not found in stub");
+      }
+      if (args.data.userId !== undefined) subscription.userId = args.data.userId;
+      if (args.data.planId !== undefined) subscription.planId = args.data.planId;
+      if (args.data.status !== undefined) subscription.status = args.data.status;
+      if (args.data.currentPeriodEnd !== undefined) {
+        subscription.currentPeriodEnd = args.data.currentPeriodEnd
+          ? new Date(args.data.currentPeriodEnd.getTime())
+          : null;
+      }
+      subscription.updatedAt = new Date();
+      return cloneSubscription(subscription);
+    },
+  };
+
+  payment = {
+    findUnique: async (args: PaymentFindUniqueArgs) => {
+      ensureDefaultData();
+      const payment = stubData.payments.find(
+        (entry) => entry.stripePaymentIntentId === args.where.stripePaymentIntentId,
+      );
+      return payment ? clonePayment(payment) : null;
+    },
+    findMany: async (args?: PaymentFindManyArgs) => {
+      ensureDefaultData();
+      let payments = stubData.payments.filter((entry) => matchesPayment(entry, args?.where));
+      if (args?.orderBy) {
+        const orders = Array.isArray(args.orderBy) ? args.orderBy : [args.orderBy];
+        payments = [...payments].sort((a, b) => {
+          for (const order of orders) {
+            if (order?.createdAt) {
+              const diff = a.createdAt.getTime() - b.createdAt.getTime();
+              if (diff !== 0) {
+                return order.createdAt === "desc" ? -diff : diff;
+              }
+            }
+          }
+          return 0;
+        });
+      }
+      return payments.map((entry) => clonePayment(entry));
+    },
+    create: async (args: PaymentCreateArgs) => {
+      ensureDefaultData();
+      const payment: PaymentStub = {
+        id: nextId("payment"),
+        userId: args.data.userId,
+        eventId: args.data.eventId ?? null,
+        amount: args.data.amount,
+        currency: args.data.currency,
+        status: args.data.status,
+        stripePaymentIntentId: args.data.stripePaymentIntentId,
+        receiptUrl: args.data.receiptUrl ?? null,
+        description: args.data.description ?? null,
+        createdAt: args.data.createdAt
+          ? new Date(args.data.createdAt.getTime())
+          : new Date(),
+      };
+      stubData.payments.push(payment);
+      return clonePayment(payment);
+    },
+    update: async (args: PaymentUpdateArgs) => {
+      ensureDefaultData();
+      const payment = stubData.payments.find(
+        (entry) => entry.stripePaymentIntentId === args.where.stripePaymentIntentId,
+      );
+      if (!payment) {
+        throw new Error("Payment not found in stub");
+      }
+      if (args.data.status !== undefined) payment.status = args.data.status;
+      if (args.data.receiptUrl !== undefined) payment.receiptUrl = args.data.receiptUrl;
+      if (args.data.description !== undefined) payment.description = args.data.description;
+      return clonePayment(payment);
+    },
+  };
+
+  event = {
+    findMany: async (args?: EventFindManyArgs) => {
+      ensureDefaultData();
+      const matches = stubData.events.filter((entry) => matchesEvent(entry, args?.where));
+      return matches.map((entry) => cloneEvent(entry));
+    },
+    findUnique: async (args: EventFindUniqueArgs) => {
+      ensureDefaultData();
+      const event = stubData.events.find((entry) => matchesEvent(entry, args.where));
+      return event ? cloneEvent(event) : null;
+    },
+  };
+
+  eventRsvp = {
+    findFirst: async (args?: EventRsvpFindFirstArgs) => {
+      ensureDefaultData();
+      const rsvp = stubData.eventRsvps.find((entry) => matchesEventRsvp(entry, args?.where));
+      return rsvp ? cloneEventRsvp(rsvp) : null;
+    },
+    findUnique: async (args: EventRsvpFindUniqueArgs) => {
+      ensureDefaultData();
+      const { userId, eventId } = args.where.userId_eventId;
+      const rsvp = stubData.eventRsvps.find(
+        (entry) => entry.userId === userId && entry.eventId === eventId,
+      );
+      return rsvp ? cloneEventRsvp(rsvp) : null;
+    },
+    upsert: async (args: EventRsvpUpsertArgs) => {
+      ensureDefaultData();
+      const { userId, eventId } = args.where.userId_eventId;
+      let rsvp = stubData.eventRsvps.find(
+        (entry) => entry.userId === userId && entry.eventId === eventId,
+      );
+      if (rsvp) {
+        if (args.update.status !== undefined) rsvp.status = args.update.status;
+        rsvp.updatedAt = new Date();
+      } else {
+        rsvp = {
+          id: nextId("eventRsvp"),
+          userId,
+          eventId,
+          status: args.create.status ?? "WAITLISTED",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        stubData.eventRsvps.push(rsvp);
+      }
+      return cloneEventRsvp(rsvp);
     },
   };
 

@@ -108,6 +108,43 @@ export function magicLinkTemplate({
 </mjml>`;
 }
 
+export function paymentReceiptTemplate({
+  amount,
+  description,
+  receiptUrl,
+}: {
+  amount: string;
+  description: string;
+  receiptUrl?: string;
+}) {
+  return `
+<mjml>
+  <mj-head>
+    <mj-title>${SITE_COPY.name} receipt</mj-title>
+    ${baseStyles}
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section background-color="#ffffff" padding="32px" border-radius="24px">
+      <mj-column>
+        <mj-text font-size="22px" font-weight="600" css-class="body-copy">Thanks for supporting ${SITE_COPY.name}</mj-text>
+        <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
+          ${description}<br /><strong>${amount}</strong>
+        </mj-text>
+        <mj-text font-size="14px" css-class="muted">
+          Tickets and memberships do not include food or drink. We'll have curated options available for purchase on the night.
+        </mj-text>
+        ${
+          receiptUrl
+            ? `<mj-button background-color="#111827" color="#ffffff" href="${receiptUrl}" padding="12px 0" border-radius="24px">View Stripe receipt</mj-button>`
+            : ""
+        }
+      </mj-column>
+    </mj-section>
+    ${footer}
+  </mj-body>
+</mjml>`;
+}
+
 function greeting(name: string) {
   if (!name) return "Hey there";
   return `Hi ${name.split(" ")[0] ?? name}`;

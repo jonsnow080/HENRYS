@@ -17,3 +17,11 @@ export const ApplicationStatus = {
 
 export type ApplicationStatus =
   (typeof ApplicationStatus)[keyof typeof ApplicationStatus];
+
+export const RsvpStatus = {
+  GOING: "GOING",
+  WAITLISTED: "WAITLISTED",
+  CANCELED: "CANCELED",
+} as const;
+
+export type RsvpStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];

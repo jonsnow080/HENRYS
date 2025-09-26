@@ -20,3 +20,18 @@ export function formatDate(date: Date | string) {
     timeStyle: "short",
   }).format(d);
 }
+
+export function formatCurrency(amountInMinorUnits: number, currency: string) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amountInMinorUnits / 100);
+}
+
+export function getBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "http://localhost:3000"
+  ).replace(/\/$/, "");
+}
