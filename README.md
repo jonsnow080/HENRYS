@@ -26,6 +26,14 @@ Additional scripts:
 
 Copy `.env.example` to `.env.local` and populate values for database URLs, Auth.js email provider, Stripe, and Resend before running the application locally.
 
+Stripe integration requires the following keys:
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_FOUNDING_MONTHLY_PRICE_ID`
+- `STRIPE_FOUNDING_ANNUAL_PRICE_ID`
+
 ## Assets Policy
 
 To keep pull requests lightweight and Codex-friendly, binary assets are not committed to this repository. Please follow these guidelines when working with imagery, video, fonts, or other rich media:
