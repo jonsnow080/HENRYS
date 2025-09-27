@@ -291,11 +291,16 @@ type EventStub = {
   startAt: Date;
   endAt: Date;
   venue: string | null;
+  venueName: string | null;
+  venueAddress: string | null;
+  venueNotes: string | null;
+  venueHiddenUntil: Date | null;
   capacity: number;
   details: string | null;
   visibility: boolean;
   priceCents: number;
   currency: string;
+  rsvpDeadline: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -305,8 +310,32 @@ type EventRsvpStub = {
   userId: string;
   eventId: string;
   status: string;
+  seatGroupId: string | null;
+  preferences: unknown;
+  noShow: boolean;
+  attended: boolean;
   createdAt: Date;
   updatedAt: Date;
+};
+
+type SeatGroupStub = {
+  id: string;
+  eventId: string;
+  tableNumber: number;
+  capacity: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type AuditLogStub = {
+  id: string;
+  actorId: string | null;
+  actorEmail: string | null;
+  action: string;
+  targetType: string;
+  targetId: string;
+  diffJSON: unknown;
+  createdAt: Date;
 };
 
 type MembershipPlanFindUniqueArgs = {
@@ -415,8 +444,117 @@ type EventRsvpFindUniqueArgs = {
 
 type EventRsvpUpsertArgs = {
   where: { userId_eventId: { userId: string; eventId: string } };
-  create: { userId: string; eventId: string; status?: string };
-  update: { status?: string };
+  create: {
+    userId: string;
+    eventId: string;
+    status?: string;
+    seatGroupId?: string | null;
+    preferences?: unknown;
+    noShow?: boolean;
+    attended?: boolean;
+  };
+  update: {
+    status?: string;
+    seatGroupId?: string | null;
+    preferences?: unknown;
+    noShow?: boolean;
+    attended?: boolean;
+  };
+};
+
+type EventCreateArgs = {
+  data: {
+    slug: string;
+    name: string;
+    summary: string;
+    startAt: Date;
+    endAt: Date;
+    venue?: string | null;
+    venueName?: string | null;
+    venueAddress?: string | null;
+    venueNotes?: string | null;
+    venueHiddenUntil?: Date | null;
+    capacity?: number;
+    details?: string | null;
+    visibility?: boolean;
+    priceCents?: number;
+    currency?: string;
+    rsvpDeadline?: Date | null;
+  };
+};
+
+type EventUpdateArgs = {
+  where: { id: string };
+  data: Partial<Omit<EventStub, "id" | "createdAt" | "updatedAt">> & {
+    startAt?: Date;
+    endAt?: Date;
+    venueHiddenUntil?: Date | null;
+    rsvpDeadline?: Date | null;
+  };
+};
+
+type EventCountArgs = {
+  where?: EventWhere;
+};
+
+type SeatGroupFindManyArgs = {
+  where?: { eventId?: string };
+};
+
+type SeatGroupCreateArgs = {
+  data: {
+    eventId: string;
+    tableNumber: number;
+    capacity?: number;
+  };
+};
+
+type SeatGroupUpdateArgs = {
+  where: { id: string };
+  data: {
+    tableNumber?: number;
+    capacity?: number;
+  };
+};
+
+type SeatGroupDeleteArgs = {
+  where: { id: string };
+};
+
+type EventRsvpFindManyArgs = {
+  where?: EventRsvpWhere;
+};
+
+type EventRsvpUpdateArgs = {
+  where: { id: string };
+  data: {
+    status?: string;
+    seatGroupId?: string | null;
+    preferences?: unknown;
+    noShow?: boolean;
+    attended?: boolean;
+  };
+};
+
+type AuditLogCreateArgs = {
+  data: {
+    actorId?: string | null;
+    actorEmail?: string | null;
+    action: string;
+    targetType: string;
+    targetId: string;
+    diffJSON: unknown;
+    createdAt?: Date;
+  };
+};
+
+type AuditLogFindManyArgs = {
+  where?: {
+    targetType?: string;
+    targetId?: string;
+  };
+  orderBy?: { createdAt: "asc" | "desc" };
+  take?: number;
 };
 
 type AccountStub = {
@@ -462,6 +600,8 @@ const stubData = {
   payments: [] as PaymentStub[],
   events: [] as EventStub[],
   eventRsvps: [] as EventRsvpStub[],
+  seatGroups: [] as SeatGroupStub[],
+  auditLogs: [] as AuditLogStub[],
 };
 
 let idCounter = 0;
@@ -497,6 +637,13 @@ function cloneMembershipPlan(plan: MembershipPlanStub): MembershipPlanStub {
   };
 }
 
+function cloneMemberProfile(profile: MemberProfileStub): MemberProfileStub {
+  return {
+    ...profile,
+    data: JSON.parse(JSON.stringify(profile.data)),
+  };
+}
+
 function cloneSubscription(subscription: SubscriptionStub): SubscriptionStub {
   return {
     ...subscription,
@@ -520,6 +667,8 @@ function cloneEvent(event: EventStub): EventStub {
     ...event,
     startAt: new Date(event.startAt.getTime()),
     endAt: new Date(event.endAt.getTime()),
+    venueHiddenUntil: event.venueHiddenUntil ? new Date(event.venueHiddenUntil.getTime()) : null,
+    rsvpDeadline: event.rsvpDeadline ? new Date(event.rsvpDeadline.getTime()) : null,
     createdAt: new Date(event.createdAt.getTime()),
     updatedAt: new Date(event.updatedAt.getTime()),
   };
@@ -528,8 +677,27 @@ function cloneEvent(event: EventStub): EventStub {
 function cloneEventRsvp(rsvp: EventRsvpStub): EventRsvpStub {
   return {
     ...rsvp,
+    preferences: rsvp.preferences
+      ? JSON.parse(JSON.stringify(rsvp.preferences))
+      : rsvp.preferences ?? null,
     createdAt: new Date(rsvp.createdAt.getTime()),
     updatedAt: new Date(rsvp.updatedAt.getTime()),
+  };
+}
+
+function cloneSeatGroup(group: SeatGroupStub): SeatGroupStub {
+  return {
+    ...group,
+    createdAt: new Date(group.createdAt.getTime()),
+    updatedAt: new Date(group.updatedAt.getTime()),
+  };
+}
+
+function cloneAuditLog(entry: AuditLogStub): AuditLogStub {
+  return {
+    ...entry,
+    createdAt: new Date(entry.createdAt.getTime()),
+    diffJSON: JSON.parse(JSON.stringify(entry.diffJSON)),
   };
 }
 
@@ -651,6 +819,10 @@ type EventRsvpWhere = {
   id?: string;
   userId?: string;
   eventId?: string;
+  status?: string | { in?: string[] };
+  seatGroupId?: string | null | { in?: (string | null)[] };
+  noShow?: boolean;
+  attended?: boolean;
 };
 
 function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean {
@@ -658,6 +830,25 @@ function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean 
   if (where.id && rsvp.id !== where.id) return false;
   if (where.userId && rsvp.userId !== where.userId) return false;
   if (where.eventId && rsvp.eventId !== where.eventId) return false;
+  if (where.status) {
+    if (typeof where.status === "string" && rsvp.status !== where.status) return false;
+    if (typeof where.status === "object" && where.status.in && !where.status.in.includes(rsvp.status)) {
+      return false;
+    }
+  }
+  if (where.seatGroupId !== undefined) {
+    if (typeof where.seatGroupId === "string" && rsvp.seatGroupId !== where.seatGroupId) return false;
+    if (where.seatGroupId === null && rsvp.seatGroupId !== null) return false;
+    if (
+      typeof where.seatGroupId === "object" &&
+      Array.isArray(where.seatGroupId.in) &&
+      !where.seatGroupId.in.includes(rsvp.seatGroupId)
+    ) {
+      return false;
+    }
+  }
+  if (where.noShow !== undefined && rsvp.noShow !== where.noShow) return false;
+  if (where.attended !== undefined && rsvp.attended !== where.attended) return false;
   return true;
 }
 
@@ -812,17 +1003,33 @@ function ensureDefaultData() {
       startAt: new Date(now + 1000 * 60 * 60 * 24 * 5),
       endAt: new Date(now + 1000 * 60 * 60 * 24 * 5 + 1000 * 60 * 120),
       venue: "Soho loft",
+      venueName: "Soho Loft",
+      venueAddress: "123 Mercer St, New York",
+      venueNotes: "Buzz 12 for entry.",
+      venueHiddenUntil: new Date(now + 1000 * 60 * 60 * 24 * 2),
       capacity: 30,
       details:
         "Dress sharp, bring stories. This salon welcomes founders, creatives, and the wildly curious.",
       visibility: true,
       priceCents: 4500,
       currency: "usd",
+      rsvpDeadline: new Date(now + 1000 * 60 * 60 * 24 * 4),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     stubData.events.push(sampleEvent);
+
+    const defaultGroups: SeatGroupStub[] = Array.from({ length: 5 }).map((_, index) => ({
+      id: `seat-${index + 1}`,
+      eventId: sampleEvent.id,
+      tableNumber: index + 1,
+      capacity: 6,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    stubData.seatGroups.push(...defaultGroups);
   }
 }
 
@@ -965,6 +1172,23 @@ class PrismaClientStub {
   };
 
   memberProfile = {
+    findUnique: async (args: { where: { userId: string } }) => {
+      ensureDefaultData();
+      const profile = stubData.memberProfiles.find((entry) => entry.userId === args.where.userId);
+      return profile ? cloneMemberProfile(profile) : null;
+    },
+    findMany: async (args?: { where?: { userId?: string; userId_in?: string[] } }) => {
+      ensureDefaultData();
+      let profiles = stubData.memberProfiles;
+      if (args?.where) {
+        profiles = profiles.filter((entry) => {
+          if (args.where?.userId && entry.userId !== args.where.userId) return false;
+          if (args.where?.userId_in && !args.where.userId_in.includes(entry.userId)) return false;
+          return true;
+        });
+      }
+      return profiles.map((profile) => cloneMemberProfile(profile));
+    },
     upsert: async (args: MemberProfileUpsertArgs) => {
       ensureDefaultData();
       let profile = stubData.memberProfiles.find((entry) => entry.userId === args.where.userId);
@@ -978,7 +1202,7 @@ class PrismaClientStub {
         };
         stubData.memberProfiles.push(profile);
       }
-      return { ...profile };
+      return cloneMemberProfile(profile);
     },
   };
 
@@ -1209,6 +1433,75 @@ class PrismaClientStub {
       const event = stubData.events.find((entry) => matchesEvent(entry, args.where));
       return event ? cloneEvent(event) : null;
     },
+    create: async (args: EventCreateArgs) => {
+      ensureDefaultData();
+      if (stubData.events.some((entry) => entry.slug === args.data.slug)) {
+        throw new Error(`Event with slug ${args.data.slug} already exists in stub.`);
+      }
+      const now = new Date();
+      const event: EventStub = {
+        id: nextId("event"),
+        slug: args.data.slug,
+        name: args.data.name,
+        summary: args.data.summary,
+        startAt: new Date(args.data.startAt.getTime()),
+        endAt: new Date(args.data.endAt.getTime()),
+        venue: args.data.venue ?? null,
+        venueName: args.data.venueName ?? null,
+        venueAddress: args.data.venueAddress ?? null,
+        venueNotes: args.data.venueNotes ?? null,
+        venueHiddenUntil: args.data.venueHiddenUntil
+          ? new Date(args.data.venueHiddenUntil.getTime())
+          : null,
+        capacity: args.data.capacity ?? 40,
+        details: args.data.details ?? null,
+        visibility: args.data.visibility ?? true,
+        priceCents: args.data.priceCents ?? 0,
+        currency: args.data.currency ?? "usd",
+        rsvpDeadline: args.data.rsvpDeadline ? new Date(args.data.rsvpDeadline.getTime()) : null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      stubData.events.push(event);
+      return cloneEvent(event);
+    },
+    update: async (args: EventUpdateArgs) => {
+      ensureDefaultData();
+      const event = stubData.events.find((entry) => entry.id === args.where.id);
+      if (!event) {
+        throw new Error(`Event with id ${args.where.id} not found in stub.`);
+      }
+      if (args.data.slug !== undefined) event.slug = args.data.slug;
+      if (args.data.name !== undefined) event.name = args.data.name;
+      if (args.data.summary !== undefined) event.summary = args.data.summary;
+      if (args.data.startAt !== undefined) event.startAt = new Date(args.data.startAt.getTime());
+      if (args.data.endAt !== undefined) event.endAt = new Date(args.data.endAt.getTime());
+      if (args.data.venue !== undefined) event.venue = args.data.venue;
+      if (args.data.venueName !== undefined) event.venueName = args.data.venueName;
+      if (args.data.venueAddress !== undefined) event.venueAddress = args.data.venueAddress;
+      if (args.data.venueNotes !== undefined) event.venueNotes = args.data.venueNotes;
+      if (args.data.venueHiddenUntil !== undefined) {
+        event.venueHiddenUntil = args.data.venueHiddenUntil
+          ? new Date(args.data.venueHiddenUntil.getTime())
+          : null;
+      }
+      if (args.data.capacity !== undefined) event.capacity = args.data.capacity;
+      if (args.data.details !== undefined) event.details = args.data.details;
+      if (args.data.visibility !== undefined) event.visibility = args.data.visibility;
+      if (args.data.priceCents !== undefined) event.priceCents = args.data.priceCents;
+      if (args.data.currency !== undefined) event.currency = args.data.currency;
+      if (args.data.rsvpDeadline !== undefined) {
+        event.rsvpDeadline = args.data.rsvpDeadline
+          ? new Date(args.data.rsvpDeadline.getTime())
+          : null;
+      }
+      event.updatedAt = new Date();
+      return cloneEvent(event);
+    },
+    count: async (args?: EventCountArgs) => {
+      ensureDefaultData();
+      return stubData.events.filter((entry) => matchesEvent(entry, args?.where)).length;
+    },
   };
 
   eventRsvp = {
@@ -1216,6 +1509,11 @@ class PrismaClientStub {
       ensureDefaultData();
       const rsvp = stubData.eventRsvps.find((entry) => matchesEventRsvp(entry, args?.where));
       return rsvp ? cloneEventRsvp(rsvp) : null;
+    },
+    findMany: async (args?: EventRsvpFindManyArgs) => {
+      ensureDefaultData();
+      const matches = stubData.eventRsvps.filter((entry) => matchesEventRsvp(entry, args?.where));
+      return matches.map((entry) => cloneEventRsvp(entry));
     },
     findUnique: async (args: EventRsvpFindUniqueArgs) => {
       ensureDefaultData();
@@ -1233,6 +1531,13 @@ class PrismaClientStub {
       );
       if (rsvp) {
         if (args.update.status !== undefined) rsvp.status = args.update.status;
+        if (args.update.seatGroupId !== undefined) rsvp.seatGroupId = args.update.seatGroupId ?? null;
+        if (args.update.preferences !== undefined)
+          rsvp.preferences = args.update.preferences
+            ? JSON.parse(JSON.stringify(args.update.preferences))
+            : args.update.preferences ?? null;
+        if (args.update.noShow !== undefined) rsvp.noShow = args.update.noShow;
+        if (args.update.attended !== undefined) rsvp.attended = args.update.attended;
         rsvp.updatedAt = new Date();
       } else {
         rsvp = {
@@ -1240,12 +1545,127 @@ class PrismaClientStub {
           userId,
           eventId,
           status: args.create.status ?? "WAITLISTED",
+          seatGroupId: args.create.seatGroupId ?? null,
+          preferences: args.create.preferences
+            ? JSON.parse(JSON.stringify(args.create.preferences))
+            : args.create.preferences ?? null,
+          noShow: args.create.noShow ?? false,
+          attended: args.create.attended ?? false,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
         stubData.eventRsvps.push(rsvp);
       }
       return cloneEventRsvp(rsvp);
+    },
+    update: async (args: EventRsvpUpdateArgs) => {
+      ensureDefaultData();
+      const rsvp = stubData.eventRsvps.find((entry) => entry.id === args.where.id);
+      if (!rsvp) {
+        throw new Error(`Event RSVP with id ${args.where.id} not found in stub.`);
+      }
+      if (args.data.status !== undefined) rsvp.status = args.data.status;
+      if (args.data.seatGroupId !== undefined) rsvp.seatGroupId = args.data.seatGroupId ?? null;
+      if (args.data.preferences !== undefined)
+        rsvp.preferences = args.data.preferences
+          ? JSON.parse(JSON.stringify(args.data.preferences))
+          : args.data.preferences ?? null;
+      if (args.data.noShow !== undefined) rsvp.noShow = args.data.noShow;
+      if (args.data.attended !== undefined) rsvp.attended = args.data.attended;
+      rsvp.updatedAt = new Date();
+      return cloneEventRsvp(rsvp);
+    },
+  };
+
+  seatGroup = {
+    findMany: async (args?: SeatGroupFindManyArgs) => {
+      ensureDefaultData();
+      const matches = stubData.seatGroups.filter((entry) => {
+        if (!args?.where) return true;
+        if (args.where.eventId && entry.eventId !== args.where.eventId) return false;
+        return true;
+      });
+      return matches.map((entry) => cloneSeatGroup(entry));
+    },
+    create: async (args: SeatGroupCreateArgs) => {
+      ensureDefaultData();
+      const group: SeatGroupStub = {
+        id: nextId("seat"),
+        eventId: args.data.eventId,
+        tableNumber: args.data.tableNumber,
+        capacity: args.data.capacity ?? 6,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      stubData.seatGroups.push(group);
+      return cloneSeatGroup(group);
+    },
+    update: async (args: SeatGroupUpdateArgs) => {
+      ensureDefaultData();
+      const group = stubData.seatGroups.find((entry) => entry.id === args.where.id);
+      if (!group) {
+        throw new Error(`Seat group with id ${args.where.id} not found in stub.`);
+      }
+      if (args.data.tableNumber !== undefined) group.tableNumber = args.data.tableNumber;
+      if (args.data.capacity !== undefined) group.capacity = args.data.capacity;
+      group.updatedAt = new Date();
+      return cloneSeatGroup(group);
+    },
+    delete: async (args: SeatGroupDeleteArgs) => {
+      ensureDefaultData();
+      const index = stubData.seatGroups.findIndex((entry) => entry.id === args.where.id);
+      if (index === -1) {
+        throw new Error(`Seat group with id ${args.where.id} not found in stub.`);
+      }
+      const [removed] = stubData.seatGroups.splice(index, 1);
+      for (const rsvp of stubData.eventRsvps) {
+        if (rsvp.seatGroupId === removed.id) {
+          rsvp.seatGroupId = null;
+          rsvp.updatedAt = new Date();
+        }
+      }
+      return cloneSeatGroup(removed);
+    },
+  };
+
+  auditLog = {
+    create: async (args: AuditLogCreateArgs) => {
+      ensureDefaultData();
+      const entry: AuditLogStub = {
+        id: nextId("audit"),
+        actorId: args.data.actorId ?? null,
+        actorEmail: args.data.actorEmail ?? null,
+        action: args.data.action,
+        targetType: args.data.targetType,
+        targetId: args.data.targetId,
+        diffJSON: JSON.parse(JSON.stringify(args.data.diffJSON ?? {})),
+        createdAt: args.data.createdAt ? new Date(args.data.createdAt.getTime()) : new Date(),
+      };
+      stubData.auditLogs.push(entry);
+      return cloneAuditLog(entry);
+    },
+    findMany: async (args?: AuditLogFindManyArgs) => {
+      ensureDefaultData();
+      let matches = stubData.auditLogs;
+      if (args?.where) {
+        matches = matches.filter((entry) => {
+          if (args.where?.targetType && entry.targetType !== args.where.targetType) return false;
+          if (args.where?.targetId && entry.targetId !== args.where.targetId) return false;
+          return true;
+        });
+      }
+      if (args?.orderBy?.createdAt) {
+        const direction = args.orderBy.createdAt;
+        matches = [...matches].sort((a, b) =>
+          direction === "desc"
+            ? b.createdAt.getTime() - a.createdAt.getTime()
+            : a.createdAt.getTime() - b.createdAt.getTime(),
+        );
+      }
+      if (args?.take !== undefined) {
+        matches = matches.slice(0, args.take);
+      }
+      return matches.map((entry) => cloneAuditLog(entry));
     },
   };
 

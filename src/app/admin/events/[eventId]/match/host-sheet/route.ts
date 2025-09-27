@@ -1,0 +1,89 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { Role, RsvpStatus } from "@/lib/prisma-constants";
+import { prisma } from "@/lib/prisma";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: { eventId: string } },
+) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== Role.ADMIN) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  const event = await prisma.event.findUnique({ where: { id: params.eventId } });
+  if (!event) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
+  const seatGroups = await prisma.seatGroup.findMany({
+    where: { eventId: event.id },
+    orderBy: { tableNumber: "asc" },
+  });
+  const rsvps = await prisma.eventRsvp.findMany({ where: { eventId: event.id, status: RsvpStatus.GOING } });
+  const userIds = rsvps.map((rsvp) => rsvp.userId);
+  const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
+  const profiles = userIds.length
+    ? await prisma.memberProfile.findMany({ where: { userId_in: userIds } })
+    : [];
+
+  const userMap = new Map(users.map((user) => [user.id, user]));
+  const profileMap = new Map(profiles.map((profile) => [profile.userId, profile]));
+
+  const sections = seatGroups
+    .map((group) => {
+      const assignments = rsvps.filter((rsvp) => rsvp.seatGroupId === group.id);
+      const rows = assignments
+        .map((rsvp) => {
+          const user = userMap.get(rsvp.userId);
+          const profile = profileMap.get(rsvp.userId);
+          const data = (profile?.data ?? {}) as Record<string, unknown>;
+          const dietary = typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : "";
+          const vibe = typeof data.vibeEnergy === "number" ? `${data.vibeEnergy}/10` : "";
+          return `<tr><td>${user?.name ?? ""}</td><td>${user?.email ?? ""}</td><td>${dietary}</td><td>${vibe}</td></tr>`;
+        })
+        .join("");
+      return `
+        <section>
+          <h2>Table ${group.tableNumber}</h2>
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Dietary</th><th>Vibe</th></tr></thead>
+            <tbody>${rows || "<tr><td colspan=4>Empty</td></tr>"}</tbody>
+          </table>
+        </section>
+      `;
+    })
+    .join("");
+
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>${event.name} · Host sheet</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; color: #111; }
+          h1 { font-size: 28px; margin-bottom: 8px; }
+          p { margin-top: 0; color: #555; }
+          section { margin-top: 24px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+          th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
+          th { background: #f7f7f7; text-align: left; }
+        </style>
+      </head>
+      <body>
+        <h1>${event.name} host sheet</h1>
+        <p>${new Intl.DateTimeFormat("en-US", { dateStyle: "full", timeStyle: "short" }).format(event.startAt)} · Capacity ${event.capacity}</p>
+        ${sections}
+      </body>
+    </html>
+  `;
+
+  return new NextResponse(html, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+    },
+  });
+}

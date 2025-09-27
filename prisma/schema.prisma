@@ -128,14 +128,20 @@ model Event {
   startAt       DateTime
   endAt         DateTime
   venue         String?
+  venueName     String?
+  venueAddress  String?
+  venueNotes    String?
+  venueHiddenUntil DateTime?
   capacity      Int       @default(40)
   details       String?
   visibility    Boolean   @default(true)
   priceCents    Int       @default(0)
   currency      String    @default("usd")
+  rsvpDeadline  DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   rsvps         EventRsvp[]
+  seatGroups    SeatGroup[]
 }
 
 model MembershipPlan {
@@ -187,10 +193,43 @@ model EventRsvp {
   userId    String
   eventId   String
   status    RsvpStatus @default(WAITLISTED)
+  seatGroupId String?
+  preferences Json?
+  noShow    Boolean    @default(false)
+  attended  Boolean    @default(false)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   user      User       @relation(fields: [userId], references: [id])
   event     Event      @relation(fields: [eventId], references: [id])
+  seatGroup SeatGroup? @relation(fields: [seatGroupId], references: [id])
 
   @@unique([userId, eventId])
+}
+
+model SeatGroup {
+  id          String     @id @default(cuid())
+  eventId     String
+  tableNumber Int
+  capacity    Int        @default(6)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  event       Event      @relation(fields: [eventId], references: [id])
+  rsvps       EventRsvp[]
+
+  @@index([eventId, tableNumber])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorEmail String?
+  action     String
+  targetType String
+  targetId   String
+  diffJSON   Json
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id])
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }
