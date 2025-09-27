@@ -57,7 +57,6 @@ const fieldSteps: Record<string, number> = {
   dealBreakers: 3,
   consentCode: 3,
   consentData: 3,
-  social: 2,
 };
 
 const steps = [
@@ -219,9 +218,6 @@ export function ApplyForm() {
                 placeholder="https://instagram.com/"
               />
             </FieldGroup>
-            {fieldErrors.social ? (
-              <p className="text-sm text-destructive">{fieldErrors.social.join(" ")}</p>
-            ) : null}
             <div className="space-y-4">
               <Label className="text-sm font-semibold">What vibe are you bringing?</Label>
               <div className="rounded-3xl border border-border/70 bg-background/80 p-4">
