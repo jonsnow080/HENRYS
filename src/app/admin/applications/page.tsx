@@ -4,7 +4,13 @@ import { Role, ApplicationStatus } from "@/lib/prisma-constants";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { SITE_COPY } from "@/lib/site-copy";
-import { bulkUpdateApplications } from "./actions";
+import {
+  bulkUpdateApplications,
+  buildApplicationEmailPayload,
+  type DecisionTemplateOption,
+} from "./actions";
+import { ApplicationNotesDialog } from "./application-notes-dialog";
+import { ApplicationEmailDialog, type ApplicationEmailPreview } from "./application-email-dialog";
 import { readApplicationPayload } from "@/lib/application/admin";
 import type { ApplicationFormInput } from "@/lib/application/schema";
 import { Input } from "@/components/ui/input";
@@ -12,11 +18,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { renderMjml } from "@/lib/email/mjml";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const STATUS_OPTIONS = Object.values(ApplicationStatus);
 const SORT_OPTIONS = ["newest", "oldest", "name", "status"] as const;
+const EMAIL_TEMPLATE_OPTIONS: DecisionTemplateOption[] = [
+  ApplicationStatus.APPROVED,
+  ApplicationStatus.WAITLIST,
+  ApplicationStatus.REJECTED,
+];
+
+const AGE_BANDS = [
+  { value: "under25", label: "Under 25", test: (age?: number) => typeof age === "number" && age < 25 },
+  { value: "25-34", label: "25-34", test: (age?: number) => typeof age === "number" && age >= 25 && age <= 34 },
+  { value: "35-44", label: "35-44", test: (age?: number) => typeof age === "number" && age >= 35 && age <= 44 },
+  { value: "45+", label: "45+", test: (age?: number) => typeof age === "number" && age >= 45 },
+  { value: "unknown", label: "Unknown", test: (age?: number) => typeof age !== "number" },
+] as const;
+
+type AgeBandValue = (typeof AGE_BANDS)[number]["value"];
 
 type AdminApplication = {
   id: string;
@@ -28,6 +50,7 @@ type AdminApplication = {
   reviewer: string | null;
   notes: string;
   payload: ApplicationFormInput | null;
+  ageBand: AgeBandValue;
 };
 
 type RawApplication = {
@@ -60,6 +83,7 @@ export default async function AdminApplicationsPage({
   const query = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
   const statusParam = typeof searchParams.status === "string" ? searchParams.status : undefined;
   const sortParam = typeof searchParams.sort === "string" ? searchParams.sort : "newest";
+  const ageBandParam = typeof searchParams.ageBand === "string" ? searchParams.ageBand : undefined;
 
   const selectedStatus = STATUS_OPTIONS.includes(statusParam as ApplicationStatus)
     ? (statusParam as ApplicationStatus)
@@ -67,6 +91,9 @@ export default async function AdminApplicationsPage({
   const sort = SORT_OPTIONS.includes(sortParam as (typeof SORT_OPTIONS)[number])
     ? (sortParam as (typeof SORT_OPTIONS)[number])
     : "newest";
+  const selectedAgeBand = AGE_BANDS.some((band) => band.value === ageBandParam)
+    ? (ageBandParam as AgeBandValue)
+    : null;
 
   const where: Record<string, unknown> = {};
   if (query) {
@@ -105,26 +132,63 @@ export default async function AdminApplicationsPage({
   const statusCounts = Object.fromEntries(statusCountsEntries) as Record<ApplicationStatus, number>;
   const totalApplications = Object.values(statusCounts).reduce((sum, value) => sum + value, 0);
 
-  const adminApplications: AdminApplication[] = applications.map((application) => ({
-    id: application.id,
-    fullName: application.fullName,
-    email: application.email,
-    status: application.status,
-    createdAt: application.createdAt.toISOString(),
-    reviewedAt: application.reviewedAt ? application.reviewedAt.toISOString() : null,
-    reviewer: application.reviewer ? application.reviewer.name ?? application.reviewer.email : null,
-    notes: application.notes ?? "",
-    payload: readApplicationPayload(application.payload),
-  }));
+  const adminApplications: AdminApplication[] = applications.map((application) => {
+    const payload = readApplicationPayload(application.payload);
+    const age = typeof payload?.age === "number" ? payload.age : undefined;
+    return {
+      id: application.id,
+      fullName: application.fullName,
+      email: application.email,
+      status: application.status,
+      createdAt: application.createdAt.toISOString(),
+      reviewedAt: application.reviewedAt ? application.reviewedAt.toISOString() : null,
+      reviewer: application.reviewer ? application.reviewer.name ?? application.reviewer.email : null,
+      notes: application.notes ?? "",
+      payload,
+      ageBand: determineAgeBand(age),
+    } satisfies AdminApplication;
+  });
+
+  const emailPreviewEntries = await Promise.all(
+    adminApplications.map(async (application) => {
+      const previews = await Promise.all(
+        EMAIL_TEMPLATE_OPTIONS.map(async (template) => {
+          const payload = await buildApplicationEmailPayload({
+            application: {
+              id: application.id,
+              email: application.email,
+              fullName: application.fullName,
+              status: application.status,
+              notes: application.notes.length ? application.notes : null,
+            },
+            template,
+            includeMagicLink: false,
+          });
+          return {
+            template,
+            subject: payload.subject,
+            html: renderMjml(payload.mjml),
+          } satisfies ApplicationEmailPreview;
+        }),
+      );
+      return [application.id, previews] as const;
+    }),
+  );
+  const emailPreviewMap = new Map<string, ApplicationEmailPreview[]>(emailPreviewEntries);
+
+  const visibleApplications = selectedAgeBand
+    ? adminApplications.filter((application) => application.ageBand === selectedAgeBand)
+    : adminApplications;
 
   const filterParams = new URLSearchParams();
   if (query) filterParams.set("q", query);
   if (selectedStatus) filterParams.set("status", selectedStatus);
+  if (selectedAgeBand) filterParams.set("ageBand", selectedAgeBand);
   if (sort !== "newest") filterParams.set("sort", sort);
   const redirectPath = `/admin/applications${filterParams.size ? `?${filterParams.toString()}` : ""}`;
 
   const successMessage = searchParams.success === "1"
-    ? buildSuccessMessage(searchParams, adminApplications.length)
+    ? buildSuccessMessage(searchParams, visibleApplications.length)
     : null;
   const errorMessage = typeof searchParams.error === "string"
     ? (typeof searchParams.reason === "string" && searchParams.reason.length
@@ -160,6 +224,7 @@ export default async function AdminApplicationsPage({
         defaultQuery={query}
         defaultStatus={selectedStatus}
         defaultSort={sort}
+        defaultAgeBand={selectedAgeBand}
       />
 
       {successMessage || errorMessage ? (
@@ -193,17 +258,18 @@ export default async function AdminApplicationsPage({
                   <TableHead>Applicant</TableHead>
                   <TableHead>Personality & preferences</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-32 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {adminApplications.length === 0 ? (
+                {visibleApplications.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="py-12 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
                       No applications found. Adjust your filters or check back soon.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  adminApplications.map((application) => (
+                  visibleApplications.map((application) => (
                     <TableRow key={application.id}>
                       <TableCell>
                         <input
@@ -230,6 +296,9 @@ export default async function AdminApplicationsPage({
                                 : null}
                             </p>
                           ) : null}
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Age band: {AGE_BANDS.find((band) => band.value === application.ageBand)?.label ?? "Unknown"}
+                          </p>
                           <details className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-xs text-muted-foreground">
                             <summary className="cursor-pointer list-none text-xs font-semibold text-foreground">
                               Read responses
@@ -314,6 +383,20 @@ export default async function AdminApplicationsPage({
                           ) : (
                             <p className="text-amber-500">Awaiting review</p>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          <ApplicationNotesDialog
+                            applicationId={application.id}
+                            applicantName={application.fullName}
+                            defaultNotes={application.notes}
+                          />
+                          <ApplicationEmailDialog
+                            applicationId={application.id}
+                            applicantName={application.fullName}
+                            previews={emailPreviewMap.get(application.id) ?? []}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -431,18 +514,25 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
   return <Badge variant="muted">Submitted</Badge>;
 }
 
+function determineAgeBand(age?: number): AgeBandValue {
+  const match = AGE_BANDS.find((band) => band.test(age));
+  return (match?.value ?? "unknown") as AgeBandValue;
+}
+
 function FilterForm({
   defaultQuery,
   defaultStatus,
   defaultSort,
+  defaultAgeBand,
 }: {
   defaultQuery: string;
   defaultStatus: ApplicationStatus | null;
   defaultSort: (typeof SORT_OPTIONS)[number];
+  defaultAgeBand: AgeBandValue | null;
 }) {
   return (
     <form
-      className="grid gap-4 rounded-[28px] border border-border/60 bg-background/80 p-6 sm:grid-cols-[minmax(0,1fr)_160px_160px_auto] sm:items-end"
+      className="grid gap-4 rounded-[28px] border border-border/60 bg-background/80 p-6 sm:grid-cols-[minmax(0,1fr)_160px_160px_160px_auto] sm:items-end"
       method="get"
     >
       <div className="space-y-2">
@@ -470,6 +560,24 @@ function FilterForm({
           {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
               {statusLabel(status)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="ageBand" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Age band
+        </label>
+        <select
+          id="ageBand"
+          name="ageBand"
+          defaultValue={defaultAgeBand ?? ""}
+          className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
+        >
+          <option value="">All ages</option>
+          {AGE_BANDS.map((band) => (
+            <option key={band.value} value={band.value}>
+              {band.label}
             </option>
           ))}
         </select>

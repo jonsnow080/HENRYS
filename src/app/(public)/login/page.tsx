@@ -10,10 +10,12 @@ export const metadata: Metadata = {
   description: "Request a passwordless magic link to access your HENRYS dashboard and events.",
 };
 
-export default function LoginPage({ searchParams }: { searchParams: { callbackUrl?: string } }) {
-  const cookieStore = cookies() as unknown as {
-    get: (name: string) => { value?: string } | undefined;
-  };
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const cookieStore = await cookies();
   const remembered = cookieStore.get("henrys-last-login")?.value ?? "";
   let initialEmail = "";
 
@@ -28,6 +30,8 @@ export default function LoginPage({ searchParams }: { searchParams: { callbackUr
     }
   }
 
+  const params = await searchParams;
+
   return (
     <div className="mx-auto flex max-w-md flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
       <header className="space-y-3 text-left">
@@ -37,7 +41,7 @@ export default function LoginPage({ searchParams }: { searchParams: { callbackUr
           folder.
         </p>
       </header>
-      <MagicLinkForm callbackUrl={searchParams.callbackUrl} initialEmail={initialEmail} />
+      <MagicLinkForm callbackUrl={params?.callbackUrl} initialEmail={initialEmail} />
       <div className="rounded-2xl border border-border/70 bg-card/70 p-4 text-sm text-muted-foreground">
         Not a member yet? <Link className="font-semibold text-foreground underline" href="/apply">Apply now</Link>.
       </div>

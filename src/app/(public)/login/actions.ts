@@ -34,17 +34,7 @@ export async function requestMagicLink(_: LoginFormState, formData: FormData): P
       redirectTo: callback,
     });
 
-    const store = cookies() as unknown as {
-      set: (options: {
-        name: string;
-        value: string;
-        httpOnly?: boolean;
-        sameSite?: "lax" | "strict" | "none";
-        path?: string;
-        secure?: boolean;
-        maxAge?: number;
-      }) => void;
-    };
+    const store = await cookies();
     store.set({
       name: "henrys-last-login",
       value: Buffer.from(parsed.data.email).toString("base64url"),
