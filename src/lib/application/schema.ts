@@ -17,8 +17,7 @@ export const vibeScaleCopy = [
   "High-energy",
 ] as const;
 
-export const applicationSchema = z
-  .object({
+export const applicationSchema = z.object({
     fullName: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().min(1, "An email is required").email("Enter a valid email"),
     age: z
@@ -75,15 +74,6 @@ export const applicationSchema = z
         message: "You must consent to data use",
       })
       .transform(() => "on" as const),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.linkedin && !data.instagram) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["social"],
-        message: "Share at least one social link so we can get a sense of you.",
-      });
-    }
   });
 
 export type ApplicationFormInput = z.infer<typeof applicationSchema>;
