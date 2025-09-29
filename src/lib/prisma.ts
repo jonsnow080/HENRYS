@@ -280,6 +280,9 @@ type PaymentStub = {
   stripePaymentIntentId: string;
   receiptUrl: string | null;
   description: string | null;
+  stripeRefundId: string | null;
+  refundedAmount: number | null;
+  refundedAt: Date | null;
   createdAt: Date;
 };
 
@@ -296,6 +299,7 @@ type EventStub = {
   visibility: boolean;
   priceCents: number;
   currency: string;
+  rsvpDeadline: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -307,6 +311,8 @@ type EventRsvpStub = {
   status: string;
   createdAt: Date;
   updatedAt: Date;
+  promotionHoldUntil: Date | null;
+  promotionLockId: string | null;
 };
 
 type MembershipPlanFindUniqueArgs = {
@@ -384,6 +390,9 @@ type PaymentCreateArgs = {
     stripePaymentIntentId: string;
     receiptUrl?: string | null;
     description?: string | null;
+    stripeRefundId?: string | null;
+    refundedAmount?: number | null;
+    refundedAt?: Date | null;
     createdAt?: Date;
   };
 };
@@ -394,6 +403,9 @@ type PaymentUpdateArgs = {
     status?: string;
     receiptUrl?: string | null;
     description?: string | null;
+    stripeRefundId?: string | null;
+    refundedAmount?: number | null;
+    refundedAt?: Date | null;
   };
 };
 
@@ -409,14 +421,41 @@ type EventRsvpFindFirstArgs = {
   where?: EventRsvpWhere;
 };
 
+type EventRsvpFindManyArgs = {
+  where?: EventRsvpWhere;
+  orderBy?: { createdAt?: "asc" | "desc" };
+};
+
 type EventRsvpFindUniqueArgs = {
   where: { userId_eventId: { userId: string; eventId: string } };
 };
 
 type EventRsvpUpsertArgs = {
   where: { userId_eventId: { userId: string; eventId: string } };
-  create: { userId: string; eventId: string; status?: string };
-  update: { status?: string };
+  create: {
+    userId: string;
+    eventId: string;
+    status?: string;
+    promotionHoldUntil?: Date | null;
+    promotionLockId?: string | null;
+  };
+  update: {
+    status?: string;
+    promotionHoldUntil?: Date | null;
+    promotionLockId?: string | null;
+  };
+};
+
+type EventRsvpUpdateArgs = {
+  where:
+    | { id: string }
+    | { userId_eventId: { userId: string; eventId: string } };
+  data: {
+    status?: string;
+    promotionHoldUntil?: Date | null;
+    promotionLockId?: string | null;
+    updatedAt?: Date;
+  };
 };
 
 type AccountStub = {
@@ -512,6 +551,7 @@ function clonePayment(payment: PaymentStub): PaymentStub {
   return {
     ...payment,
     createdAt: new Date(payment.createdAt.getTime()),
+    refundedAt: payment.refundedAt ? new Date(payment.refundedAt.getTime()) : null,
   };
 }
 
@@ -520,6 +560,9 @@ function cloneEvent(event: EventStub): EventStub {
     ...event,
     startAt: new Date(event.startAt.getTime()),
     endAt: new Date(event.endAt.getTime()),
+    rsvpDeadline: event.rsvpDeadline
+      ? new Date(event.rsvpDeadline.getTime())
+      : null,
     createdAt: new Date(event.createdAt.getTime()),
     updatedAt: new Date(event.updatedAt.getTime()),
   };
@@ -530,6 +573,9 @@ function cloneEventRsvp(rsvp: EventRsvpStub): EventRsvpStub {
     ...rsvp,
     createdAt: new Date(rsvp.createdAt.getTime()),
     updatedAt: new Date(rsvp.updatedAt.getTime()),
+    promotionHoldUntil: rsvp.promotionHoldUntil
+      ? new Date(rsvp.promotionHoldUntil.getTime())
+      : null,
   };
 }
 
@@ -651,6 +697,8 @@ type EventRsvpWhere = {
   id?: string;
   userId?: string;
   eventId?: string;
+  status?: string;
+  promotionLockId?: string | null;
 };
 
 function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean {
@@ -658,6 +706,8 @@ function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean 
   if (where.id && rsvp.id !== where.id) return false;
   if (where.userId && rsvp.userId !== where.userId) return false;
   if (where.eventId && rsvp.eventId !== where.eventId) return false;
+  if (where.status && rsvp.status !== where.status) return false;
+  if (where.promotionLockId !== undefined && rsvp.promotionLockId !== where.promotionLockId) return false;
   return true;
 }
 
@@ -818,6 +868,7 @@ function ensureDefaultData() {
       visibility: true,
       priceCents: 4500,
       currency: "usd",
+      rsvpDeadline: new Date(now + 1000 * 60 * 60 * 24 * 5 - 1000 * 60 * 60 * 24),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -1176,6 +1227,14 @@ class PrismaClientStub {
         stripePaymentIntentId: args.data.stripePaymentIntentId,
         receiptUrl: args.data.receiptUrl ?? null,
         description: args.data.description ?? null,
+        stripeRefundId: args.data.stripeRefundId ?? null,
+        refundedAmount:
+          args.data.refundedAmount !== undefined
+            ? args.data.refundedAmount
+            : null,
+        refundedAt: args.data.refundedAt
+          ? new Date(args.data.refundedAt.getTime())
+          : null,
         createdAt: args.data.createdAt
           ? new Date(args.data.createdAt.getTime())
           : new Date(),
@@ -1194,6 +1253,13 @@ class PrismaClientStub {
       if (args.data.status !== undefined) payment.status = args.data.status;
       if (args.data.receiptUrl !== undefined) payment.receiptUrl = args.data.receiptUrl;
       if (args.data.description !== undefined) payment.description = args.data.description;
+      if (args.data.stripeRefundId !== undefined) payment.stripeRefundId = args.data.stripeRefundId ?? null;
+      if (args.data.refundedAmount !== undefined) payment.refundedAmount = args.data.refundedAmount ?? null;
+      if (args.data.refundedAt !== undefined) {
+        payment.refundedAt = args.data.refundedAt
+          ? new Date(args.data.refundedAt.getTime())
+          : null;
+      }
       return clonePayment(payment);
     },
   };
@@ -1217,6 +1283,18 @@ class PrismaClientStub {
       const rsvp = stubData.eventRsvps.find((entry) => matchesEventRsvp(entry, args?.where));
       return rsvp ? cloneEventRsvp(rsvp) : null;
     },
+    findMany: async (args?: EventRsvpFindManyArgs) => {
+      ensureDefaultData();
+      let matches = stubData.eventRsvps.filter((entry) => matchesEventRsvp(entry, args?.where));
+      if (args?.orderBy?.createdAt) {
+        const direction = args.orderBy.createdAt;
+        matches = [...matches].sort((a, b) => {
+          const diff = a.createdAt.getTime() - b.createdAt.getTime();
+          return direction === "desc" ? -diff : diff;
+        });
+      }
+      return matches.map((entry) => cloneEventRsvp(entry));
+    },
     findUnique: async (args: EventRsvpFindUniqueArgs) => {
       ensureDefaultData();
       const { userId, eventId } = args.where.userId_eventId;
@@ -1233,6 +1311,14 @@ class PrismaClientStub {
       );
       if (rsvp) {
         if (args.update.status !== undefined) rsvp.status = args.update.status;
+        if (args.update.promotionHoldUntil !== undefined) {
+          rsvp.promotionHoldUntil = args.update.promotionHoldUntil
+            ? new Date(args.update.promotionHoldUntil.getTime())
+            : null;
+        }
+        if (args.update.promotionLockId !== undefined) {
+          rsvp.promotionLockId = args.update.promotionLockId ?? null;
+        }
         rsvp.updatedAt = new Date();
       } else {
         rsvp = {
@@ -1242,9 +1328,41 @@ class PrismaClientStub {
           status: args.create.status ?? "WAITLISTED",
           createdAt: new Date(),
           updatedAt: new Date(),
+          promotionHoldUntil: args.create.promotionHoldUntil
+            ? new Date(args.create.promotionHoldUntil.getTime())
+            : null,
+          promotionLockId: args.create.promotionLockId ?? null,
         };
         stubData.eventRsvps.push(rsvp);
       }
+      return cloneEventRsvp(rsvp);
+    },
+    update: async (args: EventRsvpUpdateArgs) => {
+      ensureDefaultData();
+      let rsvp: EventRsvpStub | undefined;
+      if ("id" in args.where) {
+        rsvp = stubData.eventRsvps.find((entry) => entry.id === args.where.id);
+      } else {
+        const { userId, eventId } = args.where.userId_eventId;
+        rsvp = stubData.eventRsvps.find(
+          (entry) => entry.userId === userId && entry.eventId === eventId,
+        );
+      }
+      if (!rsvp) {
+        throw new Error("Event RSVP not found in stub");
+      }
+      if (args.data.status !== undefined) rsvp.status = args.data.status;
+      if (args.data.promotionHoldUntil !== undefined) {
+        rsvp.promotionHoldUntil = args.data.promotionHoldUntil
+          ? new Date(args.data.promotionHoldUntil.getTime())
+          : null;
+      }
+      if (args.data.promotionLockId !== undefined) {
+        rsvp.promotionLockId = args.data.promotionLockId ?? null;
+      }
+      rsvp.updatedAt = args.data.updatedAt
+        ? new Date(args.data.updatedAt.getTime())
+        : new Date();
       return cloneEventRsvp(rsvp);
     },
   };

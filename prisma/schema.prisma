@@ -133,6 +133,7 @@ model Event {
   visibility    Boolean   @default(true)
   priceCents    Int       @default(0)
   currency      String    @default("usd")
+  rsvpDeadline  DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   rsvps         EventRsvp[]
@@ -171,6 +172,9 @@ model Payment {
   stripePaymentIntentId String   @unique
   receiptUrl            String?
   description           String?
+  stripeRefundId        String?  @unique
+  refundedAmount        Int?
+  refundedAt            DateTime?
   createdAt             DateTime @default(now())
   user                  User     @relation(fields: [userId], references: [id])
   event                 Event?   @relation(fields: [eventId], references: [id])
@@ -189,6 +193,8 @@ model EventRsvp {
   status    RsvpStatus @default(WAITLISTED)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  promotionHoldUntil DateTime?
+  promotionLockId    String?
   user      User       @relation(fields: [userId], references: [id])
   event     Event      @relation(fields: [eventId], references: [id])
 

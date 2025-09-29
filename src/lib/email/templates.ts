@@ -145,6 +145,114 @@ export function paymentReceiptTemplate({
 </mjml>`;
 }
 
+export function waitlistPromotionTemplate({
+  name,
+  eventName,
+  eventDate,
+  price,
+}: {
+  name: string;
+  eventName: string;
+  eventDate: string;
+  price: string;
+}) {
+  return `
+<mjml>
+  <mj-head>
+    <mj-title>Your ${SITE_COPY.name} seat is confirmed</mj-title>
+    ${baseStyles}
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section background-color="#ffffff" padding="32px" border-radius="24px">
+      <mj-column>
+        <mj-text font-size="22px" font-weight="600" css-class="body-copy">See you at ${eventName}, ${name.split(" ")[0] ?? name}.</mj-text>
+        <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
+          We promoted you from the waitlist and confirmed your ticket (${price}). Calendar details and host notes will follow shortly.
+        </mj-text>
+        <mj-text font-size="16px" css-class="body-copy">${eventDate}</mj-text>
+      </mj-column>
+    </mj-section>
+    ${footer}
+  </mj-body>
+</mjml>`;
+}
+
+export function waitlistCheckoutTemplate({
+  name,
+  eventName,
+  eventDate,
+  checkoutUrl,
+  holdMinutes,
+  price,
+}: {
+  name: string;
+  eventName: string;
+  eventDate: string;
+  checkoutUrl: string;
+  holdMinutes: number;
+  price: string;
+}) {
+  return `
+<mjml>
+  <mj-head>
+    <mj-title>Your ${SITE_COPY.name} waitlist invite</mj-title>
+    ${baseStyles}
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section background-color="#ffffff" padding="32px" border-radius="24px">
+      <mj-column>
+        <mj-text font-size="22px" font-weight="600" css-class="body-copy">You're next up, ${name.split(" ")[0] ?? name}.</mj-text>
+        <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
+          A seat just opened for <strong>${eventName}</strong> (${price}). Use the button below to complete checkout in the next ${holdMinutes} minutes before we invite the next person in queue.
+        </mj-text>
+        <mj-text font-size="16px" css-class="body-copy">${eventDate}</mj-text>
+        <mj-button background-color="#111827" color="#ffffff" href="${checkoutUrl}" padding="12px 0" border-radius="24px">
+          Confirm my ticket
+        </mj-button>
+      </mj-column>
+    </mj-section>
+    ${footer}
+  </mj-body>
+</mjml>`;
+}
+
+export function refundNotificationTemplate({
+  name,
+  eventName,
+  amountLabel,
+  message,
+}: {
+  name: string;
+  eventName: string;
+  amountLabel: string | null;
+  message: string;
+}) {
+  return `
+<mjml>
+  <mj-head>
+    <mj-title>${SITE_COPY.name} refund processed</mj-title>
+    ${baseStyles}
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section background-color="#ffffff" padding="32px" border-radius="24px">
+      <mj-column>
+        <mj-text font-size="16px" css-class="body-copy">Hi ${name.split(" ")[0] ?? name},</mj-text>
+        <mj-text font-size="22px" font-weight="600" css-class="body-copy">We've released your seat for ${eventName}.</mj-text>
+        <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
+          ${
+            amountLabel
+              ? `We've issued a ${amountLabel} refund back to your original payment method.`
+              : "This cancellation isn’t eligible for a refund."
+          }
+        </mj-text>
+        <mj-text font-size="14px" css-class="muted">${message}</mj-text>
+      </mj-column>
+    </mj-section>
+    ${footer}
+  </mj-body>
+</mjml>`;
+}
+
 function greeting(name: string) {
   if (!name) return "Hey there";
   return `Hi ${name.split(" ")[0] ?? name}`;
