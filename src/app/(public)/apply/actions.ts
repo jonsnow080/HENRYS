@@ -46,33 +46,41 @@ export async function submitApplicationAction(
 
   const payload = parsed.data;
 
-  const existing = await prisma.application.findFirst({
-    where: {
-      email: payload.email,
-      status: { in: [ApplicationStatus.SUBMITTED, ApplicationStatus.WAITLIST] },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  if (existing) {
-    await prisma.application.update({
-      where: { id: existing.id },
-      data: {
-        fullName: payload.fullName,
-        payload,
-        createdAt: new Date(),
-        status: ApplicationStatus.SUBMITTED,
-      },
-    });
-  } else {
-    await prisma.application.create({
-      data: {
+  try {
+    const existing = await prisma.application.findFirst({
+      where: {
         email: payload.email,
-        fullName: payload.fullName,
-        payload,
-        status: ApplicationStatus.SUBMITTED,
+        status: { in: [ApplicationStatus.SUBMITTED, ApplicationStatus.WAITLIST] },
       },
+      orderBy: { createdAt: "desc" },
     });
+
+    if (existing) {
+      await prisma.application.update({
+        where: { id: existing.id },
+        data: {
+          fullName: payload.fullName,
+          payload,
+          createdAt: new Date(),
+          status: ApplicationStatus.SUBMITTED,
+        },
+      });
+    } else {
+      await prisma.application.create({
+        data: {
+          email: payload.email,
+          fullName: payload.fullName,
+          payload,
+          status: ApplicationStatus.SUBMITTED,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Failed to persist application", error);
+    return {
+      success: false,
+      message: "We couldn't save your application. Please try again in a few minutes.",
+    };
   }
 
   try {

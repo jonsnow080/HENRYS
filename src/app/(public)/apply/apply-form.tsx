@@ -87,20 +87,28 @@ export function ApplyForm() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as FormValues;
-        setValues({ ...defaultValues, ...parsed });
-      } catch (error) {
-        console.warn("Failed to parse draft", error);
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as FormValues;
+          setValues({ ...defaultValues, ...parsed });
+        } catch (error) {
+          console.warn("Failed to parse draft", error);
+        }
       }
+    } catch (error) {
+      console.warn("Unable to restore saved application", error);
     }
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+    } catch (error) {
+      console.warn("Unable to persist application draft", error);
+    }
   }, [values]);
 
   useEffect(() => {
@@ -120,7 +128,11 @@ export function ApplyForm() {
 
   const submit = (formData: FormData) => {
     if (typeof window !== "undefined") {
-      window.localStorage.removeItem(STORAGE_KEY);
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        console.warn("Unable to clear saved application", error);
+      }
     }
     startTransition(() => {
       formAction(formData);

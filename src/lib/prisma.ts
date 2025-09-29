@@ -1830,7 +1830,14 @@ class PrismaClientStub {
 }
 
 const resolvedDatabaseUrl =
-  process.env.POSTGRES_PRISMA_URL?.trim() || process.env.DATABASE_URL?.trim() || "";
+  [
+    process.env.POSTGRES_PRISMA_URL,
+    process.env.DATABASE_URL,
+    process.env.POSTGRES_URL,
+    process.env.POSTGRES_URL_NON_POOLING,
+  ]
+    .map((value) => value?.trim())
+    .find((value) => value && value.length > 0) ?? "";
 
 if (!process.env.DATABASE_URL && resolvedDatabaseUrl) {
   process.env.DATABASE_URL = resolvedDatabaseUrl;

@@ -26,7 +26,7 @@ Additional scripts:
 
 Copy `.env.example` to `.env.local` and populate values for database URLs, Auth.js email provider, Stripe, and Resend before running the application locally.
 
-When deploying on Vercel with the `prisma-postgres-henrys-db1` database, ensure the `POSTGRES_PRISMA_URL` (or `DATABASE_URL`) secret is configured. The application now automatically falls back to the Prisma-specific connection string exposed by Vercel, so no additional code changes are required once the environment variable is present. Set `USE_PRISMA_CLIENT=false` only if you need to force the lightweight in-memory stub for local development.
+When deploying on Vercel with the `prisma-postgres-henrys-db1` database, ensure the `POSTGRES_PRISMA_URL` (or `DATABASE_URL`) secret is configured. The application now automatically falls back to the Prisma-specific connection string exposed by Vercel, so no additional code changes are required once the environment variable is present. If only the generic `POSTGRES_URL` or `POSTGRES_URL_NON_POOLING` variables are set, the app will now adopt those automatically. Set `USE_PRISMA_CLIENT=false` only if you need to force the lightweight in-memory stub for local development.
 
 Stripe integration requires the following keys:
 
