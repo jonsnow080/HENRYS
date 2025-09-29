@@ -1,5 +1,9 @@
 // Prisma schema for HENRYS application
-// Supports SQLite locally and Postgres in production via env-driven provider selection.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 generator client {
   provider = "prisma-client-js"
 }
