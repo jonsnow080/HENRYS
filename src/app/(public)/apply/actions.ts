@@ -44,12 +44,40 @@ export async function submitApplicationAction(
     };
   }
 
-  const payload = parsed.data;
+  const normalizedEmail = parsed.data.email.trim().toLowerCase();
+  const payload = { ...parsed.data, email: normalizedEmail };
+
+  try {
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: { equals: normalizedEmail, mode: "insensitive" },
+      },
+    });
+
+    if (existingUser) {
+      return {
+        success: false,
+        message: "It looks like you already have an account with this email.",
+        fieldErrors: {
+          email: [
+            "Already have an account? Head to the login page to request a new magic link.",
+          ],
+          form: ["Visit the login page to sign in or request a fresh magic link."],
+        },
+      };
+    }
+  } catch (error) {
+    console.error("Failed to check for existing account", error);
+    return {
+      success: false,
+      message: "We couldn't verify your account status. Please try again shortly.",
+    };
+  }
 
   try {
     const existing = await prisma.application.findFirst({
       where: {
-        email: payload.email,
+        email: { equals: normalizedEmail, mode: "insensitive" },
         status: { in: [ApplicationStatus.SUBMITTED, ApplicationStatus.WAITLIST] },
       },
       orderBy: { createdAt: "desc" },
@@ -59,6 +87,7 @@ export async function submitApplicationAction(
       await prisma.application.update({
         where: { id: existing.id },
         data: {
+          email: normalizedEmail,
           fullName: payload.fullName,
           payload,
           createdAt: new Date(),
@@ -68,7 +97,7 @@ export async function submitApplicationAction(
     } else {
       await prisma.application.create({
         data: {
-          email: payload.email,
+          email: normalizedEmail,
           fullName: payload.fullName,
           payload,
           status: ApplicationStatus.SUBMITTED,

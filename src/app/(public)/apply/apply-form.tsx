@@ -194,7 +194,12 @@ export function ApplyForm() {
                 autoComplete="name"
               />
             </FieldGroup>
-            <FieldGroup label="Email" error={fieldErrors.email} required>
+            <FieldGroup
+              label="Email"
+              description="Already have an account? Request a new magic link from the login page."
+              error={fieldErrors.email}
+              required
+            >
               <Input
                 name="email"
                 type="email"
@@ -317,15 +322,17 @@ export function ApplyForm() {
             </FieldGroup>
             <FieldGroup label="Dietary preferences" error={fieldErrors.dietary}>
               <Select
-                value={values.dietary}
-                onValueChange={(value) => setField("dietary", value)}
+                value={values.dietary === "" ? "none" : values.dietary}
+                onValueChange={(value) =>
+                  setField("dietary", value === "none" ? "" : value)
+                }
                 name="dietary"
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select an option" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No preferences</SelectItem>
+                  <SelectItem value="none">No preferences</SelectItem>
                   <SelectItem value="vegetarian">Vegetarian</SelectItem>
                   <SelectItem value="vegan">Vegan</SelectItem>
                   <SelectItem value="pescetarian">Pescetarian</SelectItem>
