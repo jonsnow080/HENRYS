@@ -4,10 +4,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = env("DATABASE_PROVIDER")
-  url      = env("DATABASE_URL")
-}
 
 enum Role {
   GUEST
