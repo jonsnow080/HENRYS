@@ -85,6 +85,7 @@ export function ApplyForm() {
   const [state, formAction] = useActionState<ApplicationFormState, FormData>(submitApplicationAction, {});
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
+  const [clientErrors, setClientErrors] = useState<Partial<Record<keyof FormValues, string[]>>>({});
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -133,9 +134,109 @@ export function ApplyForm() {
 
   const setField = React.useCallback(<K extends keyof FormValues>(key: K, value: FormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
+    setClientErrors((prev) => {
+      if (!prev[key]) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   }, []);
 
-  const fieldErrors = state?.fieldErrors ?? {};
+  const fieldErrors = React.useMemo(() => {
+    const serverErrors = state?.fieldErrors ?? {};
+    const keys = new Set<keyof FormValues>([
+      ...Object.keys(serverErrors),
+      ...Object.keys(clientErrors),
+    ] as (keyof FormValues)[]);
+
+    return Array.from(keys).reduce<Partial<Record<keyof FormValues, string[]>>>((acc, key) => {
+      const combined = [
+        ...(clientErrors[key] ?? []),
+        ...(serverErrors[key] ?? []),
+      ];
+      if (combined.length) {
+        acc[key] = combined;
+      }
+      return acc;
+    }, {});
+  }, [clientErrors, state?.fieldErrors]);
+
+  const validateStep = React.useCallback(
+    (currentStep: number, currentValues: FormValues) => {
+      const errors: Partial<Record<keyof FormValues, string[]>> = {};
+
+      if (currentStep === 1) {
+        if (!currentValues.fullName.trim()) {
+          errors.fullName = ["Please enter your full name before continuing."];
+        }
+
+        const email = currentValues.email.trim();
+        if (!email) {
+          errors.email = ["Please add an email address so we can reach you."];
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          errors.email = ["That doesn’t look like a valid email address yet."];
+        }
+
+        const ageValue = currentValues.age.trim();
+        const age = Number(ageValue);
+        if (!ageValue) {
+          errors.age = ["Let us know your age to make sure you’re in range."];
+        } else if (Number.isNaN(age)) {
+          errors.age = ["Please enter your age using numbers only."];
+        } else if (age < 25 || age > 38) {
+          errors.age = ["Our current cohort is 25-38. Double-check that your age fits."];
+        }
+
+        if (!currentValues.city.trim()) {
+          errors.city = ["Tell us which city you call home."];
+        }
+
+        if (!currentValues.occupation.trim()) {
+          errors.occupation = ["Share what you do so we can get to know you."];
+        }
+      }
+
+      if (currentStep === 2) {
+        const vibe = currentValues.vibe;
+        if (typeof vibe !== "number" || vibe < 1 || vibe > 10) {
+          errors.vibe = ["Choose the vibe you’re bringing on the slider before continuing."];
+        }
+      }
+
+      return errors;
+    },
+    [],
+  );
+
+  const clearStepErrors = React.useCallback((currentStep: number) => {
+    setClientErrors((prev) => {
+      if (!Object.keys(prev).length) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      Object.entries(fieldSteps).forEach(([field, stepNumber]) => {
+        if (stepNumber === currentStep) {
+          delete next[field as keyof FormValues];
+        }
+      });
+      return next;
+    });
+  }, []);
+
+  const handleContinue = React.useCallback(() => {
+    const errors = validateStep(step, values);
+
+    if (Object.keys(errors).length) {
+      setClientErrors((prev) => ({ ...prev, ...errors }));
+      return;
+    }
+
+    clearStepErrors(step);
+    setStep((prev) => Math.min(steps.length, prev + 1));
+  }, [clearStepErrors, step, validateStep, values]);
 
   const submit = (formData: FormData) => {
     if (typeof window !== "undefined") {
@@ -286,6 +387,9 @@ export function ApplyForm() {
                   <span>High energy</span>
                 </div>
               </div>
+              {fieldErrors.vibe ? (
+                <p className="text-sm text-destructive">{fieldErrors.vibe.join(" ")}</p>
+              ) : null}
             </div>
           </div>
         )}
@@ -456,10 +560,7 @@ export function ApplyForm() {
             </Button>
           )}
           {step < steps.length ? (
-            <Button
-              type="button"
-              onClick={() => setStep((prev) => Math.min(steps.length, prev + 1))}
-            >
+            <Button type="button" onClick={handleContinue}>
               Continue
             </Button>
           ) : (
