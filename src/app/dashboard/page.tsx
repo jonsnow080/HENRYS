@@ -13,6 +13,12 @@ export const metadata: Metadata = {
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "past_due"]);
 
+type MembershipPlanRecord = {
+  id: string;
+  name: string;
+  perksJSON: unknown;
+};
+
 function parsePerks(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.map((item) => (typeof item === "string" ? item : JSON.stringify(item)));
@@ -32,7 +38,7 @@ export default async function DashboardPage({
 
   const userId = session.user.id;
 
-  const [plansRaw, subscription, payments] = await Promise.all([
+  const [plansData, subscription, payments] = await Promise.all([
     prisma.membershipPlan.findMany(),
     prisma.subscription.findFirst({ where: { userId } }),
     prisma.payment.findMany({
@@ -40,6 +46,8 @@ export default async function DashboardPage({
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  const plansRaw = plansData as MembershipPlanRecord[];
 
   const plans: MembershipPlanOption[] = plansRaw.map((plan) => ({
     id: plan.id,

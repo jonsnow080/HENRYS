@@ -21,11 +21,13 @@ export async function saveSeatingAssignmentsAction(
     return { status: "error", message: "Unauthorized." };
   }
 
-  const eventId = typeof formData.get("eventId") === "string" ? formData.get("eventId") : null;
-  const payloadRaw = typeof formData.get("assignments") === "string" ? formData.get("assignments") : null;
-  if (!eventId || !payloadRaw) {
+  const eventIdEntry = formData.get("eventId");
+  const payloadRawEntry = formData.get("assignments");
+  if (typeof eventIdEntry !== "string" || typeof payloadRawEntry !== "string") {
     return { status: "error", message: "Missing assignment payload." };
   }
+  const eventId = eventIdEntry;
+  const payloadRaw = payloadRawEntry;
 
   let assignments: { rsvpId: string; seatGroupId: string | null }[] = [];
   try {
@@ -40,7 +42,10 @@ export async function saveSeatingAssignmentsAction(
   }
 
   const rsvps = await prisma.eventRsvp.findMany({ where: { eventId } });
-  const rsvpMap = new Map(rsvps.map((entry) => [entry.id, entry]));
+  const rsvpMap = new Map<string, (typeof rsvps)[number]>();
+  for (const rsvp of rsvps) {
+    rsvpMap.set(rsvp.id, rsvp);
+  }
 
   const updates = assignments.filter((assignment) => {
     const current = rsvpMap.get(assignment.rsvpId);

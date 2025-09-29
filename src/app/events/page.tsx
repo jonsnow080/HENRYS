@@ -10,13 +10,22 @@ export const metadata: Metadata = {
   title: "Events",
 };
 
+type VisibleEventRecord = {
+  id: string;
+  name: string;
+  summary: string | null;
+  startAt: Date;
+  priceCents: number;
+  currency: string;
+};
+
 export default async function EventsPage() {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");
   }
 
-  const events = await prisma.event.findMany({ where: { visibility: true } });
+  const events = (await prisma.event.findMany({ where: { visibility: true } })) as VisibleEventRecord[];
   const sorted = events.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
 
   return (
@@ -44,7 +53,7 @@ export default async function EventsPage() {
                 <div className="space-y-3">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">{formatDate(event.startAt)}</div>
                   <h2 className="text-2xl font-semibold">{event.name}</h2>
-                  <p className="text-sm text-muted-foreground">{event.summary}</p>
+                  <p className="text-sm text-muted-foreground">{event.summary ?? ""}</p>
                 </div>
                 <div className="mt-6 flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">{priceLabel}</span>

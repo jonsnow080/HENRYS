@@ -23,7 +23,6 @@ export function BillingPortalButton() {
         toast({
           title: "Portal unavailable",
           description: message,
-          variant: "destructive",
         });
       }
     });

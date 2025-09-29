@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getStripe } from "@/lib/stripe/server";
@@ -6,7 +7,7 @@ import { getBaseUrl } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id || !session.user.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
     where: { userId: session.user.id },
   });
 
-  const checkoutSession = await stripe.checkout.sessions.create({
+  const sessionParams = {
     mode: "subscription",
     success_url: `${baseUrl}/dashboard?checkout=success`,
     cancel_url: `${baseUrl}/dashboard?checkout=cancelled`,
@@ -65,7 +66,9 @@ export async function POST(req: Request) {
     ...(existingSubscription?.stripeCustomerId
       ? { customer: existingSubscription.stripeCustomerId }
       : { customer_email: session.user.email }),
-  });
+  } as unknown as Stripe.Checkout.SessionCreateParams;
+
+  const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
 
   return NextResponse.json({ sessionId: checkoutSession.id });
 }

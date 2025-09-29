@@ -66,7 +66,7 @@ async function handleSubscriptionEvent(
       data: {
         planId: plan.id,
         status: subscription.status,
-        currentPeriodEnd: toDate(subscription.current_period_end),
+        currentPeriodEnd: getCurrentPeriodEndDate(subscription),
       },
     });
     return;
@@ -78,14 +78,14 @@ async function handleSubscriptionEvent(
       userId,
       planId: plan.id,
       status: subscription.status,
-      currentPeriodEnd: toDate(subscription.current_period_end),
+      currentPeriodEnd: getCurrentPeriodEndDate(subscription),
       stripeCustomerId,
     },
     update: {
       userId,
       planId: plan.id,
       status: subscription.status,
-      currentPeriodEnd: toDate(subscription.current_period_end),
+      currentPeriodEnd: getCurrentPeriodEndDate(subscription),
     },
   });
 }
@@ -196,14 +196,20 @@ function resolveId(
   value:
     | string
     | Stripe.ApiList<unknown>
-    | Stripe.Charge.PaymentIntent
+    | Stripe.PaymentIntent
     | Stripe.Customer
+    | Stripe.DeletedCustomer
     | null,
 ): string | null {
   if (!value) return null;
   if (typeof value === "string") return value;
   if ("id" in value && typeof value.id === "string") return value.id;
   return null;
+}
+
+function getCurrentPeriodEndDate(subscription: Stripe.Subscription): Date | null {
+  const raw = (subscription as Stripe.Subscription & { current_period_end?: number | null }).current_period_end;
+  return toDate(typeof raw === "number" ? raw : null);
 }
 
 function toDate(timestamp?: number | null): Date | null {

@@ -19,10 +19,15 @@ export async function updateRsvpStatusAction(formData: FormData) {
     redirect("/login");
   }
 
-  const rsvpId = typeof formData.get("rsvpId") === "string" ? formData.get("rsvpId") : null;
-  const eventId = typeof formData.get("eventId") === "string" ? formData.get("eventId") : null;
-  const redirectTo = typeof formData.get("redirectTo") === "string" ? formData.get("redirectTo") : "/admin/events";
-  const nextStatus = parseStatus(formData.get("status"));
+  const rsvpIdEntry = formData.get("rsvpId");
+  const eventIdEntry = formData.get("eventId");
+  const redirectToEntry = formData.get("redirectTo");
+  const statusEntry = formData.get("status");
+
+  const redirectTo = typeof redirectToEntry === "string" ? redirectToEntry : "/admin/events";
+  const rsvpId = typeof rsvpIdEntry === "string" ? rsvpIdEntry : null;
+  const eventId = typeof eventIdEntry === "string" ? eventIdEntry : null;
+  const nextStatus = parseStatus(statusEntry);
 
   if (!rsvpId || !eventId || !nextStatus) {
     redirect(redirectTo);
@@ -62,9 +67,13 @@ export async function toggleNoShowAction(formData: FormData) {
     redirect("/login");
   }
 
-  const rsvpId = typeof formData.get("rsvpId") === "string" ? formData.get("rsvpId") : null;
-  const eventId = typeof formData.get("eventId") === "string" ? formData.get("eventId") : null;
-  const redirectTo = typeof formData.get("redirectTo") === "string" ? formData.get("redirectTo") : "/admin/events";
+  const rsvpIdEntry = formData.get("rsvpId");
+  const eventIdEntry = formData.get("eventId");
+  const redirectToEntry = formData.get("redirectTo");
+
+  const redirectTo = typeof redirectToEntry === "string" ? redirectToEntry : "/admin/events";
+  const rsvpId = typeof rsvpIdEntry === "string" ? rsvpIdEntry : null;
+  const eventId = typeof eventIdEntry === "string" ? eventIdEntry : null;
 
   if (!rsvpId || !eventId) {
     redirect(redirectTo);

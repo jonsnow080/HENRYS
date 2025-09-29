@@ -59,22 +59,36 @@ export default async function EventRsvpsPage({
   const query = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
 
   const rsvps = await prisma.eventRsvp.findMany({ where: { eventId: event.id } });
-  const userIds = rsvps.map((rsvp) => rsvp.userId);
+  const userIds: string[] = [];
+  for (const rsvp of rsvps) {
+    userIds.push(rsvp.userId);
+  }
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
   const profiles = userIds.length
     ? await prisma.memberProfile.findMany({ where: { userId_in: userIds } })
     : [];
   const seatGroups = await prisma.seatGroup.findMany({ where: { eventId: event.id } });
 
-  const userMap = new Map(users.map((user) => [user.id, user]));
-  const profileMap = new Map(profiles.map((profile) => [profile.userId, profile]));
-  const seatGroupMap = new Map(seatGroups.map((group) => [group.id, group]));
+  const userMap = new Map<string, (typeof users)[number]>();
+  for (const user of users) {
+    userMap.set(user.id, user);
+  }
+  const profileMap = new Map<string, (typeof profiles)[number]>();
+  for (const profile of profiles) {
+    profileMap.set(profile.userId, profile);
+  }
+  const seatGroupMap = new Map<string, (typeof seatGroups)[number]>();
+  for (const group of seatGroups) {
+    seatGroupMap.set(group.id, group);
+  }
 
-  const adminRsvps: AdminRsvp[] = rsvps.map((rsvp) => {
+  const adminRsvps: AdminRsvp[] = [];
+  for (const rsvp of rsvps) {
     const user = userMap.get(rsvp.userId);
     const profile = profileMap.get(rsvp.userId);
     const data = (profile?.data ?? {}) as Record<string, unknown>;
-    return {
+    const seatGroup = rsvp.seatGroupId ? seatGroupMap.get(rsvp.seatGroupId) : null;
+    adminRsvps.push({
       id: rsvp.id,
       status: rsvp.status as RsvpStatus,
       noShow: rsvp.noShow,
@@ -90,17 +104,15 @@ export default async function EventRsvpsPage({
         dietary: typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : undefined,
         dietaryNotes: typeof data.dietaryNotes === "string" ? (data.dietaryNotes as string) : undefined,
       },
-      seatGroup: rsvp.seatGroupId
-        ? seatGroupMap.get(rsvp.seatGroupId)
-          ? {
-              id: rsvp.seatGroupId,
-              tableNumber: seatGroupMap.get(rsvp.seatGroupId)!.tableNumber,
-            }
-          : null
+      seatGroup: seatGroup
+        ? {
+            id: seatGroup.id,
+            tableNumber: seatGroup.tableNumber,
+          }
         : null,
       createdAt: rsvp.createdAt,
-    } satisfies AdminRsvp;
-  });
+    });
+  }
 
   const visibleRsvps = adminRsvps.filter((entry) => {
     if (query) {
@@ -127,14 +139,24 @@ export default async function EventRsvpsPage({
 
   const stats = {
     total: adminRsvps.length,
-    going: adminRsvps.filter((entry) => entry.status === RsvpStatus.GOING).length,
-    waitlist: adminRsvps.filter((entry) => entry.status === RsvpStatus.WAITLISTED).length,
-    canceled: adminRsvps.filter((entry) => entry.status === RsvpStatus.CANCELED).length,
-    noShow: adminRsvps.filter((entry) => entry.noShow).length,
+    going: 0,
+    waitlist: 0,
+    canceled: 0,
+    noShow: 0,
   };
+  for (const entry of adminRsvps) {
+    if (entry.status === RsvpStatus.GOING) stats.going += 1;
+    if (entry.status === RsvpStatus.WAITLISTED) stats.waitlist += 1;
+    if (entry.status === RsvpStatus.CANCELED) stats.canceled += 1;
+    if (entry.noShow) stats.noShow += 1;
+  }
 
   const exportUrl = `/admin/events/${event.id}/rsvps/export`;
   const redirectPath = buildRedirect(event.id, searchParams);
+  const seatGroupOptions: { id: string; tableNumber: number }[] = [];
+  for (const group of seatGroups) {
+    seatGroupOptions.push({ id: group.id, tableNumber: group.tableNumber });
+  }
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -164,7 +186,7 @@ export default async function EventRsvpsPage({
         defaultAttendance={attendanceParam}
         defaultSeatGroup={seatGroupParam}
         eventId={event.id}
-        seatGroups={seatGroups.map((group) => ({ id: group.id, tableNumber: group.tableNumber }))}
+        seatGroups={seatGroupOptions}
       />
 
       <div className="overflow-hidden rounded-[32px] border border-border/70 bg-card/80">
@@ -211,7 +233,11 @@ export default async function EventRsvpsPage({
                   <TableCell>
                     <div className="space-y-1">
                       <StatusBadge status={entry.status} />
-                      {entry.noShow ? <Badge variant="destructive">No-show</Badge> : null}
+                      {entry.noShow ? (
+                        <Badge variant="outline" className="border-destructive/50 text-destructive">
+                          No-show
+                        </Badge>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell>

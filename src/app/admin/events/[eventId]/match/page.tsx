@@ -22,22 +22,46 @@ export default async function SeatingMatchPage({ params }: { params: { eventId: 
   });
 
   const rsvps = await prisma.eventRsvp.findMany({ where: { eventId: event.id } });
-  const goingRsvps = rsvps.filter((rsvp) => rsvp.status === RsvpStatus.GOING);
-  const userIds = rsvps.map((rsvp) => rsvp.userId);
+  const goingRsvps: typeof rsvps = [];
+  const userIds: string[] = [];
+  for (const rsvp of rsvps) {
+    userIds.push(rsvp.userId);
+    if (rsvp.status === RsvpStatus.GOING) {
+      goingRsvps.push(rsvp);
+    }
+  }
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
   const profiles = userIds.length
     ? await prisma.memberProfile.findMany({ where: { userId_in: userIds } })
     : [];
 
-  const userMap = new Map(users.map((user) => [user.id, user]));
-  const profileMap = new Map(profiles.map((profile) => [profile.userId, profile]));
+  const userMap = new Map<string, (typeof users)[number]>();
+  for (const user of users) {
+    userMap.set(user.id, user);
+  }
+  const profileMap = new Map<string, (typeof profiles)[number]>();
+  for (const profile of profiles) {
+    profileMap.set(profile.userId, profile);
+  }
 
-  const attendees = goingRsvps.map((rsvp) => {
+  const attendees: {
+    id: string;
+    userId: string;
+    name: string;
+    email: string;
+    seatGroupId: string | null;
+    age?: number;
+    vibe?: number;
+    dietary?: string;
+    dietaryNotes?: string;
+    dontPairWithIds: string[];
+  }[] = [];
+  for (const rsvp of goingRsvps) {
     const user = userMap.get(rsvp.userId);
     const profile = profileMap.get(rsvp.userId);
     const data = (profile?.data ?? {}) as Record<string, unknown>;
     const preferences = (rsvp.preferences ?? {}) as { dontPairWithIds?: string[] };
-    return {
+    attendees.push({
       id: rsvp.id,
       userId: rsvp.userId,
       name: user?.name ?? "Unknown guest",
@@ -50,8 +74,13 @@ export default async function SeatingMatchPage({ params }: { params: { eventId: 
       dontPairWithIds: Array.isArray(preferences.dontPairWithIds)
         ? (preferences.dontPairWithIds as string[])
         : [],
-    };
-  });
+    });
+  }
+
+  const seatGroupSummaries: { id: string; tableNumber: number; capacity: number }[] = [];
+  for (const group of seatGroups) {
+    seatGroupSummaries.push({ id: group.id, tableNumber: group.tableNumber, capacity: group.capacity });
+  }
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -79,15 +108,7 @@ export default async function SeatingMatchPage({ params }: { params: { eventId: 
         </div>
       </header>
 
-      <SeatingPlanner
-        eventId={event.id}
-        attendees={attendees}
-        seatGroups={seatGroups.map((group) => ({
-          id: group.id,
-          tableNumber: group.tableNumber,
-          capacity: group.capacity,
-        }))}
-      />
+      <SeatingPlanner eventId={event.id} attendees={attendees} seatGroups={seatGroupSummaries} />
     </div>
   );
 }

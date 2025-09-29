@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email/send";
@@ -8,8 +8,9 @@ import { handleStripeEvent } from "./processor";
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request) {
-  const signature = headers().get("stripe-signature");
+export async function POST(req: NextRequest) {
+  const headersList = await headers();
+  const signature = headersList.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!signature || !webhookSecret) {

@@ -841,6 +841,7 @@ function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean 
     if (where.seatGroupId === null && rsvp.seatGroupId !== null) return false;
     if (
       typeof where.seatGroupId === "object" &&
+      where.seatGroupId !== null &&
       Array.isArray(where.seatGroupId.in) &&
       !where.seatGroupId.in.includes(rsvp.seatGroupId)
     ) {

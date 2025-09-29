@@ -40,7 +40,6 @@ export function PurchaseTicketForm({
         toast({
           title: "Unable to purchase",
           description: message,
-          variant: "destructive",
         });
       }
     });
