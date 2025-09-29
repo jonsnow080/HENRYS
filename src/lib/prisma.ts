@@ -1828,7 +1828,18 @@ class PrismaClientStub {
   }
 }
 
-const preferRealClient = process.env.USE_PRISMA_CLIENT === "true";
+const resolvedDatabaseUrl =
+  process.env.POSTGRES_PRISMA_URL?.trim() || process.env.DATABASE_URL?.trim() || "";
+
+if (!process.env.DATABASE_URL && resolvedDatabaseUrl) {
+  process.env.DATABASE_URL = resolvedDatabaseUrl;
+}
+
+const isExplicitlyDisabled = process.env.USE_PRISMA_CLIENT === "false";
+const preferRealClient =
+  !isExplicitlyDisabled &&
+  (process.env.USE_PRISMA_CLIENT === "true" ||
+    (resolvedDatabaseUrl !== "" && !resolvedDatabaseUrl.startsWith("file:")));
 
 const PrismaClientCtor = await (async () => {
   if (!preferRealClient) {
