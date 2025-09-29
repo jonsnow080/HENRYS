@@ -84,6 +84,7 @@ export function ApplyForm() {
   const [step, setStep] = useState(1);
   const [state, formAction] = useActionState<ApplicationFormState, FormData>(submitApplicationAction, {});
   const [isPending, startTransition] = useTransition();
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -95,10 +96,19 @@ export function ApplyForm() {
           setValues({ ...defaultValues, ...parsed });
         } catch (error) {
           console.warn("Failed to parse draft", error);
+          setStorageWarning(
+            "We found a saved draft but couldn’t load it. Autosave has been reset on this device.",
+          );
+          try {
+            window.localStorage.removeItem(STORAGE_KEY);
+          } catch (removeError) {
+            console.warn("Unable to clear invalid draft", removeError);
+          }
         }
       }
     } catch (error) {
       console.warn("Unable to restore saved application", error);
+      setStorageWarning("Autosave isn’t available in this browser. You can still submit your application.");
     }
   }, []);
 
@@ -108,6 +118,7 @@ export function ApplyForm() {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
     } catch (error) {
       console.warn("Unable to persist application draft", error);
+      setStorageWarning("We couldn’t save your progress to this device. Submitting still works as normal.");
     }
   }, [values]);
 
@@ -132,6 +143,9 @@ export function ApplyForm() {
         window.localStorage.removeItem(STORAGE_KEY);
       } catch (error) {
         console.warn("Unable to clear saved application", error);
+        setStorageWarning(
+          "We couldn’t clear the saved draft on this device. If you see old answers later, please clear your browser data.",
+        );
       }
     }
     startTransition(() => {
@@ -142,6 +156,24 @@ export function ApplyForm() {
   return (
     <form action={submit} className="space-y-8" noValidate>
       <ProgressIndicator currentStep={step} />
+
+      <div className="space-y-3">
+        {storageWarning ? (
+          <FormMessage
+            tone="warning"
+            title="Autosave is unavailable"
+            description={storageWarning}
+          />
+        ) : null}
+        {state?.message ? (
+          <FormMessage
+            tone="error"
+            title="We couldn’t submit your application"
+            description={state.message}
+            details={state.fieldErrors?.form}
+          />
+        ) : null}
+      </div>
 
       <section aria-labelledby="apply-step-heading" className="space-y-6">
         <header className="space-y-1">
@@ -496,6 +528,44 @@ function ProgressIndicator({ currentStep }: { currentStep: number }) {
           </React.Fragment>
         );
       })}
+    </div>
+  );
+}
+
+type FormMessageProps = {
+  tone: "warning" | "error";
+  title: string;
+  description: string;
+  details?: string[];
+};
+
+function FormMessage({ tone, title, description, details }: FormMessageProps) {
+  const toneClasses =
+    tone === "warning"
+      ? {
+          container:
+            "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100",
+          title: "text-amber-900 dark:text-amber-50",
+        }
+      : {
+          container:
+            "border-destructive/40 bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/20 dark:text-destructive-foreground",
+          title: "text-destructive dark:text-destructive-foreground",
+        };
+
+  return (
+    <div className={cn("rounded-2xl border p-4 text-sm", toneClasses.container)}>
+      <div className="space-y-2">
+        <p className={cn("font-semibold", toneClasses.title)}>{title}</p>
+        <p>{description}</p>
+        {details?.length ? (
+          <ul className="list-disc space-y-1 pl-5">
+            {details.map((detail, index) => (
+              <li key={index}>{detail}</li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
     </div>
   );
 }
