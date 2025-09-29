@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useActionState, useEffect, useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { submitApplicationAction, type ApplicationFormState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -482,7 +482,12 @@ export function ApplyForm() {
                 {dealBreakerOptions.map((option) => {
                   const active = values.dealBreakers.includes(option);
                   return (
-                    <label key={option} className="cursor-pointer">
+                    <label
+                      key={option}
+                      className={cn(
+                        "cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-emerald-500",
+                      )}
+                    >
                       <input
                         type="checkbox"
                         className="sr-only"
@@ -501,8 +506,23 @@ export function ApplyForm() {
                           });
                         }}
                       />
-                      <Badge variant={active ? "accent" : "outline"} className="px-4 py-2 text-sm">
-                        {option}
+                      <Badge
+                        variant={active ? "default" : "outline"}
+                        className={cn(
+                          "inline-flex items-center gap-2 px-4 py-2 text-sm transition",
+                          active
+                            ? "border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:border-emerald-400/60 dark:bg-emerald-500/20 dark:text-emerald-200"
+                            : "border-border text-muted-foreground hover:border-foreground/40",
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            "h-3.5 w-3.5 transition-opacity",
+                            active ? "opacity-100" : "opacity-0",
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span>{option}</span>
                       </Badge>
                     </label>
                   );
