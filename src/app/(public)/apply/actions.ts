@@ -19,7 +19,13 @@ export async function submitApplicationAction(
   formData: FormData,
 ): Promise<ApplicationFormState> {
   const data = Object.fromEntries(formData) as Record<string, FormDataEntryValue>;
-  const dealBreakers = formData.getAll("dealBreakers") as string[];
+  const dealBreakers = Array.from(
+    new Set<string>(
+      formData
+        .getAll("dealBreakers")
+        .filter((entry): entry is string => typeof entry === "string" && entry.length > 0),
+    ),
+  );
 
   const parsed = applicationSchema.safeParse({
     ...data,

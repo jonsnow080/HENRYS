@@ -155,6 +155,7 @@ export function ApplyForm() {
 
   return (
     <form action={submit} className="space-y-8" noValidate>
+      <PersistentFields values={values} />
       <ProgressIndicator currentStep={step} />
 
       <div className="space-y-3">
@@ -340,7 +341,6 @@ export function ApplyForm() {
                   <SelectItem value="kosher">Kosher</SelectItem>
                 </SelectContent>
               </Select>
-              <input type="hidden" name="dietary" value={values.dietary} />
             </FieldGroup>
             <FieldGroup label="Dietary notes">
               <Textarea
@@ -418,7 +418,6 @@ export function ApplyForm() {
                   onCheckedChange={(value) => setField("consentCode", Boolean(value))}
                   required
                 />
-                <input type="hidden" name="consentCode" value={values.consentCode ? "on" : ""} />
                 <Label htmlFor="consent-code" className="text-sm font-normal text-muted-foreground">
                   I agree to uphold the HENRYS code of conduct and support inclusive, respectful spaces.
                 </Label>
@@ -434,7 +433,6 @@ export function ApplyForm() {
                   onCheckedChange={(value) => setField("consentData", Boolean(value))}
                   required
                 />
-                <input type="hidden" name="consentData" value={values.consentData ? "on" : ""} />
                 <Label htmlFor="consent-data" className="text-sm font-normal text-muted-foreground">
                   I consent to HENRYS storing my data securely to facilitate event matchmaking.
                 </Label>
@@ -484,6 +482,33 @@ export function ApplyForm() {
         </p>
       </noscript>
     </form>
+  );
+}
+
+function PersistentFields({ values }: { values: FormValues }) {
+  return (
+    <>
+      <input type="hidden" name="fullName" value={values.fullName} />
+      <input type="hidden" name="email" value={values.email} />
+      <input type="hidden" name="age" value={values.age} />
+      <input type="hidden" name="city" value={values.city} />
+      <input type="hidden" name="occupation" value={values.occupation} />
+      <input type="hidden" name="linkedin" value={values.linkedin} />
+      <input type="hidden" name="instagram" value={values.instagram} />
+      <input type="hidden" name="motivation" value={values.motivation} />
+      <input type="hidden" name="threeWords" value={values.threeWords} />
+      <input type="hidden" name="perfectSaturday" value={values.perfectSaturday} />
+      <input type="hidden" name="dietary" value={values.dietary} />
+      <input type="hidden" name="dietaryNotes" value={values.dietaryNotes} />
+      <input type="hidden" name="alcohol" value={values.alcohol} />
+      <input type="hidden" name="vibe" value={String(values.vibe)} />
+      <input type="hidden" name="availability" value={values.availability} />
+      {values.dealBreakers.map((option) => (
+        <input key={option} type="hidden" name="dealBreakers" value={option} />
+      ))}
+      {values.consentCode ? <input type="hidden" name="consentCode" value="on" /> : null}
+      {values.consentData ? <input type="hidden" name="consentData" value="on" /> : null}
+    </>
   );
 }
 
