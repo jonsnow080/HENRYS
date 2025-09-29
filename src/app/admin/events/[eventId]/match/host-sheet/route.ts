@@ -1,18 +1,20 @@
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { Role, RsvpStatus } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  _request: Request,
-  { params }: { params: { eventId: string } },
+  _request: NextRequest,
+  context: { params: Promise<{ eventId: string }> },
 ) {
+  const { eventId } = await context.params;
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: params.eventId } });
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
     return new NextResponse("Not found", { status: 404 });
   }
