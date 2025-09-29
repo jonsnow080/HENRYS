@@ -1,18 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { Role, RsvpStatus } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  _request: Request,
-  { params }: { params: { eventId: string } },
+  _request: NextRequest,
+  context: { params: Promise<{ eventId: string }> },
 ) {
+  const { eventId } = await context.params;
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: params.eventId } });
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
     return new NextResponse("Not found", { status: 404 });
   }
@@ -22,39 +23,57 @@ export async function GET(
     orderBy: { tableNumber: "asc" },
   });
   const rsvps = await prisma.eventRsvp.findMany({ where: { eventId: event.id, status: RsvpStatus.GOING } });
-  const userIds = rsvps.map((rsvp) => rsvp.userId);
+  const userIds: string[] = [];
+  for (const rsvp of rsvps) {
+    userIds.push(rsvp.userId);
+  }
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
   const profiles = userIds.length
     ? await prisma.memberProfile.findMany({ where: { userId_in: userIds } })
     : [];
 
-  const userMap = new Map(users.map((user) => [user.id, user]));
-  const profileMap = new Map(profiles.map((profile) => [profile.userId, profile]));
+  const userMap = new Map<string, (typeof users)[number]>();
+  for (const user of users) {
+    userMap.set(user.id, user);
+  }
+  const profileMap = new Map<string, (typeof profiles)[number]>();
+  for (const profile of profiles) {
+    profileMap.set(profile.userId, profile);
+  }
 
-  const sections = seatGroups
-    .map((group) => {
-      const assignments = rsvps.filter((rsvp) => rsvp.seatGroupId === group.id);
-      const rows = assignments
-        .map((rsvp) => {
-          const user = userMap.get(rsvp.userId);
-          const profile = profileMap.get(rsvp.userId);
-          const data = (profile?.data ?? {}) as Record<string, unknown>;
-          const dietary = typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : "";
-          const vibe = typeof data.vibeEnergy === "number" ? `${data.vibeEnergy}/10` : "";
-          return `<tr><td>${user?.name ?? ""}</td><td>${user?.email ?? ""}</td><td>${dietary}</td><td>${vibe}</td></tr>`;
-        })
-        .join("");
-      return `
+  const sectionsParts: string[] = [];
+  for (const group of seatGroups) {
+    const assignments: typeof rsvps = [];
+    for (const rsvp of rsvps) {
+      if (rsvp.seatGroupId === group.id) {
+        assignments.push(rsvp);
+      }
+    }
+
+    const rowsParts: string[] = [];
+    for (const rsvp of assignments) {
+      const user = userMap.get(rsvp.userId);
+      const profile = profileMap.get(rsvp.userId);
+      const data = (profile?.data ?? {}) as Record<string, unknown>;
+      const dietary = typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : "";
+      const vibe = typeof data.vibeEnergy === "number" ? `${data.vibeEnergy}/10` : "";
+      rowsParts.push(
+        `<tr><td>${user?.name ?? ""}</td><td>${user?.email ?? ""}</td><td>${dietary}</td><td>${vibe}</td></tr>`,
+      );
+    }
+
+    const rowsHtml = rowsParts.join("");
+    sectionsParts.push(`
         <section>
           <h2>Table ${group.tableNumber}</h2>
           <table>
             <thead><tr><th>Name</th><th>Email</th><th>Dietary</th><th>Vibe</th></tr></thead>
-            <tbody>${rows || "<tr><td colspan=4>Empty</td></tr>"}</tbody>
+            <tbody>${rowsHtml || "<tr><td colspan=4>Empty</td></tr>"}</tbody>
           </table>
         </section>
-      `;
-    })
-    .join("");
+      `);
+  }
+  const sections = sectionsParts.join("");
 
   const html = `
     <!doctype html>

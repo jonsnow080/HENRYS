@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getStripe } from "@/lib/stripe/server";
@@ -7,15 +8,16 @@ import { getBaseUrl } from "@/lib/utils";
 export const runtime = "nodejs";
 
 export async function POST(
-  _req: Request,
-  { params }: { params: { eventId: string } },
+  _req: NextRequest,
+  context: { params: Promise<{ eventId: string }> },
 ) {
+  const { eventId } = await context.params;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: params.eventId } });
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event || !event.visibility) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
@@ -27,7 +29,7 @@ export async function POST(
   const stripe = getStripe();
   const baseUrl = getBaseUrl();
 
-  const checkoutSession = await stripe.checkout.sessions.create({
+  const sessionParams = {
     mode: "payment",
     success_url: `${baseUrl}/events/${event.id}?checkout=success`,
     cancel_url: `${baseUrl}/events/${event.id}?checkout=cancelled`,
@@ -37,7 +39,7 @@ export async function POST(
           currency: event.currency,
           product_data: {
             name: event.name,
-            description: event.summary,
+            description: event.summary ?? undefined,
           },
           unit_amount: event.priceCents,
         },
@@ -69,7 +71,9 @@ export async function POST(
       },
     ],
     client_reference_id: `${event.id}:${session.user.id}`,
-  });
+  } as unknown as Stripe.Checkout.SessionCreateParams;
+
+  const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
 
   return NextResponse.json({ sessionId: checkoutSession.id });
 }

@@ -1,27 +1,34 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { Role } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  _request: Request,
-  { params }: { params: { eventId: string } },
+  _request: NextRequest,
+  context: { params: Promise<{ eventId: string }> },
 ) {
+  const { eventId } = await context.params;
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: params.eventId } });
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
     return new NextResponse("Not found", { status: 404 });
   }
 
   const rsvps = await prisma.eventRsvp.findMany({ where: { eventId: event.id } });
-  const userIds = rsvps.map((rsvp) => rsvp.userId);
+  const userIds: string[] = [];
+  for (const rsvp of rsvps) {
+    userIds.push(rsvp.userId);
+  }
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
 
-  const userMap = new Map(users.map((user) => [user.id, user]));
+  const userMap = new Map<string, (typeof users)[number]>();
+  for (const user of users) {
+    userMap.set(user.id, user);
+  }
 
   const rows = ["Name,Email,Status,NoShow,SeatGroup" ];
   for (const rsvp of rsvps) {

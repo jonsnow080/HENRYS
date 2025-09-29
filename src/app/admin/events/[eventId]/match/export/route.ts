@@ -24,13 +24,24 @@ export async function GET(
     orderBy: { tableNumber: "asc" },
   });
   const rsvps = await prisma.eventRsvp.findMany({ where: { eventId: event.id, status: RsvpStatus.GOING } });
-  const userIds = rsvps.map((rsvp) => rsvp.userId);
+  const userIds: string[] = [];
+  for (const rsvp of rsvps) {
+    userIds.push(rsvp.userId);
+  }
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
-  const userMap = new Map(users.map((user) => [user.id, user]));
+  const userMap = new Map<string, (typeof users)[number]>();
+  for (const user of users) {
+    userMap.set(user.id, user);
+  }
 
   const rows = ["Table,Name,Email"];
   for (const group of seatGroups) {
-    const assignments = rsvps.filter((rsvp) => rsvp.seatGroupId === group.id);
+    const assignments: typeof rsvps = [];
+    for (const rsvp of rsvps) {
+      if (rsvp.seatGroupId === group.id) {
+        assignments.push(rsvp);
+      }
+    }
     if (assignments.length === 0) {
       rows.push(`${group.tableNumber},,,`);
       continue;

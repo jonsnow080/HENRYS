@@ -37,6 +37,27 @@ type AdminEvent = {
   };
 };
 
+type EventRecord = {
+  id: string;
+  slug: string;
+  name: string;
+  summary: string | null;
+  startAt: Date;
+  endAt: Date;
+  capacity: number;
+  priceCents: number;
+  visibility: boolean;
+  rsvpDeadline: Date | null;
+  venueName: string | null;
+  venueHiddenUntil: Date | null;
+  createdAt: Date;
+};
+
+type EventRsvpRecord = {
+  eventId: string;
+  status: string;
+};
+
 const SORT_OPTIONS = ["start-desc", "start-asc", "name", "created"] as const;
 
 const PAGE_SIZE = 8;
@@ -57,9 +78,9 @@ export default async function AdminEventsPage({ searchParams }: { searchParams: 
     ? (sortParam as (typeof SORT_OPTIONS)[number])
     : "start-desc";
 
-  const events = await prisma.event.findMany({
+  const events = (await prisma.event.findMany({
     orderBy: { createdAt: "desc" },
-  });
+  })) as EventRecord[];
 
   const filtered = events.filter((event) => {
     if (query) {
@@ -102,7 +123,7 @@ export default async function AdminEventsPage({ searchParams }: { searchParams: 
 
   const eventIds = pageEvents.map((event) => event.id);
   const rsvps = eventIds.length
-    ? await prisma.eventRsvp.findMany({ where: { eventId: { in: eventIds } } })
+    ? ((await prisma.eventRsvp.findMany({ where: { eventId: { in: eventIds } } })) as EventRsvpRecord[])
     : [];
 
   const grouped = new Map<string, { going: number; waitlist: number; canceled: number }>();
@@ -121,7 +142,7 @@ export default async function AdminEventsPage({ searchParams }: { searchParams: 
     id: event.id,
     slug: event.slug,
     name: event.name,
-    summary: event.summary,
+    summary: event.summary ?? "",
     startAt: event.startAt,
     endAt: event.endAt,
     capacity: event.capacity,
