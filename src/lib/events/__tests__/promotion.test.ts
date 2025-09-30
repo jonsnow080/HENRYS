@@ -50,13 +50,36 @@ function createDeps({ event, rsvps, users, subscriptions = [], stripeBehavior = 
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => (where.id === event.id ? event : null)),
     },
     eventRsvp: {
-      findMany: vi.fn(async () => rsvps.map((rsvp) => ({ ...rsvp }))),
+      findMany: vi.fn(async ({ where }: { where?: Partial<Rsvp> } = {}) =>
+        rsvps
+          .filter((rsvp) => {
+            if (where?.eventId && rsvp.eventId !== where.eventId) return false;
+            if (where?.status && rsvp.status !== where.status) return false;
+            return true;
+          })
+          .map((rsvp) => ({ ...rsvp })),
+      ),
       update: vi.fn(async ({ where, data }: { where: { id: string }; data: Partial<Rsvp> }) => {
         const target = rsvps.find((entry) => entry.id === where.id);
         if (!target) throw new Error("RSVP not found");
         Object.assign(target, data, { updatedAt: new Date() });
         return { ...target };
       }),
+      updateMany: vi.fn(
+        async ({ where, data }: { where?: Partial<Rsvp>; data: Partial<Rsvp> }) => {
+          let count = 0;
+          for (const entry of rsvps) {
+            if (where?.id && entry.id !== where.id) continue;
+            if (where?.status && entry.status !== where.status) continue;
+            if (where?.promotionHoldUntil !== undefined && entry.promotionHoldUntil !== where.promotionHoldUntil)
+              continue;
+            if (where?.promotionLockId !== undefined && entry.promotionLockId !== where.promotionLockId) continue;
+            Object.assign(entry, data, { updatedAt: new Date() });
+            count += 1;
+          }
+          return { count };
+        },
+      ),
     },
     user: {
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => users[where.id] ?? null),

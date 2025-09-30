@@ -458,6 +458,24 @@ type EventRsvpUpdateArgs = {
   };
 };
 
+type EventRsvpUpdateManyArgs = {
+  where?: {
+    id?: string;
+    eventId?: string;
+    status?: string;
+    promotionHoldUntil?: Date | null;
+    promotionLockId?: string | null;
+  };
+  data: {
+    status?: string;
+    promotionHoldUntil?: Date | null;
+    promotionLockId?: string | null;
+    updatedAt?: Date;
+  };
+};
+
+type BatchPayload = { count: number };
+
 type AccountStub = {
   provider_providerAccountId: string;
   provider: string;
@@ -699,6 +717,7 @@ type EventRsvpWhere = {
   eventId?: string;
   status?: string;
   promotionLockId?: string | null;
+  promotionHoldUntil?: Date | null;
 };
 
 function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean {
@@ -708,6 +727,16 @@ function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean 
   if (where.eventId && rsvp.eventId !== where.eventId) return false;
   if (where.status && rsvp.status !== where.status) return false;
   if (where.promotionLockId !== undefined && rsvp.promotionLockId !== where.promotionLockId) return false;
+  if (where.promotionHoldUntil !== undefined) {
+    if (where.promotionHoldUntil === null) {
+      if (rsvp.promotionHoldUntil !== null) return false;
+    } else if (
+      !rsvp.promotionHoldUntil ||
+      rsvp.promotionHoldUntil.getTime() !== where.promotionHoldUntil.getTime()
+    ) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -1365,6 +1394,31 @@ class PrismaClientStub {
         : new Date();
       return cloneEventRsvp(rsvp);
     },
+    updateMany: async (args: EventRsvpUpdateManyArgs): Promise<BatchPayload> => {
+      ensureDefaultData();
+      const matches = stubData.eventRsvps.filter((entry) => matchesEventRsvp(entry, args.where));
+      let count = 0;
+      for (const rsvp of matches) {
+        if (args.data.status !== undefined) {
+          rsvp.status = args.data.status;
+        }
+        if (args.data.promotionHoldUntil !== undefined) {
+          rsvp.promotionHoldUntil = args.data.promotionHoldUntil
+            ? new Date(args.data.promotionHoldUntil.getTime())
+            : null;
+        }
+        if (args.data.promotionLockId !== undefined) {
+          rsvp.promotionLockId = args.data.promotionLockId ?? null;
+        }
+        if (args.data.updatedAt !== undefined) {
+          rsvp.updatedAt = new Date(args.data.updatedAt.getTime());
+        } else {
+          rsvp.updatedAt = new Date();
+        }
+        count += 1;
+      }
+      return { count };
+    },
   };
 
   session = {
@@ -1526,10 +1580,10 @@ class PrismaClientStub {
   }
 }
 
-const preferRealClient = process.env.USE_PRISMA_CLIENT === "true";
+const forceStub = process.env.USE_PRISMA_STUB === "true" || process.env.NODE_ENV === "test";
 
 const PrismaClientCtor = await (async () => {
-  if (!preferRealClient) {
+  if (forceStub) {
     return PrismaClientStub;
   }
   try {

@@ -10,6 +10,7 @@ import {
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const HOLD_MINUTES = 30;
+const HOLD_DURATION_MS = HOLD_MINUTES * 60 * 1000;
 
 export type PrismaLike = typeof prismaClient;
 
@@ -45,30 +46,49 @@ export async function promoteNextWaitlistedRsvp(
     orderBy: { createdAt: "asc" },
   });
 
-  let candidate = null;
+  let candidate: (typeof waitlist)[number] | null = null;
+  let lockId: string | null = null;
+  let provisionalHoldUntil: Date | null = null;
+
   for (const rsvp of waitlist) {
     if (rsvp.promotionHoldUntil && rsvp.promotionHoldUntil <= now) {
-      await deps.prisma.eventRsvp.update({
-        where: { id: rsvp.id },
-        data: { promotionHoldUntil: null, promotionLockId: null },
-      });
+      await releaseHold(deps, rsvp.id);
       rsvp.promotionHoldUntil = null;
       rsvp.promotionLockId = null;
     }
-    if (!rsvp.promotionHoldUntil && !rsvp.promotionLockId && !candidate) {
+  }
+
+  for (const rsvp of waitlist) {
+    if (rsvp.promotionHoldUntil || rsvp.promotionLockId) {
+      continue;
+    }
+
+    const candidateLockId = crypto.randomUUID();
+    const holdUntil = new Date(now.getTime() + HOLD_DURATION_MS);
+    const claimed = await deps.prisma.eventRsvp.updateMany({
+      where: {
+        id: rsvp.id,
+        status: RsvpStatus.WAITLISTED,
+        promotionHoldUntil: null,
+        promotionLockId: null,
+      },
+      data: {
+        promotionHoldUntil: holdUntil,
+        promotionLockId: candidateLockId,
+      },
+    });
+
+    if (claimed.count > 0) {
       candidate = rsvp;
+      lockId = candidateLockId;
+      provisionalHoldUntil = holdUntil;
+      break;
     }
   }
 
-  if (!candidate) {
+  if (!candidate || !lockId || !provisionalHoldUntil) {
     return { status: "no_waitlist" };
   }
-
-  const lockId = crypto.randomUUID();
-  await deps.prisma.eventRsvp.update({
-    where: { id: candidate.id },
-    data: { promotionLockId: lockId, promotionHoldUntil: now },
-  });
 
   const user = await deps.prisma.user.findUnique({ where: { id: candidate.userId } });
   if (!user || !user.email) {
@@ -149,7 +169,7 @@ export async function promoteNextWaitlistedRsvp(
     await releaseHold(deps, candidate.id);
     return { status: "skipped", reason: "checkout_failed" };
   }
-  const holdUntil = new Date(now.getTime() + HOLD_MINUTES * 60 * 1000);
+  const holdUntil = provisionalHoldUntil;
   await deps.prisma.eventRsvp.update({
     where: { id: candidate.id },
     data: {
