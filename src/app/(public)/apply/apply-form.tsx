@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useActionState, useEffect, useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { useActionState, useEffect, useId, useState, useTransition } from "react";
+import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { submitApplicationAction, type ApplicationFormState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ const defaultValues = {
   fullName: "",
   email: "",
   age: "",
-  city: "London",
+  city: "",
   occupation: "",
   linkedin: "",
   instagram: "",
@@ -85,6 +85,8 @@ export function ApplyForm() {
   const [state, formAction] = useActionState<ApplicationFormState, FormData>(submitApplicationAction, {});
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
+  const [clientErrors, setClientErrors] = useState<Partial<Record<keyof FormValues, string[]>>>({});
+  const vibeErrorId = useId();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -133,11 +135,150 @@ export function ApplyForm() {
 
   const setField = React.useCallback(<K extends keyof FormValues>(key: K, value: FormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
+    setClientErrors((prev) => {
+      if (!prev[key]) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   }, []);
 
-  const fieldErrors = state?.fieldErrors ?? {};
+  const fieldErrors = React.useMemo(() => {
+    const serverErrors = state?.fieldErrors ?? {};
+    const keys = new Set<keyof FormValues>([
+      ...Object.keys(serverErrors),
+      ...Object.keys(clientErrors),
+    ] as (keyof FormValues)[]);
+
+    return Array.from(keys).reduce<Partial<Record<keyof FormValues, string[]>>>((acc, key) => {
+      const combined = [
+        ...(clientErrors[key] ?? []),
+        ...(serverErrors[key] ?? []),
+      ];
+      if (combined.length) {
+        acc[key] = combined;
+      }
+      return acc;
+    }, {});
+  }, [clientErrors, state?.fieldErrors]);
+
+  const vibeInvalid = Boolean(fieldErrors.vibe?.length);
+
+  const validateStep = React.useCallback(
+    (currentStep: number, currentValues: FormValues) => {
+      const errors: Partial<Record<keyof FormValues, string[]>> = {};
+
+      if (currentStep === 1) {
+        if (!currentValues.fullName.trim()) {
+          errors.fullName = ["Please enter your full name before continuing."];
+        }
+
+        const email = currentValues.email.trim();
+        if (!email) {
+          errors.email = ["Please add an email address so we can reach you."];
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          errors.email = ["That doesn’t look like a valid email address yet."];
+        }
+
+        const ageValue = currentValues.age.trim();
+        const age = Number(ageValue);
+        if (!ageValue) {
+          errors.age = ["Let us know your age to make sure you’re in range."];
+        } else if (Number.isNaN(age)) {
+          errors.age = ["Please enter your age using numbers only."];
+        } else if (age < 25 || age > 38) {
+          errors.age = ["Our current cohort is 25-38. Double-check that your age fits."];
+        }
+
+        if (!currentValues.city.trim()) {
+          errors.city = ["Tell us which city you call home."];
+        }
+
+        if (!currentValues.occupation.trim()) {
+          errors.occupation = ["Share what you do so we can get to know you."];
+        }
+      }
+
+      if (currentStep === 2) {
+        const vibe = currentValues.vibe;
+        if (typeof vibe !== "number" || vibe < 1 || vibe > 10) {
+          errors.vibe = ["Choose the vibe you’re bringing on the slider before continuing."];
+        }
+      }
+
+      if (currentStep === 3) {
+        if (currentValues.motivation.trim().length < 40) {
+          errors.motivation = ["Share a little more about what brings you to HENRYS before continuing."];
+        }
+
+        if (currentValues.threeWords.trim().length < 3) {
+          errors.threeWords = ["Add at least three descriptive words so we can get a sense of you."];
+        }
+
+        if (currentValues.perfectSaturday.trim().length < 30) {
+          errors.perfectSaturday = ["Paint a fuller picture of your perfect Saturday before moving on."];
+        }
+
+        if (!currentValues.alcohol.trim()) {
+          errors.alcohol = ["Let us know your alcohol preferences before continuing."];
+        }
+
+        if (!currentValues.consentCode) {
+          errors.consentCode = ["Please confirm you agree to the code of conduct before submitting."];
+        }
+
+        if (!currentValues.consentData) {
+          errors.consentData = ["Please consent to data storage before submitting."];
+        }
+      }
+
+      return errors;
+    },
+    [],
+  );
+
+  const clearStepErrors = React.useCallback((currentStep: number) => {
+    setClientErrors((prev) => {
+      if (!Object.keys(prev).length) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      Object.entries(fieldSteps).forEach(([field, stepNumber]) => {
+        if (stepNumber === currentStep) {
+          delete next[field as keyof FormValues];
+        }
+      });
+      return next;
+    });
+  }, []);
+
+  const handleContinue = React.useCallback(() => {
+    setStep((currentStep) => {
+      const errors = validateStep(currentStep, values);
+
+      if (Object.keys(errors).length) {
+        setClientErrors((prev) => ({ ...prev, ...errors }));
+        return currentStep;
+      }
+
+      clearStepErrors(currentStep);
+      return Math.min(steps.length, currentStep + 1);
+    });
+  }, [clearStepErrors, validateStep, values]);
 
   const submit = (formData: FormData) => {
+    const finalStepErrors = validateStep(3, values);
+    if (Object.keys(finalStepErrors).length) {
+      setClientErrors((prev) => ({ ...prev, ...finalStepErrors }));
+      setStep(3);
+      return;
+    }
+
+    clearStepErrors(3);
+
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem(STORAGE_KEY);
@@ -155,6 +296,7 @@ export function ApplyForm() {
 
   return (
     <form action={submit} className="space-y-8" noValidate>
+      <PersistentFields values={values} />
       <ProgressIndicator currentStep={step} />
 
       <div className="space-y-3">
@@ -194,7 +336,12 @@ export function ApplyForm() {
                 autoComplete="name"
               />
             </FieldGroup>
-            <FieldGroup label="Email" error={fieldErrors.email} required>
+            <FieldGroup
+              label="Email"
+              description="Already have an account? Request a new magic link from the login page."
+              error={fieldErrors.email}
+              required
+            >
               <Input
                 name="email"
                 type="email"
@@ -264,7 +411,12 @@ export function ApplyForm() {
             </FieldGroup>
             <div className="space-y-4">
               <Label className="text-sm font-semibold">What vibe are you bringing?</Label>
-              <div className="rounded-3xl border border-border/70 bg-background/80 p-4">
+              <div
+                className={cn(
+                  "rounded-3xl border border-border/70 bg-background/80 p-4",
+                  vibeInvalid && "border-destructive/50 bg-destructive/10",
+                )}
+              >
                 <Slider
                   name="vibe"
                   min={1}
@@ -272,6 +424,8 @@ export function ApplyForm() {
                   step={1}
                   value={[values.vibe]}
                   onValueChange={([value]) => setField("vibe", value ?? 5)}
+                  aria-invalid={vibeInvalid || undefined}
+                  aria-describedby={vibeInvalid ? vibeErrorId : undefined}
                 />
                 <input type="hidden" name="vibe" value={values.vibe} />
                 <div className="mt-3 flex justify-between text-xs text-muted-foreground">
@@ -280,6 +434,7 @@ export function ApplyForm() {
                   <span>High energy</span>
                 </div>
               </div>
+              {vibeInvalid ? <ErrorNotice id={vibeErrorId} messages={fieldErrors.vibe ?? []} /> : null}
             </div>
           </div>
         )}
@@ -317,15 +472,17 @@ export function ApplyForm() {
             </FieldGroup>
             <FieldGroup label="Dietary preferences" error={fieldErrors.dietary}>
               <Select
-                value={values.dietary}
-                onValueChange={(value) => setField("dietary", value)}
+                value={values.dietary === "" ? "none" : values.dietary}
+                onValueChange={(value) =>
+                  setField("dietary", value === "none" ? "" : value)
+                }
                 name="dietary"
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select an option" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No preferences</SelectItem>
+                  <SelectItem value="none">No preferences</SelectItem>
                   <SelectItem value="vegetarian">Vegetarian</SelectItem>
                   <SelectItem value="vegan">Vegan</SelectItem>
                   <SelectItem value="pescetarian">Pescetarian</SelectItem>
@@ -333,7 +490,6 @@ export function ApplyForm() {
                   <SelectItem value="kosher">Kosher</SelectItem>
                 </SelectContent>
               </Select>
-              <input type="hidden" name="dietary" value={values.dietary} />
             </FieldGroup>
             <FieldGroup label="Dietary notes">
               <Textarea
@@ -371,7 +527,12 @@ export function ApplyForm() {
                 {dealBreakerOptions.map((option) => {
                   const active = values.dealBreakers.includes(option);
                   return (
-                    <label key={option} className="cursor-pointer">
+                    <label
+                      key={option}
+                      className={cn(
+                        "cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-emerald-500",
+                      )}
+                    >
                       <input
                         type="checkbox"
                         className="sr-only"
@@ -390,8 +551,23 @@ export function ApplyForm() {
                           });
                         }}
                       />
-                      <Badge variant={active ? "accent" : "outline"} className="px-4 py-2 text-sm">
-                        {option}
+                      <Badge
+                        variant={active ? "default" : "outline"}
+                        className={cn(
+                          "inline-flex items-center gap-2 px-4 py-2 text-sm transition",
+                          active
+                            ? "border-emerald-500 bg-emerald-500/15 text-emerald-700 dark:border-emerald-400/60 dark:bg-emerald-500/20 dark:text-emerald-200"
+                            : "border-border text-muted-foreground hover:border-foreground/40",
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            "h-3.5 w-3.5 transition-opacity",
+                            active ? "opacity-100" : "opacity-0",
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span>{option}</span>
                       </Badge>
                     </label>
                   );
@@ -411,7 +587,6 @@ export function ApplyForm() {
                   onCheckedChange={(value) => setField("consentCode", Boolean(value))}
                   required
                 />
-                <input type="hidden" name="consentCode" value={values.consentCode ? "on" : ""} />
                 <Label htmlFor="consent-code" className="text-sm font-normal text-muted-foreground">
                   I agree to uphold the HENRYS code of conduct and support inclusive, respectful spaces.
                 </Label>
@@ -427,7 +602,6 @@ export function ApplyForm() {
                   onCheckedChange={(value) => setField("consentData", Boolean(value))}
                   required
                 />
-                <input type="hidden" name="consentData" value={values.consentData ? "on" : ""} />
                 <Label htmlFor="consent-data" className="text-sm font-normal text-muted-foreground">
                   I consent to HENRYS storing my data securely to facilitate event matchmaking.
                 </Label>
@@ -451,10 +625,7 @@ export function ApplyForm() {
             </Button>
           )}
           {step < steps.length ? (
-            <Button
-              type="button"
-              onClick={() => setStep((prev) => Math.min(steps.length, prev + 1))}
-            >
+            <Button type="button" onClick={handleContinue}>
               Continue
             </Button>
           ) : (
@@ -480,6 +651,56 @@ export function ApplyForm() {
   );
 }
 
+type ErrorNoticeProps = {
+  id?: string;
+  messages: string[];
+};
+
+function ErrorNotice({ id, messages }: ErrorNoticeProps) {
+  return (
+    <div
+      id={id}
+      role="alert"
+      aria-live="polite"
+      className="flex items-start gap-2 rounded-xl border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+    >
+      <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 flex-none" />
+      <div className="space-y-1">
+        {messages.map((message, index) => (
+          <p key={index}>{message}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PersistentFields({ values }: { values: FormValues }) {
+  return (
+    <>
+      <input type="hidden" name="fullName" value={values.fullName} />
+      <input type="hidden" name="email" value={values.email} />
+      <input type="hidden" name="age" value={values.age} />
+      <input type="hidden" name="city" value={values.city} />
+      <input type="hidden" name="occupation" value={values.occupation} />
+      <input type="hidden" name="linkedin" value={values.linkedin} />
+      <input type="hidden" name="instagram" value={values.instagram} />
+      <input type="hidden" name="motivation" value={values.motivation} />
+      <input type="hidden" name="threeWords" value={values.threeWords} />
+      <input type="hidden" name="perfectSaturday" value={values.perfectSaturday} />
+      <input type="hidden" name="dietary" value={values.dietary} />
+      <input type="hidden" name="dietaryNotes" value={values.dietaryNotes} />
+      <input type="hidden" name="alcohol" value={values.alcohol} />
+      <input type="hidden" name="vibe" value={String(values.vibe)} />
+      <input type="hidden" name="availability" value={values.availability} />
+      {values.dealBreakers.map((option) => (
+        <input key={option} type="hidden" name="dealBreakers" value={option} />
+      ))}
+      {values.consentCode ? <input type="hidden" name="consentCode" value="on" /> : null}
+      {values.consentData ? <input type="hidden" name="consentData" value="on" /> : null}
+    </>
+  );
+}
+
 type FieldGroupProps = {
   label: string;
   children: React.ReactNode;
@@ -489,17 +710,59 @@ type FieldGroupProps = {
 };
 
 function FieldGroup({ label, children, error, description, required }: FieldGroupProps) {
+  const errorId = React.useId();
+  const invalid = Boolean(error?.length);
+
+  let control = children;
+  if (React.isValidElement(children)) {
+    const childProps = children.props as Record<string, unknown>;
+    const describedBy = [
+      (childProps["aria-describedby"] as string | undefined) ?? undefined,
+      invalid ? errorId : undefined,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
+    const cloneProps: Record<string, unknown> = {};
+
+    if (invalid) {
+      cloneProps["aria-invalid"] = true;
+    }
+
+    if (describedBy) {
+      cloneProps["aria-describedby"] = describedBy;
+    }
+
+    if ("className" in childProps) {
+      cloneProps.className = cn(
+        childProps.className as string | undefined,
+        invalid && "border-destructive/60 focus-visible:ring-destructive/60",
+      );
+    }
+
+    control = React.cloneElement(children, cloneProps);
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Label>{label}</Label>
-        {required ? <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs">Required</span> : null}
+        <Label className={cn(invalid && "text-destructive")}>{label}</Label>
+        {required ? (
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-xs",
+              invalid
+                ? "bg-destructive/15 text-destructive"
+                : "bg-foreground/10 text-foreground",
+            )}
+          >
+            Required
+          </span>
+        ) : null}
       </div>
       {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
-      {children}
-      {error?.length ? (
-        <p className="text-sm text-destructive">{error.join(" ")}</p>
-      ) : null}
+      {control}
+      {invalid ? <ErrorNotice id={errorId} messages={error ?? []} /> : null}
     </div>
   );
 }
