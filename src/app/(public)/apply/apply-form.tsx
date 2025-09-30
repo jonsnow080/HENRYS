@@ -38,6 +38,15 @@ const defaultValues = {
   consentData: false,
 };
 
+type FormValues = typeof defaultValues;
+type FieldErrors = Partial<Record<keyof FormValues, string[]>>;
+
+const stepRequiredFields: Record<number, (keyof FormValues)[]> = {
+  1: ["fullName", "email", "age", "city", "occupation"],
+  2: [],
+  3: ["motivation", "threeWords", "perfectSaturday", "alcohol", "consentCode", "consentData"],
+};
+
 const fieldSteps: Record<string, number> = {
   fullName: 1,
   email: 1,
@@ -77,14 +86,13 @@ const steps = [
   },
 ];
 
-type FormValues = typeof defaultValues;
-
 export function ApplyForm() {
   const [values, setValues] = useState<FormValues>(defaultValues);
   const [step, setStep] = useState(1);
   const [state, formAction] = useActionState<ApplicationFormState, FormData>(submitApplicationAction, {});
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
+  const [clientErrors, setClientErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -131,13 +139,171 @@ export function ApplyForm() {
     }
   }, [state?.fieldErrors]);
 
-  const setField = React.useCallback(<K extends keyof FormValues>(key: K, value: FormValues[K]) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const setField = React.useCallback(
+    <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
+      setValues((prev) => ({ ...prev, [key]: value }));
+      setClientErrors((prev) => {
+        if (!prev[key]) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    },
+    [setClientErrors],
+  );
 
-  const fieldErrors = state?.fieldErrors ?? {};
+  const fieldErrors = React.useMemo<FieldErrors>(() => {
+    const errors: FieldErrors = { ...clientErrors };
+    if (state?.fieldErrors) {
+      for (const [key, messages] of Object.entries(state.fieldErrors)) {
+        if (key in defaultValues) {
+          errors[key as keyof FormValues] = messages;
+        }
+      }
+    }
+    return errors;
+  }, [clientErrors, state?.fieldErrors]);
+
+  const getValidationMessage = React.useCallback(
+    (field: keyof FormValues): string | null => {
+      const value = values[field];
+      switch (field) {
+        case "fullName": {
+          const text = String(value ?? "").trim();
+          if (text.length < 2) {
+            return "Name must be at least 2 characters";
+          }
+          return null;
+        }
+        case "email": {
+          const text = String(value ?? "").trim();
+          if (!text) {
+            return "An email is required";
+          }
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailPattern.test(text)) {
+            return "Enter a valid email";
+          }
+          return null;
+        }
+        case "age": {
+          const text = String(value ?? "").trim();
+          if (!text) {
+            return "Age is required";
+          }
+          const number = Number(text);
+          if (!Number.isInteger(number)) {
+            return "Age must be a whole number";
+          }
+          if (number < 25 || number > 38) {
+            return "HENRYS is for ages 25–38";
+          }
+          return null;
+        }
+        case "city": {
+          const text = String(value ?? "").trim();
+          if (text.length < 2) {
+            return "City must be at least 2 characters";
+          }
+          return null;
+        }
+        case "occupation": {
+          const text = String(value ?? "").trim();
+          if (text.length < 2) {
+            return "Occupation must be at least 2 characters";
+          }
+          return null;
+        }
+        case "motivation": {
+          const text = String(value ?? "").trim();
+          if (text.length < 40) {
+            return "Give us at least a couple of sentences";
+          }
+          return null;
+        }
+        case "threeWords": {
+          const text = String(value ?? "").trim();
+          if (text.length < 3) {
+            return "Add at least three words";
+          }
+          return null;
+        }
+        case "perfectSaturday": {
+          const text = String(value ?? "").trim();
+          if (text.length < 30) {
+            return "We love details — give us at least 30 characters";
+          }
+          return null;
+        }
+        case "alcohol": {
+          const text = String(value ?? "").trim();
+          if (text.length < 2) {
+            return "Let us know your preferences";
+          }
+          return null;
+        }
+        case "consentCode": {
+          if (!value) {
+            return "You must accept the code of conduct";
+          }
+          return null;
+        }
+        case "consentData": {
+          if (!value) {
+            return "You must consent to data use";
+          }
+          return null;
+        }
+        default:
+          return null;
+      }
+    },
+    [values],
+  );
+
+  const validateStep = React.useCallback(
+    (currentStep: number) => {
+      const requiredFields = stepRequiredFields[currentStep] ?? [];
+      if (!requiredFields.length) {
+        return true;
+      }
+
+      const nextErrors: FieldErrors = {};
+      for (const field of requiredFields) {
+        const message = getValidationMessage(field);
+        if (message) {
+          nextErrors[field] = [message];
+        }
+      }
+
+      setClientErrors((prev) => {
+        const updated = { ...prev };
+        for (const field of requiredFields) {
+          delete updated[field];
+        }
+        if (Object.keys(nextErrors).length === 0) {
+          return updated;
+        }
+        return { ...updated, ...nextErrors };
+      });
+
+      return Object.keys(nextErrors).length === 0;
+    },
+    [getValidationMessage, setClientErrors],
+  );
+
+  const handleContinue = React.useCallback(() => {
+    if (validateStep(step)) {
+      setStep((prev) => Math.min(steps.length, prev + 1));
+    }
+  }, [step, validateStep]);
 
   const submit = (formData: FormData) => {
+    if (!validateStep(step)) {
+      return;
+    }
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem(STORAGE_KEY);
@@ -451,10 +617,7 @@ export function ApplyForm() {
             </Button>
           )}
           {step < steps.length ? (
-            <Button
-              type="button"
-              onClick={() => setStep((prev) => Math.min(steps.length, prev + 1))}
-            >
+            <Button type="button" onClick={handleContinue}>
               Continue
             </Button>
           ) : (
