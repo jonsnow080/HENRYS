@@ -1,12 +1,33 @@
-import type { NextAuthConfig } from "next-auth";
+import type { NextAuthConfig, SignOutEvent } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import EmailProvider from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/lib/prisma-constants";
 import { verifyPassword } from "@/lib/password";
+import { sendEmail } from "@/lib/email/send";
+import { magicLinkTemplate } from "@/lib/email/templates";
+import { SITE_COPY } from "@/lib/site-copy";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
+
+function extractEmailFromSignOut(event: SignOutEvent): string | null {
+  if (!event || typeof event !== "object") {
+    return null;
+  }
+  const session = (event as { session?: unknown }).session;
+  if (!session || typeof session !== "object") {
+    return null;
+  }
+  const user = (session as { user?: unknown }).user;
+  if (!user || typeof user !== "object") {
+    return null;
+  }
+  const email = (user as { email?: unknown }).email;
+  return typeof email === "string" ? email : null;
+}
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -23,20 +44,19 @@ export const authConfig = {
   },
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      name: "Email",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        const parsed = credentialsSchema.safeParse(credentials);
+      async authorize(rawCredentials) {
+        const parsed = credentialsSchema.safeParse(rawCredentials);
         if (!parsed.success) {
-          return null;
+          throw new Error("INVALID_CREDENTIALS");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
-        });
+        const email = parsed.data.email.trim().toLowerCase();
+        const user = await prisma.user.findUnique({ where: { email } });
 
         if (!user || !user.passwordHash) {
           return null;
@@ -47,12 +67,47 @@ export const authConfig = {
           return null;
         }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
+        if (!allowedMemberRoles.has(user.role)) {
+          throw new Error("ACCESS_DENIED");
+        }
+
+        const { passwordHash, ...safeUser } = user;
+        void passwordHash;
+        return safeUser;
+      },
+    }),
+    EmailProvider({
+      maxAge: 15 * 60,
+      from: process.env.AUTH_EMAIL_FROM ?? `HENRYS <mail@henrys.club>`,
+      normalizeIdentifier(identifier) {
+        return identifier.trim().toLowerCase();
+      },
+      server: process.env.EMAIL_SERVER ?? {
+        host: process.env.SMTP_HOST ?? "127.0.0.1",
+        port: Number(process.env.SMTP_PORT ?? 2525),
+        auth: process.env.SMTP_USER
+          ? {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASSWORD ?? "",
+            }
+          : undefined,
+      },
+      async sendVerificationRequest({ identifier, url }) {
+        const email = identifier.trim().toLowerCase();
+        const rateLimit = checkRateLimit(`magic-link:${email}`);
+        if (!rateLimit.allowed) {
+          const error = new Error("RATE_LIMIT_EXCEEDED");
+          (error as Error & { rateLimit?: typeof rateLimit }).rateLimit = rateLimit;
+          throw error;
+        }
+
+        await sendEmail({
+          to: email,
+          subject: `${SITE_COPY.name} — one-click login`,
+          mjml: magicLinkTemplate({ url }),
+          text: `Sign in to ${SITE_COPY.name} by visiting ${url}`,
+          tags: [{ name: "category", value: "magic-link" }],
+        });
       },
     }),
   ],
@@ -92,6 +147,18 @@ export const authConfig = {
     async signIn({ user }) {
       if (!user) return false;
       return allowedMemberRoles.has((user as { role: Role }).role);
+    },
+  },
+  events: {
+    async signOut(event) {
+      const email = extractEmailFromSignOut(event);
+      if (!email) {
+        return;
+      }
+
+      await prisma.verificationToken.deleteMany({
+        where: { identifier: email },
+      });
     },
   },
   cookies: {
