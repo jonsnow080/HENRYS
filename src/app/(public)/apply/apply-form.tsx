@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useActionState, useEffect, useId, useState, useTransition } from "react";
 import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { submitApplicationAction, type ApplicationFormState } from "./actions";
@@ -313,6 +314,12 @@ export function ApplyForm() {
             title="We couldn’t submit your application"
             description={state.message}
             details={state.fieldErrors?.form}
+            action=
+              {state.redirectTo ? (
+                <Button asChild variant="outline" className="w-full sm:w-auto">
+                  <Link href={state.redirectTo}>Go to login</Link>
+                </Button>
+              ) : undefined}
           />
         ) : null}
       </div>
@@ -800,9 +807,10 @@ type FormMessageProps = {
   title: string;
   description: string;
   details?: string[];
+  action?: React.ReactNode;
 };
 
-function FormMessage({ tone, title, description, details }: FormMessageProps) {
+function FormMessage({ tone, title, description, details, action }: FormMessageProps) {
   const toneClasses =
     tone === "warning"
       ? {
@@ -817,7 +825,7 @@ function FormMessage({ tone, title, description, details }: FormMessageProps) {
         };
 
   return (
-    <div className={cn("rounded-2xl border p-4 text-sm", toneClasses.container)}>
+    <div className={cn("space-y-3 rounded-2xl border p-4 text-sm", toneClasses.container)}>
       <div className="space-y-2">
         <p className={cn("font-semibold", toneClasses.title)}>{title}</p>
         <p>{description}</p>
@@ -829,6 +837,7 @@ function FormMessage({ tone, title, description, details }: FormMessageProps) {
           </ul>
         ) : null}
       </div>
+      {action ? <div>{action}</div> : null}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ApplicationStatus } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +13,7 @@ export type ApplicationFormState = {
   message?: string;
   success?: boolean;
   fieldErrors?: Record<string, string[]>;
+  redirectTo?: string;
 };
 
 export async function submitApplicationAction(
@@ -61,6 +63,21 @@ export async function submitApplicationAction(
     });
 
     if (existingUser) {
+      try {
+        const store = await cookies();
+        store.set({
+          name: "henrys-last-login",
+          value: Buffer.from(normalizedEmail).toString("base64url"),
+          httpOnly: true,
+          sameSite: "lax",
+          path: "/",
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 60 * 60 * 24 * 60,
+        });
+      } catch (error) {
+        console.warn("Unable to persist last login email", error);
+      }
+
       return {
         success: false,
         message: "It looks like you already have an account with this email.",
@@ -68,6 +85,7 @@ export async function submitApplicationAction(
           email: ["Already have an account? Head to the login page to sign in."],
           form: ["Visit the login page to sign in."],
         },
+        redirectTo: "/login",
       };
     }
   } catch (error) {
