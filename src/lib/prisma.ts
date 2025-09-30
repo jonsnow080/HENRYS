@@ -1370,7 +1370,8 @@ class PrismaClientStub {
       ensureDefaultData();
       let rsvp: EventRsvpStub | undefined;
       if ("id" in args.where) {
-        rsvp = stubData.eventRsvps.find((entry) => entry.id === args.where.id);
+        const { id } = args.where;
+        rsvp = stubData.eventRsvps.find((entry) => entry.id === id);
       } else {
         const { userId, eventId } = args.where.userId_eventId;
         rsvp = stubData.eventRsvps.find(

@@ -9,7 +9,8 @@ import { handleStripeEvent } from "./processor";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const signature = headers().get("stripe-signature");
+  const headerList = await headers();
+  const signature = headerList.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!signature || !webhookSecret) {

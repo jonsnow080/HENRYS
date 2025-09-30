@@ -58,7 +58,6 @@ export function SubscribeCard({ plans }: { plans: MembershipPlanOption[] }) {
         toast({
           title: "Checkout failed",
           description: message,
-          variant: "destructive",
         });
       }
     });

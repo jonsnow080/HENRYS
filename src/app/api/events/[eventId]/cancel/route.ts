@@ -17,14 +17,15 @@ export const runtime = "nodejs";
 
 export async function POST(
   _req: Request,
-  { params }: { params: { eventId: string } },
+  context: { params: Promise<{ eventId: string }> },
 ) {
+  const { eventId } = await context.params;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: params.eventId } });
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }

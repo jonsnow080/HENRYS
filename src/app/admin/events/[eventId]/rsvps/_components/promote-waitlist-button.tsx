@@ -33,7 +33,7 @@ export function PromoteWaitlistButton({ eventId }: { eventId: string }) {
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unexpected error";
-        toast({ title: "Promotion failed", description: message, variant: "destructive" });
+        toast({ title: "Promotion failed", description: message });
       }
     });
   };

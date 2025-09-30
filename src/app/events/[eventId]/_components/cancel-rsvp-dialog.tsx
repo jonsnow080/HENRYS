@@ -52,7 +52,6 @@ export function CancelRsvpDialog({
         toast({
           title: "Unable to cancel",
           description: message,
-          variant: "destructive",
         });
       }
     });

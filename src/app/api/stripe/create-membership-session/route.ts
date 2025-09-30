@@ -51,17 +51,6 @@ export async function POST(req: Request) {
         description: `${plan.name} membership`,
       },
     },
-    custom_fields: [
-      {
-        key: "food_drink_ack",
-        label: {
-          type: "custom",
-          custom: "I understand tickets/membership do not include food/drink",
-        },
-        type: "checkbox",
-        checkbox: { required: true },
-      },
-    ],
     ...(existingSubscription?.stripeCustomerId
       ? { customer: existingSubscription.stripeCustomerId }
       : { customer_email: session.user.email }),

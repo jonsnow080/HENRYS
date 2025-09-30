@@ -11,8 +11,9 @@ export const runtime = "nodejs";
 
 export async function POST(
   _req: Request,
-  { params }: { params: { eventId: string } },
+  context: { params: Promise<{ eventId: string }> },
 ) {
+  const { eventId } = await context.params;
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +21,7 @@ export async function POST(
 
   const stripe = getStripe();
   try {
-    const result = await promoteNextWaitlistedRsvp(params.eventId, {
+    const result = await promoteNextWaitlistedRsvp(eventId, {
       prisma,
       stripe,
       sendEmail,

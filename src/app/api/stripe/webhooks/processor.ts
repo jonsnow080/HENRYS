@@ -47,13 +47,16 @@ async function handleSubscriptionEvent(
   const stripeCustomerId = resolveId(subscription.customer);
   if (!stripeCustomerId) return;
 
-  const priceId = subscription.items.data[0]?.price?.id;
+  const primaryItem = subscription.items.data[0];
+  const priceId = primaryItem?.price?.id;
   if (!priceId) return;
 
   const plan = await deps.prisma.membershipPlan.findUnique({
     where: { stripePriceId: priceId },
   });
   if (!plan) return;
+
+  const currentPeriodEnd = primaryItem?.current_period_end ?? null;
 
   const userId = subscription.metadata?.userId;
   if (!userId) {
@@ -66,7 +69,7 @@ async function handleSubscriptionEvent(
       data: {
         planId: plan.id,
         status: subscription.status,
-        currentPeriodEnd: toDate(subscription.current_period_end),
+        currentPeriodEnd: toDate(currentPeriodEnd),
       },
     });
     return;
@@ -78,14 +81,14 @@ async function handleSubscriptionEvent(
       userId,
       planId: plan.id,
       status: subscription.status,
-      currentPeriodEnd: toDate(subscription.current_period_end),
+      currentPeriodEnd: toDate(currentPeriodEnd),
       stripeCustomerId,
     },
     update: {
       userId,
       planId: plan.id,
       status: subscription.status,
-      currentPeriodEnd: toDate(subscription.current_period_end),
+      currentPeriodEnd: toDate(currentPeriodEnd),
     },
   });
 }
@@ -196,8 +199,9 @@ function resolveId(
   value:
     | string
     | Stripe.ApiList<unknown>
-    | Stripe.Charge.PaymentIntent
+    | Stripe.PaymentIntent
     | Stripe.Customer
+    | Stripe.DeletedCustomer
     | null,
 ): string | null {
   if (!value) return null;

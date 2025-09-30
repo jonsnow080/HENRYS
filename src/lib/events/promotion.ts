@@ -2,7 +2,7 @@ import crypto from "crypto";
 import type Stripe from "stripe";
 import { RsvpStatus } from "@/lib/prisma-constants";
 import type { prisma as prismaClient } from "@/lib/prisma";
-import type { SendEmail } from "@/lib/email/send";
+import type { sendEmail as sendEmailFn } from "@/lib/email/send";
 import {
   waitlistPromotionTemplate,
   waitlistCheckoutTemplate,
@@ -15,6 +15,8 @@ const HOLD_DURATION_MS = HOLD_MINUTES * 60 * 1000;
 export type PrismaLike = typeof prismaClient;
 
 export type StripeLike = Pick<Stripe, "paymentIntents" | "paymentMethods" | "checkout">;
+
+type SendEmail = typeof sendEmailFn;
 
 export type PromotionDependencies = {
   prisma: PrismaLike;

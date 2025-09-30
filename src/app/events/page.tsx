@@ -10,13 +10,22 @@ export const metadata: Metadata = {
   title: "Events",
 };
 
+type EventRecord = {
+  id: string;
+  name: string;
+  summary: string;
+  startAt: Date;
+  priceCents: number;
+  currency: string;
+};
+
 export default async function EventsPage() {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");
   }
 
-  const events = await prisma.event.findMany({ where: { visibility: true } });
+  const events = (await prisma.event.findMany({ where: { visibility: true } })) as EventRecord[];
   const sorted = events.sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
 
   return (

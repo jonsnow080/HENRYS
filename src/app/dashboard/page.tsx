@@ -20,6 +20,12 @@ function parsePerks(value: unknown): string[] {
   return [];
 }
 
+type PlanRecord = {
+  id: string;
+  name: string;
+  perksJSON: unknown;
+};
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -41,7 +47,8 @@ export default async function DashboardPage({
     }),
   ]);
 
-  const plans: MembershipPlanOption[] = plansRaw.map((plan) => ({
+  const planRecords = plansRaw as PlanRecord[];
+  const plans: MembershipPlanOption[] = planRecords.map((plan) => ({
     id: plan.id,
     name: plan.name,
     perks: parsePerks(plan.perksJSON),

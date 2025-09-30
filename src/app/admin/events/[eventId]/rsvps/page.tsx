@@ -13,6 +13,16 @@ import {
 } from "@/components/ui/table";
 import { PromoteWaitlistButton } from "./_components/promote-waitlist-button";
 
+type AdminRsvp = {
+  id: string;
+  userId: string;
+  eventId: string;
+  status: RsvpStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  promotionHoldUntil: Date | null;
+};
+
 function formatHold(holdUntil: Date | null) {
   if (!holdUntil) return "—";
   const now = new Date();
@@ -32,10 +42,10 @@ export default async function AdminEventRsvpsPage({
     notFound();
   }
 
-  const rsvps = await prisma.eventRsvp.findMany({
+  const rsvps = (await prisma.eventRsvp.findMany({
     where: { eventId: event.id },
     orderBy: { createdAt: "asc" },
-  });
+  })) as AdminRsvp[];
 
   const userCache = new Map<string, { name: string | null; email: string }>();
   for (const rsvp of rsvps) {

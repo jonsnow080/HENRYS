@@ -8,14 +8,15 @@ export const runtime = "nodejs";
 
 export async function POST(
   _req: Request,
-  { params }: { params: { eventId: string } },
+  context: { params: Promise<{ eventId: string }> },
 ) {
+  const { eventId } = await context.params;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: params.eventId } });
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event || !event.visibility) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
@@ -57,17 +58,6 @@ export async function POST(
         description: `${event.name} ticket`,
       },
     },
-    custom_fields: [
-      {
-        key: "food_drink_ack",
-        label: {
-          type: "custom",
-          custom: "I understand tickets/membership do not include food/drink",
-        },
-        type: "checkbox",
-        checkbox: { required: true },
-      },
-    ],
     client_reference_id: `${event.id}:${session.user.id}`,
   });
 
