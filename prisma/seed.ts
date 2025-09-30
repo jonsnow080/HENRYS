@@ -1,8 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
+import { hashPassword } from "../src/lib/auth/password";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const memberEmail = "rileyhaase090@gmail.com";
+  const password = "temppass";
+  const passwordHash = await hashPassword(password);
+
   const plans = [
     {
       name: "Founding Monthly",
@@ -37,6 +42,23 @@ async function main() {
       },
     });
   }
+
+  await prisma.user.upsert({
+    where: { email: memberEmail },
+    update: {
+      passwordHash,
+      role: Role.MEMBER,
+      emailVerified: new Date(),
+      name: "Riley Haase",
+    },
+    create: {
+      email: memberEmail,
+      passwordHash,
+      role: Role.MEMBER,
+      emailVerified: new Date(),
+      name: "Riley Haase",
+    },
+  });
 }
 
 main()

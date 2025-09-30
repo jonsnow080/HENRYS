@@ -17,7 +17,7 @@ export default function ApplyPage() {
         <p className="text-base text-muted-foreground sm:text-lg">
           We review applications weekly. Expect a personal reply from the founders within seven days. Already a member?
           <Link href="/login" className="ml-2 underline">
-            Request a magic link.
+            Sign in.
           </Link>
         </p>
       </header>

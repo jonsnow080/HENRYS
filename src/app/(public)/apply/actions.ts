@@ -65,10 +65,8 @@ export async function submitApplicationAction(
         success: false,
         message: "It looks like you already have an account with this email.",
         fieldErrors: {
-          email: [
-            "Already have an account? Head to the login page to request a new magic link.",
-          ],
-          form: ["Visit the login page to sign in or request a fresh magic link."],
+          email: ["Already have an account? Head to the login page to sign in."],
+          form: ["Visit the login page to sign in."],
         },
       };
     }

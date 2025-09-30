@@ -338,7 +338,7 @@ export function ApplyForm() {
             </FieldGroup>
             <FieldGroup
               label="Email"
-              description="Already have an account? Request a new magic link from the login page."
+              description="Already have an account? Sign in from the login page."
               error={fieldErrors.email}
               required
             >
@@ -662,7 +662,7 @@ function ErrorNotice({ id, messages }: ErrorNoticeProps) {
       id={id}
       role="alert"
       aria-live="polite"
-      className="flex items-start gap-2 rounded-xl border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+      className="flex items-start gap-2 rounded-xl border border-red-500 bg-red-50 p-3 text-sm text-red-700 shadow-[0_1px_0_rgba(220,38,38,0.12)]"
     >
       <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 flex-none" />
       <div className="space-y-1">

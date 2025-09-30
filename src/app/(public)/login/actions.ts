@@ -1,12 +1,14 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { z } from "zod";
 import { AuthError } from "next-auth";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
+  password: z.string().min(1, "Enter your password"),
   callbackUrl: z.string().optional(),
 });
 
@@ -16,7 +18,7 @@ export type LoginFormState = {
   fieldErrors?: Record<string, string[]>;
 };
 
-export async function requestMagicLink(_: LoginFormState, formData: FormData): Promise<LoginFormState> {
+export async function passwordSignIn(_: LoginFormState, formData: FormData): Promise<LoginFormState> {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {
@@ -28,8 +30,9 @@ export async function requestMagicLink(_: LoginFormState, formData: FormData): P
 
   try {
     const callback = parsed.data.callbackUrl && parsed.data.callbackUrl.length > 1 ? parsed.data.callbackUrl : "/dashboard";
-    await signIn("email", {
+    await signIn("credentials", {
       email: parsed.data.email,
+      password: parsed.data.password,
       redirect: false,
       redirectTo: callback,
     });
@@ -44,30 +47,21 @@ export async function requestMagicLink(_: LoginFormState, formData: FormData): P
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 60,
     });
+
+    redirect(callback);
   } catch (error) {
     if (error instanceof AuthError) {
       const detail = typeof error.cause === "object" && error.cause && "message" in error.cause
         ? String((error.cause as { message?: string }).message)
         : error.message;
 
-      if (detail === "USER_NOT_FOUND" || error.type === "CredentialsSignin") {
-        return { success: false, message: "We couldn't find an approved member with that email." };
-      }
       if (detail === "ACCESS_DENIED") {
         return { success: false, message: "Access is limited to approved members. Check your invite email for next steps." };
       }
-      if (detail === "TOO_MANY_REQUESTS") {
-        return { success: false, message: "Magic links are cooling down — try again shortly." };
-      }
-      if (error.type === "CallbackRouteError") {
-        return { success: false, message: "Something went wrong sending your magic link. Please try again." };
+      if (detail === "INVALID_CREDENTIALS" || error.type === "CredentialsSignin") {
+        return { success: false, message: "We couldn't sign you in with those credentials." };
       }
     }
     throw error;
   }
-
-  return {
-    success: true,
-    message: "Magic link sent. Check your inbox within the next 15 minutes.",
-  };
 }

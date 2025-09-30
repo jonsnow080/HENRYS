@@ -3,11 +3,11 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { SITE_COPY } from "@/lib/site-copy";
-import { MagicLinkForm } from "./magic-link-form";
+import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
   title: `Member login · ${SITE_COPY.name}`,
-  description: "Request a passwordless magic link to access your HENRYS dashboard and events.",
+  description: "Sign in to access your HENRYS dashboard and events.",
 };
 
 export default async function LoginPage({
@@ -35,13 +35,10 @@ export default async function LoginPage({
   return (
     <div className="mx-auto flex max-w-md flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
       <header className="space-y-3 text-left">
-        <h1 className="text-3xl font-semibold">Sign in with magic link</h1>
-        <p className="text-sm text-muted-foreground">
-          We&apos;ll send a one-click link that expires in 15 minutes. Add founders@henrys.club to your contacts to avoid the spam
-          folder.
-        </p>
+        <h1 className="text-3xl font-semibold">Sign in</h1>
+        <p className="text-sm text-muted-foreground">Enter your member email and password to continue.</p>
       </header>
-      <MagicLinkForm callbackUrl={params?.callbackUrl} initialEmail={initialEmail} />
+      <SignInForm callbackUrl={params?.callbackUrl} initialEmail={initialEmail} />
       <div className="rounded-2xl border border-border/70 bg-card/70 p-4 text-sm text-muted-foreground">
         Not a member yet? <Link className="font-semibold text-foreground underline" href="/apply">Apply now</Link>.
       </div>
