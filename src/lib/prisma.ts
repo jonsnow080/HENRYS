@@ -80,6 +80,7 @@ type UserCreateArgs = {
     email: string;
     name?: string | null;
     role?: Role;
+    passwordHash?: string | null;
   };
 };
 
@@ -89,6 +90,7 @@ type UserUpdateArgs = {
     email?: string;
     name?: string | null;
     role?: Role;
+    passwordHash?: string | null;
   };
 };
 
@@ -221,6 +223,7 @@ type UserStub = {
   email: string;
   name: string | null;
   role: Role;
+  passwordHash: string | null;
 };
 
 type MemberProfileStub = {
@@ -915,6 +918,7 @@ function ensureDefaultData() {
     email: "admin@henrys.club",
     name: "Avery Admin",
     role: Role.ADMIN,
+    passwordHash: null,
   };
 
   const memberUser: UserStub = {
@@ -922,6 +926,7 @@ function ensureDefaultData() {
     email: "member@henrys.club",
     name: "Morgan Member",
     role: Role.MEMBER,
+    passwordHash: null,
   };
 
   stubData.users.push(adminUser, memberUser);
@@ -1148,6 +1153,7 @@ class PrismaClientStub {
         email: args.data.email,
         name: args.data.name ?? null,
         role: args.data.role ?? Role.MEMBER,
+        passwordHash: args.data.passwordHash ?? null,
       };
       stubData.users.push(user);
       return cloneUser(user);
@@ -1160,6 +1166,7 @@ class PrismaClientStub {
       if (args.data.email !== undefined) target.email = args.data.email;
       if (args.data.name !== undefined) target.name = args.data.name ?? null;
       if (args.data.role !== undefined) target.role = args.data.role;
+      if (args.data.passwordHash !== undefined) target.passwordHash = args.data.passwordHash ?? null;
       return cloneUser(target);
     },
     delete: async (args: { where: UserWhere }) => {
