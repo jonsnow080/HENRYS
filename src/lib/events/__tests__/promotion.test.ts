@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { promoteNextWaitlistedRsvp, type PromotionDependencies } from "../promotion";
 import { RsvpStatus } from "@/lib/prisma-constants";
 
@@ -25,10 +25,13 @@ type MockDeps = {
   stripeBehavior?: {
     paymentIntentStatus?: string;
     paymentMethodId?: string | null;
+    paymentIntentError?: Error;
+    checkoutError?: Error;
   };
+  now?: Date;
 };
 
-function createDeps({ event, rsvps, users, subscriptions = [], stripeBehavior = {} }: MockDeps) {
+function createDeps({ event, rsvps, users, subscriptions = [], stripeBehavior = {}, now }: MockDeps) {
   const stripe = {
     paymentMethods: {
       list: vi.fn(async () => ({
@@ -36,11 +39,21 @@ function createDeps({ event, rsvps, users, subscriptions = [], stripeBehavior = 
       })),
     },
     paymentIntents: {
-      create: vi.fn(async () => ({ status: stripeBehavior.paymentIntentStatus ?? "succeeded" })),
+      create: vi.fn(async () => {
+        if (stripeBehavior.paymentIntentError) {
+          throw stripeBehavior.paymentIntentError;
+        }
+        return { status: stripeBehavior.paymentIntentStatus ?? "succeeded" };
+      }),
     },
     checkout: {
       sessions: {
-        create: vi.fn(async () => ({ id: "cs_test", url: "https://stripe.test/checkout" })),
+        create: vi.fn(async () => {
+          if (stripeBehavior.checkoutError) {
+            throw stripeBehavior.checkoutError;
+          }
+          return { id: "cs_test", url: "https://stripe.test/checkout" };
+        }),
       },
     },
   };
@@ -94,11 +107,19 @@ function createDeps({ event, rsvps, users, subscriptions = [], stripeBehavior = 
   const sendEmail = vi.fn(async () => {});
   const getBaseUrl = () => "https://henrys.test";
 
-  const deps = { prisma, stripe, sendEmail, getBaseUrl };
+  const deps = { prisma, stripe, sendEmail, getBaseUrl, ...(now ? { now: () => now } : {}) };
   return deps as PromotionDependencies & typeof deps;
 }
 
 describe("promoteNextWaitlistedRsvp", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   const baseEvent = {
     id: "event",
     name: "Salon",
@@ -169,5 +190,84 @@ describe("promoteNextWaitlistedRsvp", () => {
     expect(deps.sendEmail).toHaveBeenCalled();
     const updated = await deps.prisma.eventRsvp.findMany();
     expect(updated[0]?.promotionHoldUntil).not.toBeNull();
+  });
+
+  it("returns event_not_found when the event is missing", async () => {
+    const deps = createDeps({
+      event: { ...baseEvent, id: "other" },
+      rsvps: [],
+      users: {},
+    });
+
+    const result = await promoteNextWaitlistedRsvp("event", deps);
+    expect(result).toEqual({ status: "event_not_found" });
+  });
+
+  it("skips entries without a reachable user and promotes the next attendee", async () => {
+    const deps = createDeps({
+      event: { ...baseEvent, priceCents: 0 },
+      rsvps: [
+        { ...baseRsvp, id: "rsvp1" },
+        { ...baseRsvp, id: "rsvp2", userId: "user2", createdAt: new Date("2024-07-01T11:00:00.000Z") },
+      ],
+      users: {
+        user1: { id: "user1", email: "" },
+        user2: { id: "user2", email: "waitlist@example.com" },
+      },
+    });
+
+    const result = await promoteNextWaitlistedRsvp("event", deps);
+    expect(result).toEqual({ status: "promoted", userId: "user2", rsvpId: "rsvp2" });
+    const rsvps = await deps.prisma.eventRsvp.findMany();
+    expect(rsvps.find((entry) => entry.id === "rsvp1")?.promotionHoldUntil).toBeNull();
+    expect(rsvps.find((entry) => entry.id === "rsvp2")?.status).toBe(RsvpStatus.GOING);
+  });
+
+  it("continues through the queue when checkout creation fails", async () => {
+    const deps = createDeps({
+      event: { ...baseEvent, priceCents: 4500 },
+      rsvps: [
+        { ...baseRsvp, id: "rsvp1" },
+        { ...baseRsvp, id: "rsvp2", userId: "user2", createdAt: new Date("2024-07-01T11:00:00.000Z") },
+      ],
+      users: {
+        user1: { id: "user1", email: "waitlist1@example.com" },
+        user2: { id: "user2", email: "waitlist2@example.com" },
+      },
+      stripeBehavior: { paymentMethodId: null },
+    });
+
+    deps.stripe.checkout.sessions.create.mockImplementationOnce(async () => {
+      throw new Error("fail");
+    });
+
+    const result = await promoteNextWaitlistedRsvp("event", deps);
+    expect(result).toEqual({ status: "checkout_link_sent", userId: "user2", rsvpId: "rsvp2", expiresAt: expect.any(Date) });
+    expect(deps.stripe.checkout.sessions.create).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns the last skip reason when every waitlisted attendee fails", async () => {
+    const deps = createDeps({
+      event: { ...baseEvent, priceCents: 4500 },
+      rsvps: [
+        { ...baseRsvp, id: "rsvp1" },
+        { ...baseRsvp, id: "rsvp2", userId: "user2", createdAt: new Date("2024-07-01T11:00:00.000Z") },
+      ],
+      users: {
+        user1: { id: "user1", email: "waitlist1@example.com" },
+        user2: { id: "user2", email: "waitlist2@example.com" },
+      },
+      stripeBehavior: { checkoutError: new Error("fail"), paymentMethodId: null },
+    });
+
+    // Force both attempts to fail by making checkout throw and clearing hold afterwards
+    deps.stripe.checkout.sessions.create.mockImplementation(async () => {
+      throw new Error("fail");
+    });
+
+    const result = await promoteNextWaitlistedRsvp("event", deps);
+    expect(result).toEqual({ status: "skipped", reason: "checkout_failed" });
+    const rsvps = await deps.prisma.eventRsvp.findMany();
+    expect(rsvps.every((entry) => entry.promotionHoldUntil === null)).toBe(true);
   });
 });

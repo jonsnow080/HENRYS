@@ -48,10 +48,6 @@ export async function promoteNextWaitlistedRsvp(
     orderBy: { createdAt: "asc" },
   });
 
-  let candidate: (typeof waitlist)[number] | null = null;
-  let lockId: string | null = null;
-  let provisionalHoldUntil: Date | null = null;
-
   for (const rsvp of waitlist) {
     if (rsvp.promotionHoldUntil && rsvp.promotionHoldUntil <= now) {
       await releaseHold(deps, rsvp.id);
@@ -60,12 +56,14 @@ export async function promoteNextWaitlistedRsvp(
     }
   }
 
+  let lastSkip: string | null = null;
+
   for (const rsvp of waitlist) {
     if (rsvp.promotionHoldUntil || rsvp.promotionLockId) {
       continue;
     }
 
-    const candidateLockId = crypto.randomUUID();
+    const lockId = crypto.randomUUID();
     const holdUntil = new Date(now.getTime() + HOLD_DURATION_MS);
     const claimed = await deps.prisma.eventRsvp.updateMany({
       where: {
@@ -76,124 +74,124 @@ export async function promoteNextWaitlistedRsvp(
       },
       data: {
         promotionHoldUntil: holdUntil,
-        promotionLockId: candidateLockId,
+        promotionLockId: lockId,
       },
     });
 
-    if (claimed.count > 0) {
-      candidate = rsvp;
-      lockId = candidateLockId;
-      provisionalHoldUntil = holdUntil;
-      break;
+    if (claimed.count === 0) {
+      continue;
     }
-  }
 
-  if (!candidate || !lockId || !provisionalHoldUntil) {
-    return { status: "no_waitlist" };
-  }
+    const user = await deps.prisma.user.findUnique({ where: { id: rsvp.userId } });
+    if (!user || !user.email) {
+      await releaseHold(deps, rsvp.id);
+      lastSkip = "user_missing";
+      continue;
+    }
 
-  const user = await deps.prisma.user.findUnique({ where: { id: candidate.userId } });
-  if (!user || !user.email) {
-    await releaseHold(deps, candidate.id);
-    return { status: "skipped", reason: "user_missing" };
-  }
-
-  if (event.priceCents <= 0) {
-    await deps.prisma.eventRsvp.update({
-      where: { id: candidate.id },
-      data: {
-        status: RsvpStatus.GOING,
-        promotionHoldUntil: null,
-        promotionLockId: null,
-      },
-    });
-    await deps.sendEmail({
-      to: user.email,
-      subject: `You’re confirmed for ${event.name}`,
-      mjml: waitlistPromotionTemplate({
-        name: user.name ?? user.email,
-        eventName: event.name,
-        eventDate: formatDate(event.startAt),
-        price: "complimentary",
-      }),
-    });
-    return { status: "promoted", userId: user.id, rsvpId: candidate.id };
-  }
-
-  const subscription = await deps.prisma.subscription.findFirst({ where: { userId: user.id } });
-  const customerId = subscription?.stripeCustomerId ?? null;
-
-  if (customerId) {
-    const paymentMethod = await getDefaultPaymentMethod(deps, customerId);
-    if (paymentMethod) {
-      const paymentIntent = await attemptOffSessionCharge({
-        deps,
-        event,
-        userId: user.id,
-        customerId,
-        paymentMethodId: paymentMethod,
-        lockId,
+    if (event.priceCents <= 0) {
+      await deps.prisma.eventRsvp.update({
+        where: { id: rsvp.id },
+        data: {
+          status: RsvpStatus.GOING,
+          promotionHoldUntil: null,
+          promotionLockId: null,
+        },
       });
-      if (paymentIntent?.status === "succeeded") {
-        await deps.prisma.eventRsvp.update({
-          where: { id: candidate.id },
-          data: {
-            status: RsvpStatus.GOING,
-            promotionHoldUntil: null,
-            promotionLockId: null,
-          },
+      await deps.sendEmail({
+        to: user.email,
+        subject: `You’re confirmed for ${event.name}`,
+        mjml: waitlistPromotionTemplate({
+          name: user.name ?? user.email,
+          eventName: event.name,
+          eventDate: formatDate(event.startAt),
+          price: "complimentary",
+        }),
+      });
+      return { status: "promoted", userId: user.id, rsvpId: rsvp.id };
+    }
+
+    const subscription = await deps.prisma.subscription.findFirst({ where: { userId: user.id } });
+    const customerId = subscription?.stripeCustomerId ?? null;
+
+    if (customerId) {
+      const paymentMethod = await getDefaultPaymentMethod(deps, customerId);
+      if (paymentMethod) {
+        const paymentIntent = await attemptOffSessionCharge({
+          deps,
+          event,
+          userId: user.id,
+          customerId,
+          paymentMethodId: paymentMethod,
+          lockId,
         });
-        await deps.sendEmail({
-          to: user.email,
-          subject: `You’re confirmed for ${event.name}`,
-          mjml: waitlistPromotionTemplate({
-            name: user.name ?? user.email,
-            eventName: event.name,
-            eventDate: formatDate(event.startAt),
-            price: formatCurrency(event.priceCents, event.currency),
-          }),
-        });
-        return { status: "promoted", userId: user.id, rsvpId: candidate.id };
+        if (paymentIntent?.status === "succeeded") {
+          await deps.prisma.eventRsvp.update({
+            where: { id: rsvp.id },
+            data: {
+              status: RsvpStatus.GOING,
+              promotionHoldUntil: null,
+              promotionLockId: null,
+            },
+          });
+          await deps.sendEmail({
+            to: user.email,
+            subject: `You’re confirmed for ${event.name}`,
+            mjml: waitlistPromotionTemplate({
+              name: user.name ?? user.email,
+              eventName: event.name,
+              eventDate: formatDate(event.startAt),
+              price: formatCurrency(event.priceCents, event.currency),
+            }),
+          });
+          return { status: "promoted", userId: user.id, rsvpId: rsvp.id };
+        }
       }
     }
+
+    try {
+      const checkoutSession = await createCheckoutSession({
+        deps,
+        event,
+        user,
+        customerId,
+      });
+
+      await deps.prisma.eventRsvp.update({
+        where: { id: rsvp.id },
+        data: {
+          promotionHoldUntil: holdUntil,
+          promotionLockId: null,
+        },
+      });
+
+      await deps.sendEmail({
+        to: user.email,
+        subject: `Claim your spot for ${event.name}`,
+        mjml: waitlistCheckoutTemplate({
+          name: user.name ?? user.email,
+          eventName: event.name,
+          eventDate: formatDate(event.startAt),
+          checkoutUrl: checkoutSession.url ?? deps.getBaseUrl(),
+          holdMinutes: HOLD_MINUTES,
+          price: formatCurrency(event.priceCents, event.currency),
+        }),
+      });
+
+      return { status: "checkout_link_sent", userId: user.id, rsvpId: rsvp.id, expiresAt: holdUntil };
+    } catch (error) {
+      console.warn("waitlist promotion checkout creation failed", error);
+      await releaseHold(deps, rsvp.id);
+      lastSkip = "checkout_failed";
+      continue;
+    }
   }
 
-  let checkoutSession: Stripe.Checkout.Session;
-  try {
-    checkoutSession = await createCheckoutSession({
-      deps,
-      event,
-      user,
-      customerId,
-    });
-  } catch (error) {
-    console.warn("waitlist promotion checkout creation failed", error);
-    await releaseHold(deps, candidate.id);
-    return { status: "skipped", reason: "checkout_failed" };
+  if (lastSkip) {
+    return { status: "skipped", reason: lastSkip };
   }
-  const holdUntil = provisionalHoldUntil;
-  await deps.prisma.eventRsvp.update({
-    where: { id: candidate.id },
-    data: {
-      promotionHoldUntil: holdUntil,
-      promotionLockId: null,
-    },
-  });
 
-  await deps.sendEmail({
-    to: user.email,
-    subject: `Claim your spot for ${event.name}`,
-    mjml: waitlistCheckoutTemplate({
-      name: user.name ?? user.email,
-      eventName: event.name,
-      eventDate: formatDate(event.startAt),
-      checkoutUrl: checkoutSession.url ?? deps.getBaseUrl(),
-      holdMinutes: HOLD_MINUTES,
-      price: formatCurrency(event.priceCents, event.currency),
-    }),
-  });
-
-  return { status: "checkout_link_sent", userId: user.id, rsvpId: candidate.id, expiresAt: holdUntil };
+  return { status: "no_waitlist" };
 }
 
 async function releaseHold(deps: PromotionDependencies, rsvpId: string) {
