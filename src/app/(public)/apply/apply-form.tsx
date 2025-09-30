@@ -88,6 +88,10 @@ export function ApplyForm() {
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [clientErrors, setClientErrors] = useState<Partial<Record<keyof FormValues, string[]>>>({});
   const vibeErrorId = useId();
+  const dealBreakersErrorId = useId();
+  const dealBreakersLabelId = useId();
+  const consentCodeErrorId = useId();
+  const consentDataErrorId = useId();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -166,6 +170,9 @@ export function ApplyForm() {
   }, [clientErrors, state?.fieldErrors]);
 
   const vibeInvalid = Boolean(fieldErrors.vibe?.length);
+  const dealBreakersInvalid = Boolean(fieldErrors.dealBreakers?.length);
+  const consentCodeInvalid = Boolean(fieldErrors.consentCode?.length);
+  const consentDataInvalid = Boolean(fieldErrors.consentData?.length);
 
   const validateStep = React.useCallback(
     (currentStep: number, currentValues: FormValues) => {
@@ -526,11 +533,18 @@ export function ApplyForm() {
               />
             </FieldGroup>
             <div className="space-y-3">
-              <Label className="text-sm font-semibold">Deal-breakers</Label>
+              <Label id={dealBreakersLabelId} className="text-sm font-semibold">
+                Deal-breakers
+              </Label>
               <p className="text-sm text-muted-foreground">
                 Choose the vibes you&apos;d rather skip. Helps us seat you well.
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div
+                role="group"
+                aria-labelledby={dealBreakersLabelId}
+                aria-describedby={dealBreakersInvalid ? dealBreakersErrorId : undefined}
+                className="flex flex-wrap gap-2"
+              >
                 {dealBreakerOptions.map((option) => {
                   const active = values.dealBreakers.includes(option);
                   return (
@@ -546,6 +560,8 @@ export function ApplyForm() {
                         name="dealBreakers"
                         value={option}
                         checked={active}
+                        aria-invalid={dealBreakersInvalid || undefined}
+                        aria-describedby={dealBreakersInvalid ? dealBreakersErrorId : undefined}
                         onChange={(event) => {
                           setValues((prev) => {
                             const next = new Set(prev.dealBreakers);
@@ -580,8 +596,8 @@ export function ApplyForm() {
                   );
                 })}
               </div>
-              {fieldErrors.dealBreakers ? (
-                <p className="text-sm text-destructive">{fieldErrors.dealBreakers.join(" ")}</p>
+              {dealBreakersInvalid ? (
+                <ErrorNotice id={dealBreakersErrorId} messages={fieldErrors.dealBreakers ?? []} />
               ) : null}
             </div>
             <fieldset className="space-y-3 rounded-3xl border border-border/70 bg-background/80 p-4">
@@ -592,14 +608,16 @@ export function ApplyForm() {
                   name="consentCode"
                   checked={values.consentCode}
                   onCheckedChange={(value) => setField("consentCode", Boolean(value))}
+                  aria-invalid={consentCodeInvalid || undefined}
+                  aria-describedby={consentCodeInvalid ? consentCodeErrorId : undefined}
                   required
                 />
                 <Label htmlFor="consent-code" className="text-sm font-normal text-muted-foreground">
                   I agree to uphold the HENRYS code of conduct and support inclusive, respectful spaces.
                 </Label>
               </div>
-              {fieldErrors.consentCode ? (
-                <p className="text-sm text-destructive">{fieldErrors.consentCode.join(" ")}</p>
+              {consentCodeInvalid ? (
+                <ErrorNotice id={consentCodeErrorId} messages={fieldErrors.consentCode ?? []} />
               ) : null}
               <div className="flex items-start gap-3">
                 <Checkbox
@@ -607,14 +625,16 @@ export function ApplyForm() {
                   name="consentData"
                   checked={values.consentData}
                   onCheckedChange={(value) => setField("consentData", Boolean(value))}
+                  aria-invalid={consentDataInvalid || undefined}
+                  aria-describedby={consentDataInvalid ? consentDataErrorId : undefined}
                   required
                 />
                 <Label htmlFor="consent-data" className="text-sm font-normal text-muted-foreground">
                   I consent to HENRYS storing my data securely to facilitate event matchmaking.
                 </Label>
               </div>
-              {fieldErrors.consentData ? (
-                <p className="text-sm text-destructive">{fieldErrors.consentData.join(" ")}</p>
+              {consentDataInvalid ? (
+                <ErrorNotice id={consentDataErrorId} messages={fieldErrors.consentData ?? []} />
               ) : null}
             </fieldset>
           </div>
