@@ -1,4 +1,4 @@
-import type { NextAuthConfig, SignOutEvent } from "next-auth";
+import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -10,6 +10,10 @@ import { magicLinkTemplate } from "@/lib/email/templates";
 import { SITE_COPY } from "@/lib/site-copy";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
+
+type SignOutEvent = Parameters<
+  NonNullable<NonNullable<NextAuthConfig["events"]>["signOut"]>
+>[0];
 
 const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
 
