@@ -59,8 +59,10 @@ export const authConfig = {
           throw new Error("INVALID_CREDENTIALS");
         }
 
-        const email = parsed.data.email.trim().toLowerCase();
-        const user = await prisma.user.findUnique({ where: { email } });
+        const email = parsed.data.email.trim();
+        const user = await prisma.user.findFirst({
+          where: { email: { equals: email, mode: "insensitive" } },
+        });
 
         if (!user || !user.passwordHash) {
           return null;
@@ -84,7 +86,7 @@ export const authConfig = {
       maxAge: 15 * 60,
       from: process.env.AUTH_EMAIL_FROM ?? `HENRYS <mail@henrys.club>`,
       normalizeIdentifier(identifier) {
-        return identifier.trim().toLowerCase();
+        return identifier.trim();
       },
       server: process.env.EMAIL_SERVER ?? {
         host: process.env.SMTP_HOST ?? "127.0.0.1",
@@ -97,8 +99,8 @@ export const authConfig = {
           : undefined,
       },
       async sendVerificationRequest({ identifier, url }) {
-        const email = identifier.trim().toLowerCase();
-        const rateLimit = checkRateLimit(`magic-link:${email}`);
+        const email = identifier.trim();
+        const rateLimit = checkRateLimit(`magic-link:${email.toLowerCase()}`);
         if (!rateLimit.allowed) {
           const error = new Error("RATE_LIMIT_EXCEEDED");
           (error as Error & { rateLimit?: typeof rateLimit }).rateLimit = rateLimit;

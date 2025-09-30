@@ -172,8 +172,11 @@ export function ApplyForm() {
       switch (field) {
         case "fullName": {
           const text = String(value ?? "").trim();
-          if (text.length < 2) {
-            return "Name must be at least 2 characters";
+          if (text.length < 3) {
+            return "Name must be at least 3 characters";
+          }
+          if (!/\s/.test(text)) {
+            return "Enter your first and last name";
           }
           return null;
         }
@@ -186,6 +189,9 @@ export function ApplyForm() {
           if (!emailPattern.test(text)) {
             return "Enter a valid email";
           }
+          if (!text.toLowerCase().endsWith("@gmail.com")) {
+            return "Use a personal Gmail address";
+          }
           return null;
         }
         case "age": {
@@ -197,22 +203,29 @@ export function ApplyForm() {
           if (!Number.isInteger(number)) {
             return "Age must be a whole number";
           }
-          if (number < 25 || number > 38) {
-            return "HENRYS is for ages 25–38";
+          if (number < 18) {
+            return "You must be at least 18";
+          }
+          if (number > 999) {
+            return "Age must be 3 digits or less";
           }
           return null;
         }
         case "city": {
           const text = String(value ?? "").trim();
-          if (text.length < 2) {
-            return "City must be at least 2 characters";
+          if (!text) {
+            return "City is required";
           }
           return null;
         }
         case "occupation": {
           const text = String(value ?? "").trim();
-          if (text.length < 2) {
-            return "Occupation must be at least 2 characters";
+          if (!text) {
+            return "Tell us what you do";
+          }
+          const words = text.split(/\s+/).filter(Boolean);
+          if (words.length > 3) {
+            return "Keep it to 3 words or fewer";
           }
           return null;
         }
@@ -360,7 +373,12 @@ export function ApplyForm() {
                 autoComplete="name"
               />
             </FieldGroup>
-            <FieldGroup label="Email" error={fieldErrors.email} required>
+            <FieldGroup
+              label="Email"
+              description="Use a personal Gmail address. We only accept Gmail right now."
+              error={fieldErrors.email}
+              required
+            >
               <Input
                 name="email"
                 type="email"
@@ -376,10 +394,13 @@ export function ApplyForm() {
                   name="age"
                   type="number"
                   inputMode="numeric"
-                  min={25}
-                  max={38}
+                  min={18}
+                  max={999}
                   value={values.age}
-                  onChange={(event) => setField("age", event.target.value)}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value.replace(/[^0-9]/g, "");
+                    setField("age", digitsOnly.slice(0, 3));
+                  }}
                   required
                 />
               </FieldGroup>
@@ -392,7 +413,12 @@ export function ApplyForm() {
                 />
               </FieldGroup>
             </div>
-            <FieldGroup label="What do you do?" error={fieldErrors.occupation} required>
+            <FieldGroup
+              label="What do you do?"
+              description="Keep it short — three words max."
+              error={fieldErrors.occupation}
+              required
+            >
               <Input
                 name="occupation"
                 value={values.occupation}
