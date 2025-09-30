@@ -41,6 +41,7 @@ export function SignInForm({
           id="password"
           name="password"
           type="password"
+          placeholder="••••••••"
           required
           autoComplete="current-password"
           aria-invalid={state?.fieldErrors?.password ? "true" : undefined}
