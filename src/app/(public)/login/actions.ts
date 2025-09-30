@@ -1,12 +1,15 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { signIn } from "@/auth";
-import { z } from "zod";
+import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
+import { z } from "zod";
+import { signIn } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   callbackUrl: z.string().optional(),
 });
 
@@ -16,7 +19,7 @@ export type LoginFormState = {
   fieldErrors?: Record<string, string[]>;
 };
 
-export async function requestMagicLink(_: LoginFormState, formData: FormData): Promise<LoginFormState> {
+export async function authenticate(_: LoginFormState, formData: FormData): Promise<LoginFormState> {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return {
@@ -26,10 +29,24 @@ export async function requestMagicLink(_: LoginFormState, formData: FormData): P
     };
   }
 
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    select: { passwordHash: true },
+  });
+
+  if (!user || !user.passwordHash) {
+    return {
+      success: false,
+      message: "We couldn't find an account with that email and password. Try resetting your password.",
+    };
+  }
+
+  const callback = parsed.data.callbackUrl && parsed.data.callbackUrl.length > 1 ? parsed.data.callbackUrl : "/dashboard";
+
   try {
-    const callback = parsed.data.callbackUrl && parsed.data.callbackUrl.length > 1 ? parsed.data.callbackUrl : "/dashboard";
-    await signIn("email", {
+    await signIn("credentials", {
       email: parsed.data.email,
+      password: parsed.data.password,
       redirect: false,
       redirectTo: callback,
     });
@@ -45,29 +62,14 @@ export async function requestMagicLink(_: LoginFormState, formData: FormData): P
       maxAge: 60 * 60 * 24 * 60,
     });
   } catch (error) {
-    if (error instanceof AuthError) {
-      const detail = typeof error.cause === "object" && error.cause && "message" in error.cause
-        ? String((error.cause as { message?: string }).message)
-        : error.message;
-
-      if (detail === "USER_NOT_FOUND" || error.type === "CredentialsSignin") {
-        return { success: false, message: "We couldn't find an approved member with that email." };
-      }
-      if (detail === "ACCESS_DENIED") {
-        return { success: false, message: "Access is limited to approved members. Check your invite email for next steps." };
-      }
-      if (detail === "TOO_MANY_REQUESTS") {
-        return { success: false, message: "Magic links are cooling down — try again shortly." };
-      }
-      if (error.type === "CallbackRouteError") {
-        return { success: false, message: "Something went wrong sending your magic link. Please try again." };
-      }
+    if (error instanceof AuthError && error.type === "CredentialsSignin") {
+      return {
+        success: false,
+        message: "Incorrect email or password. Please try again.",
+      };
     }
     throw error;
   }
 
-  return {
-    success: true,
-    message: "Magic link sent. Check your inbox within the next 15 minutes.",
-  };
+  redirect(callback);
 }
