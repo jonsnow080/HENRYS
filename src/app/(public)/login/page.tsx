@@ -7,7 +7,7 @@ import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
   title: `Member login · ${SITE_COPY.name}`,
-  description: "Sign in with your email address and password to access your HENRYS dashboard and events.",
+  description: "Sign in to access your HENRYS dashboard and events with your email address and password.",
 };
 
 export default async function LoginPage({
@@ -35,9 +35,9 @@ export default async function LoginPage({
   return (
     <div className="mx-auto flex max-w-md flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
       <header className="space-y-3 text-left">
-        <h1 className="text-3xl font-semibold">Sign in to continue</h1>
+        <h1 className="text-3xl font-semibold">Sign in</h1>
         <p className="text-sm text-muted-foreground">
-          Enter the email and password you used when creating your account. Forgot your password? You can reset it below.
+          Enter your member email and password to continue. Forgot your password? You can reset it below.
         </p>
       </header>
       <SignInForm callbackUrl={params?.callbackUrl} initialEmail={initialEmail} />
