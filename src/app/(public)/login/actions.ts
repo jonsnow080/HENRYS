@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(1, "Enter your password"),
   callbackUrl: z.string().optional(),
 });
 
@@ -62,11 +62,22 @@ export async function authenticate(_: LoginFormState, formData: FormData): Promi
       maxAge: 60 * 60 * 24 * 60,
     });
   } catch (error) {
-    if (error instanceof AuthError && error.type === "CredentialsSignin") {
-      return {
-        success: false,
-        message: "Incorrect email or password. Please try again.",
-      };
+    if (error instanceof AuthError) {
+      const detail =
+        typeof error.cause === "object" && error.cause && "message" in error.cause
+          ? String((error.cause as { message?: string }).message)
+          : error.message;
+
+      if (detail === "ACCESS_DENIED") {
+        return {
+          success: false,
+          message: "Access is limited to approved members. Check your invite email for next steps.",
+        };
+      }
+
+      if (detail === "INVALID_CREDENTIALS" || error.type === "CredentialsSignin") {
+        return { success: false, message: "We couldn't sign you in with those credentials." };
+      }
     }
     throw error;
   }
