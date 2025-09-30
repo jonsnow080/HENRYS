@@ -41,12 +41,14 @@ const defaultValues = {
 type FormValues = typeof defaultValues;
 type FieldErrors = Partial<Record<keyof FormValues, string[]>>;
 
+// Map of step -> fields that must be valid before advancing past the step the user just completed.
 const stepRequiredFields: Record<number, (keyof FormValues)[]> = {
   1: ["fullName", "email", "age", "city", "occupation"],
   2: [],
   3: ["motivation", "threeWords", "perfectSaturday", "alcohol", "consentCode", "consentData"],
 };
 
+// Track the step each field belongs to so we can scope validation messaging appropriately.
 const fieldSteps: Record<string, number> = {
   fullName: 1,
   email: 1,
@@ -93,6 +95,24 @@ export function ApplyForm() {
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [clientErrors, setClientErrors] = useState<FieldErrors>({});
+
+  useEffect(() => {
+    setClientErrors((prev) => {
+      const next: FieldErrors = {};
+      for (const [key, messages] of Object.entries(prev)) {
+        const fieldStep = fieldSteps[key] ?? Infinity;
+        if (messages && fieldStep <= step) {
+          next[key as keyof FormValues] = messages;
+        }
+      }
+      const prevKeys = Object.keys(prev);
+      const nextKeys = Object.keys(next);
+      const unchanged =
+        prevKeys.length === nextKeys.length &&
+        nextKeys.every((key) => prev[key as keyof FormValues] === next[key as keyof FormValues]);
+      return unchanged ? prev : next;
+    });
+  }, [step]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -154,7 +174,7 @@ export function ApplyForm() {
     [setClientErrors],
   );
 
-  const fieldErrors = React.useMemo<FieldErrors>(() => {
+  const combinedErrors = React.useMemo<FieldErrors>(() => {
     const errors: FieldErrors = { ...clientErrors };
     if (state?.fieldErrors) {
       for (const [key, messages] of Object.entries(state.fieldErrors)) {
@@ -165,6 +185,17 @@ export function ApplyForm() {
     }
     return errors;
   }, [clientErrors, state?.fieldErrors]);
+
+  const fieldErrors = React.useMemo<FieldErrors>(() => {
+    const errors: FieldErrors = {};
+    for (const [key, messages] of Object.entries(combinedErrors)) {
+      const fieldStep = fieldSteps[key] ?? Infinity;
+      if (fieldStep <= step) {
+        errors[key as keyof FormValues] = messages;
+      }
+    }
+    return errors;
+  }, [combinedErrors, step]);
 
   const getValidationMessage = React.useCallback(
     (field: keyof FormValues): string | null => {
@@ -364,6 +395,7 @@ export function ApplyForm() {
 
         {step === 1 && (
           <div className="grid gap-6">
+            {/* Step 1 – Foundations: Full name */}
             <FieldGroup label="Full name" error={fieldErrors.fullName} required>
               <Input
                 name="fullName"
@@ -373,6 +405,7 @@ export function ApplyForm() {
                 autoComplete="name"
               />
             </FieldGroup>
+            {/* Step 1 – Foundations: Email */}
             <FieldGroup
               label="Email"
               description="Use a personal Gmail address. We only accept Gmail right now."
@@ -389,6 +422,7 @@ export function ApplyForm() {
               />
             </FieldGroup>
             <div className="grid gap-4 sm:grid-cols-2">
+              {/* Step 1 – Foundations: Age */}
               <FieldGroup label="Age" error={fieldErrors.age} required>
                 <Input
                   name="age"
@@ -404,6 +438,7 @@ export function ApplyForm() {
                   required
                 />
               </FieldGroup>
+              {/* Step 1 – Foundations: City */}
               <FieldGroup label="City" error={fieldErrors.city} required>
                 <Input
                   name="city"
@@ -413,6 +448,7 @@ export function ApplyForm() {
                 />
               </FieldGroup>
             </div>
+            {/* Step 1 – Foundations: Occupation */}
             <FieldGroup
               label="What do you do?"
               description="Keep it short — three words max."
@@ -432,6 +468,7 @@ export function ApplyForm() {
 
         {step === 2 && (
           <div className="grid gap-6">
+            {/* Step 2 – Socials & vibe: LinkedIn */}
             <FieldGroup
               label="LinkedIn"
               description="Optional but recommended so we can confirm your details."
@@ -445,6 +482,7 @@ export function ApplyForm() {
                 placeholder="https://"
               />
             </FieldGroup>
+            {/* Step 2 – Socials & vibe: Instagram */}
             <FieldGroup label="Instagram" error={fieldErrors.instagram}>
               <Input
                 name="instagram"
@@ -455,6 +493,7 @@ export function ApplyForm() {
               />
             </FieldGroup>
             <div className="space-y-4">
+              {/* Step 2 – Socials & vibe: Energy slider */}
               <Label className="text-sm font-semibold">What vibe are you bringing?</Label>
               <div className="rounded-3xl border border-border/70 bg-background/80 p-4">
                 <Slider
@@ -478,6 +517,7 @@ export function ApplyForm() {
 
         {step === 3 && (
           <div className="grid gap-6">
+            {/* Step 3 – Taste & texture: Motivation */}
             <FieldGroup label="What brings you to HENRYS?" error={fieldErrors.motivation} required>
               <Textarea
                 name="motivation"
@@ -488,6 +528,7 @@ export function ApplyForm() {
                 required
               />
             </FieldGroup>
+            {/* Step 3 – Taste & texture: Three words */}
             <FieldGroup label="Three words friends use to describe you" error={fieldErrors.threeWords} required>
               <Input
                 name="threeWords"
@@ -497,6 +538,7 @@ export function ApplyForm() {
                 required
               />
             </FieldGroup>
+            {/* Step 3 – Taste & texture: Perfect Saturday */}
             <FieldGroup label="Perfect Saturday?" error={fieldErrors.perfectSaturday} required>
               <Textarea
                 name="perfectSaturday"
@@ -507,17 +549,20 @@ export function ApplyForm() {
                 required
               />
             </FieldGroup>
+            {/* Step 3 – Taste & texture: Dietary preferences */}
             <FieldGroup label="Dietary preferences" error={fieldErrors.dietary}>
               <Select
-                value={values.dietary}
-                onValueChange={(value) => setField("dietary", value)}
+                value={values.dietary ? values.dietary : "none"}
+                onValueChange={(value) =>
+                  setField("dietary", value === "none" ? "" : value)
+                }
                 name="dietary"
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select an option" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No preferences</SelectItem>
+                  <SelectItem value="none">No preferences</SelectItem>
                   <SelectItem value="vegetarian">Vegetarian</SelectItem>
                   <SelectItem value="vegan">Vegan</SelectItem>
                   <SelectItem value="pescetarian">Pescetarian</SelectItem>
@@ -527,6 +572,7 @@ export function ApplyForm() {
               </Select>
               <input type="hidden" name="dietary" value={values.dietary} />
             </FieldGroup>
+            {/* Step 3 – Taste & texture: Dietary notes */}
             <FieldGroup label="Dietary notes">
               <Textarea
                 name="dietaryNotes"
@@ -536,6 +582,7 @@ export function ApplyForm() {
                 placeholder="Allergies or chef notes we should know."
               />
             </FieldGroup>
+            {/* Step 3 – Taste & texture: Alcohol preferences */}
             <FieldGroup label="Alcohol preferences" error={fieldErrors.alcohol} required>
               <Input
                 name="alcohol"
@@ -545,6 +592,7 @@ export function ApplyForm() {
                 required
               />
             </FieldGroup>
+            {/* Step 3 – Taste & texture: Availability */}
             <FieldGroup label="Ideal availability" error={fieldErrors.availability}>
               <Textarea
                 name="availability"
@@ -554,6 +602,7 @@ export function ApplyForm() {
                 placeholder="Thursday nights, Sunday brunch, etc."
               />
             </FieldGroup>
+            {/* Step 3 – Taste & texture: Deal-breakers */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold">Deal-breakers</Label>
               <p className="text-sm text-muted-foreground">
@@ -596,6 +645,7 @@ export function ApplyForm() {
             <fieldset className="space-y-3 rounded-3xl border border-border/70 bg-background/80 p-4">
               <legend className="text-sm font-semibold">Consent</legend>
               <div className="flex items-start gap-3">
+                {/* Step 3 – Taste & texture: Code of conduct consent */}
                 <Checkbox
                   id="consent-code"
                   name="consentCode"
@@ -612,6 +662,7 @@ export function ApplyForm() {
                 <p className="text-sm text-destructive">{fieldErrors.consentCode.join(" ")}</p>
               ) : null}
               <div className="flex items-start gap-3">
+                {/* Step 3 – Taste & texture: Data consent */}
                 <Checkbox
                   id="consent-data"
                   name="consentData"
