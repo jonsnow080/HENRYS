@@ -8,7 +8,7 @@ import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 const loginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
   password: z.string().min(1, "Enter your password"),
   callbackUrl: z.string().optional(),
 });
