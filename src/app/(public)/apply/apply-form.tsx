@@ -21,7 +21,7 @@ const defaultValues = {
   fullName: "",
   email: "",
   age: "",
-  city: "London",
+  city: "",
   occupation: "",
   linkedin: "",
   instagram: "",
@@ -208,6 +208,32 @@ export function ApplyForm() {
         }
       }
 
+      if (currentStep === 3) {
+        if (currentValues.motivation.trim().length < 40) {
+          errors.motivation = ["Share a little more about what brings you to HENRYS before continuing."];
+        }
+
+        if (currentValues.threeWords.trim().length < 3) {
+          errors.threeWords = ["Add at least three descriptive words so we can get a sense of you."];
+        }
+
+        if (currentValues.perfectSaturday.trim().length < 30) {
+          errors.perfectSaturday = ["Paint a fuller picture of your perfect Saturday before moving on."];
+        }
+
+        if (!currentValues.alcohol.trim()) {
+          errors.alcohol = ["Let us know your alcohol preferences before continuing."];
+        }
+
+        if (!currentValues.consentCode) {
+          errors.consentCode = ["Please confirm you agree to the code of conduct before submitting."];
+        }
+
+        if (!currentValues.consentData) {
+          errors.consentData = ["Please consent to data storage before submitting."];
+        }
+      }
+
       return errors;
     },
     [],
@@ -230,18 +256,29 @@ export function ApplyForm() {
   }, []);
 
   const handleContinue = React.useCallback(() => {
-    const errors = validateStep(step, values);
+    setStep((currentStep) => {
+      const errors = validateStep(currentStep, values);
 
-    if (Object.keys(errors).length) {
-      setClientErrors((prev) => ({ ...prev, ...errors }));
+      if (Object.keys(errors).length) {
+        setClientErrors((prev) => ({ ...prev, ...errors }));
+        return currentStep;
+      }
+
+      clearStepErrors(currentStep);
+      return Math.min(steps.length, currentStep + 1);
+    });
+  }, [clearStepErrors, validateStep, values]);
+
+  const submit = (formData: FormData) => {
+    const finalStepErrors = validateStep(3, values);
+    if (Object.keys(finalStepErrors).length) {
+      setClientErrors((prev) => ({ ...prev, ...finalStepErrors }));
+      setStep(3);
       return;
     }
 
-    clearStepErrors(step);
-    setStep((prev) => Math.min(steps.length, prev + 1));
-  }, [clearStepErrors, step, validateStep, values]);
+    clearStepErrors(3);
 
-  const submit = (formData: FormData) => {
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem(STORAGE_KEY);
