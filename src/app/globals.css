@@ -40,6 +40,8 @@
   --color-muted: rgb(var(--muted));
   --color-muted-foreground: rgb(var(--muted-foreground));
   --color-border: rgb(var(--border));
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
   --color-card: rgb(var(--card));
   --color-card-foreground: rgb(var(--card-foreground));
   --color-ring: rgb(var(--ring));
