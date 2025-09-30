@@ -49,32 +49,30 @@ export async function submitApplicationAction(
   try {
     const existing = await prisma.application.findFirst({
       where: {
-        email: payload.email,
+        email: { equals: payload.email, mode: "insensitive" },
         status: { in: [ApplicationStatus.SUBMITTED, ApplicationStatus.WAITLIST] },
       },
       orderBy: { createdAt: "desc" },
     });
 
     if (existing) {
-      await prisma.application.update({
-        where: { id: existing.id },
-        data: {
-          fullName: payload.fullName,
-          payload,
-          createdAt: new Date(),
-          status: ApplicationStatus.SUBMITTED,
+      return {
+        success: false,
+        message: "It looks like you've already applied with this email.",
+        fieldErrors: {
+          email: ["This Gmail address has already been used for an application."],
         },
-      });
-    } else {
-      await prisma.application.create({
-        data: {
-          email: payload.email,
-          fullName: payload.fullName,
-          payload,
-          status: ApplicationStatus.SUBMITTED,
-        },
-      });
+      };
     }
+
+    await prisma.application.create({
+      data: {
+        email: payload.email,
+        fullName: payload.fullName,
+        payload,
+        status: ApplicationStatus.SUBMITTED,
+      },
+    });
   } catch (error) {
     console.error("Failed to persist application", error);
     return {

@@ -25,19 +25,44 @@ const optionalUrl = z
   });
 
 export const applicationSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().min(1, "An email is required").email("Enter a valid email"),
+  fullName: z
+    .string()
+    .trim()
+    .min(3, "Name must be at least 3 characters")
+    .refine((value) => /\s/.test(value), {
+      message: "Enter your first and last name",
+    }),
+  email: z
+    .string()
+    .trim()
+    .min(1, "An email is required")
+    .email("Enter a valid email")
+    .refine((value) => value.toLowerCase().endsWith("@gmail.com"), {
+      message: "Use a personal Gmail address",
+    }),
   age: z
     .string()
     .trim()
     .refine((value) => value.length > 0, { message: "Age is required" })
     .transform((value) => Number(value))
     .refine((value) => Number.isInteger(value), { message: "Age must be a whole number" })
-    .refine((value) => value >= 25 && value <= 38, {
-      message: "HENRYS is for ages 25–38",
+    .refine((value) => value >= 18, {
+      message: "You must be at least 18",
+    })
+    .refine((value) => value <= 999, {
+      message: "Age must be 3 digits or less",
     }),
-  city: z.string().min(2, "City must be at least 2 characters"),
-  occupation: z.string().min(2, "Occupation must be at least 2 characters"),
+  city: z
+    .string()
+    .trim()
+    .refine((value) => value.length > 0, { message: "City is required" }),
+  occupation: z
+    .string()
+    .trim()
+    .refine((value) => value.length > 0, { message: "Tell us what you do" })
+    .refine((value) => value.split(/\s+/).filter(Boolean).length <= 3, {
+      message: "Keep it to 3 words or fewer",
+    }),
   linkedin: optionalUrl,
   instagram: optionalUrl,
   motivation: z.string().min(40, "Give us at least a couple of sentences"),
