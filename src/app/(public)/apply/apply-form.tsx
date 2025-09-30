@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useActionState, useEffect, useState, useTransition } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { useActionState, useEffect, useId, useState, useTransition } from "react";
+import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { submitApplicationAction, type ApplicationFormState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,6 +86,7 @@ export function ApplyForm() {
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [clientErrors, setClientErrors] = useState<Partial<Record<keyof FormValues, string[]>>>({});
+  const vibeErrorId = useId();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -162,6 +163,8 @@ export function ApplyForm() {
       return acc;
     }, {});
   }, [clientErrors, state?.fieldErrors]);
+
+  const vibeInvalid = Boolean(fieldErrors.vibe?.length);
 
   const validateStep = React.useCallback(
     (currentStep: number, currentValues: FormValues) => {
@@ -371,7 +374,12 @@ export function ApplyForm() {
             </FieldGroup>
             <div className="space-y-4">
               <Label className="text-sm font-semibold">What vibe are you bringing?</Label>
-              <div className="rounded-3xl border border-border/70 bg-background/80 p-4">
+              <div
+                className={cn(
+                  "rounded-3xl border border-border/70 bg-background/80 p-4",
+                  vibeInvalid && "border-destructive/50 bg-destructive/10",
+                )}
+              >
                 <Slider
                   name="vibe"
                   min={1}
@@ -379,6 +387,8 @@ export function ApplyForm() {
                   step={1}
                   value={[values.vibe]}
                   onValueChange={([value]) => setField("vibe", value ?? 5)}
+                  aria-invalid={vibeInvalid || undefined}
+                  aria-describedby={vibeInvalid ? vibeErrorId : undefined}
                 />
                 <input type="hidden" name="vibe" value={values.vibe} />
                 <div className="mt-3 flex justify-between text-xs text-muted-foreground">
@@ -387,9 +397,7 @@ export function ApplyForm() {
                   <span>High energy</span>
                 </div>
               </div>
-              {fieldErrors.vibe ? (
-                <p className="text-sm text-destructive">{fieldErrors.vibe.join(" ")}</p>
-              ) : null}
+              {vibeInvalid ? <ErrorNotice id={vibeErrorId} messages={fieldErrors.vibe ?? []} /> : null}
             </div>
           </div>
         )}
@@ -606,6 +614,29 @@ export function ApplyForm() {
   );
 }
 
+type ErrorNoticeProps = {
+  id?: string;
+  messages: string[];
+};
+
+function ErrorNotice({ id, messages }: ErrorNoticeProps) {
+  return (
+    <div
+      id={id}
+      role="alert"
+      aria-live="polite"
+      className="flex items-start gap-2 rounded-xl border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+    >
+      <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 flex-none" />
+      <div className="space-y-1">
+        {messages.map((message, index) => (
+          <p key={index}>{message}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PersistentFields({ values }: { values: FormValues }) {
   return (
     <>
@@ -642,17 +673,59 @@ type FieldGroupProps = {
 };
 
 function FieldGroup({ label, children, error, description, required }: FieldGroupProps) {
+  const errorId = React.useId();
+  const invalid = Boolean(error?.length);
+
+  let control = children;
+  if (React.isValidElement(children)) {
+    const childProps = children.props as Record<string, unknown>;
+    const describedBy = [
+      (childProps["aria-describedby"] as string | undefined) ?? undefined,
+      invalid ? errorId : undefined,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
+    const cloneProps: Record<string, unknown> = {};
+
+    if (invalid) {
+      cloneProps["aria-invalid"] = true;
+    }
+
+    if (describedBy) {
+      cloneProps["aria-describedby"] = describedBy;
+    }
+
+    if ("className" in childProps) {
+      cloneProps.className = cn(
+        childProps.className as string | undefined,
+        invalid && "border-destructive/60 focus-visible:ring-destructive/60",
+      );
+    }
+
+    control = React.cloneElement(children, cloneProps);
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Label>{label}</Label>
-        {required ? <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs">Required</span> : null}
+        <Label className={cn(invalid && "text-destructive")}>{label}</Label>
+        {required ? (
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-xs",
+              invalid
+                ? "bg-destructive/15 text-destructive"
+                : "bg-foreground/10 text-foreground",
+            )}
+          >
+            Required
+          </span>
+        ) : null}
       </div>
       {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
-      {children}
-      {error?.length ? (
-        <p className="text-sm text-destructive">{error.join(" ")}</p>
-      ) : null}
+      {control}
+      {invalid ? <ErrorNotice id={errorId} messages={error ?? []} /> : null}
     </div>
   );
 }
