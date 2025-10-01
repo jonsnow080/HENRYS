@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { z } from "zod";
 import { signIn } from "@/auth";
@@ -63,70 +62,30 @@ export async function registerAccount(_: RegisterFormState, formData: FormData):
 
   const redirectTo = "/dashboard";
   try {
-    const signInResult = await signIn("credentials", {
+    await signIn("resend", {
       email: parsed.data.email,
-      password: parsed.data.password,
       redirect: false,
       redirectTo,
     });
-
-    if (typeof signInResult === "string" && signInResult.length > 0) {
-      const baseUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-      try {
-        const parsedUrl = new URL(signInResult, baseUrl);
-        const errorCode = parsedUrl.searchParams.get("code") ?? parsedUrl.searchParams.get("error");
-
-        if (errorCode) {
-          const normalized = errorCode.toUpperCase();
-
-          if (normalized === "ACCESS_DENIED") {
-            return {
-              success: false,
-              message: "Your account was created, but it still needs approval before you can sign in. We\'ll be in touch soon.",
-            };
-          }
-
-          if (normalized === "CREDENTIALSSIGNIN" || normalized === "INVALID_CREDENTIALS") {
-            return {
-              success: false,
-              message:
-                "Your account was created, but we couldn\'t sign you in automatically. Please try signing in.",
-            };
-          }
-
-          return {
-            success: false,
-            message:
-              "Your account was created, but we couldn\'t finish signing you in. Please try again or use the login page.",
-          };
-        }
-      } catch (parseError) {
-        console.warn("Failed to inspect sign-in redirect", parseError);
-      }
-    }
   } catch (error) {
-    if (error instanceof AuthError && error.type === "CredentialsSignin") {
-      return {
-        success: false,
-        message: "Your account was created, but we couldn\'t sign you in automatically. Please try signing in.",
-      };
-    }
     if (error instanceof AuthError) {
-      const detail =
-        typeof error.cause === "object" && error.cause && "message" in error.cause
-          ? String((error.cause as { message?: string }).message)
-          : error.message;
-
-      if (detail === "ACCESS_DENIED" || error.type === "AccessDenied") {
+      if (error.type === "AccessDenied") {
         return {
           success: false,
           message: "Your account was created, but it still needs approval before you can sign in. We\'ll be in touch soon.",
         };
       }
 
+      if (error.type === "EmailSignInError") {
+        return {
+          success: true,
+          message: "Account created! Check your inbox for your magic link.",
+        };
+      }
+
       return {
         success: false,
-        message: "Something unexpected happened while signing you in. Please try again from the login page.",
+        message: "Something unexpected happened while starting your session. Please try again from the login page.",
       };
     }
     throw error;
@@ -143,5 +102,8 @@ export async function registerAccount(_: RegisterFormState, formData: FormData):
     maxAge: 60 * 60 * 24 * 60,
   });
 
-  redirect(redirectTo);
+  return {
+    success: true,
+    message: "Account created! Check your inbox for your magic link.",
+  };
 }

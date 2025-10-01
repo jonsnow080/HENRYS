@@ -7,13 +7,13 @@ import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
   title: `Member login · ${SITE_COPY.name}`,
-  description: "Sign in to access your HENRYS dashboard and events with your email address and password.",
+  description: "Request a one-time magic link to access your HENRYS dashboard and events.",
 };
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string }>;
+  searchParams?: { redirectTo?: string; callbackUrl?: string };
 }) {
   const cookieStore = await cookies();
   const remembered = cookieStore.get("henrys-last-login")?.value ?? "";
@@ -30,17 +30,18 @@ export default async function LoginPage({
     }
   }
 
-  const params = await searchParams;
+  const redirectTo = searchParams?.redirectTo ?? searchParams?.callbackUrl;
 
   return (
     <div className="mx-auto flex max-w-md flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
       <header className="space-y-3 text-left">
         <h1 className="text-3xl font-semibold">Sign in</h1>
         <p className="text-sm text-muted-foreground">
-          Enter your member email and password to continue. Forgot your password? You can reset it below.
+          Enter your member email and we&apos;ll email you a one-time magic link. The link expires in 15 minutes and
+          works on any device.
         </p>
       </header>
-      <SignInForm callbackUrl={params?.callbackUrl} initialEmail={initialEmail} />
+      <SignInForm redirectTo={redirectTo} initialEmail={initialEmail} />
       <div className="space-y-3 rounded-2xl border border-border/70 bg-card/70 p-4 text-sm text-muted-foreground">
         <p>
           New here?{" "}

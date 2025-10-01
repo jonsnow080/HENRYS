@@ -23,7 +23,9 @@ export default auth((req) => {
 
   if (!session?.user) {
     const loginUrl = new URL("/login", nextUrl.origin);
-    loginUrl.searchParams.set("callbackUrl", nextUrl.pathname + nextUrl.search);
+    const redirectValue = nextUrl.pathname + nextUrl.search;
+    loginUrl.searchParams.set("redirectTo", redirectValue);
+    loginUrl.searchParams.set("callbackUrl", redirectValue);
     return NextResponse.redirect(loginUrl);
   }
 

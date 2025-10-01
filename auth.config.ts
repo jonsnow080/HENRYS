@@ -1,42 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import EmailProvider from "next-auth/providers/email";
+import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/lib/prisma-constants";
-import { verifyPassword } from "@/lib/password";
-import { sendEmail } from "@/lib/email/send";
-import { magicLinkTemplate } from "@/lib/email/templates";
-import { SITE_COPY } from "@/lib/site-copy";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { z } from "zod";
-
-type SignOutEvent = Parameters<
-  NonNullable<NonNullable<NextAuthConfig["events"]>["signOut"]>
->[0];
 
 const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
-
-function extractEmailFromSignOut(event: SignOutEvent): string | null {
-  if (!event || typeof event !== "object") {
-    return null;
-  }
-  const session = (event as { session?: unknown }).session;
-  if (!session || typeof session !== "object") {
-    return null;
-  }
-  const user = (session as { user?: unknown }).user;
-  if (!user || typeof user !== "object") {
-    return null;
-  }
-  const email = (user as { email?: unknown }).email;
-  return typeof email === "string" ? email : null;
-}
-
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
 
 export const authConfig = {
   adapter: PrismaAdapter(prisma),
@@ -47,87 +15,56 @@ export const authConfig = {
     signIn: "/login",
   },
   providers: [
-    CredentialsProvider({
-      name: "Email",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(rawCredentials) {
-        const parsed = credentialsSchema.safeParse(rawCredentials);
-        if (!parsed.success) {
-          throw new Error("INVALID_CREDENTIALS");
-        }
-
-        const email = parsed.data.email.trim();
-        const user = await prisma.user.findFirst({
-          where: { email: { equals: email, mode: "insensitive" } },
-        });
-
-        if (!user || !user.passwordHash) {
-          return null;
-        }
-
-        const valid = await verifyPassword(parsed.data.password, user.passwordHash);
-        if (!valid) {
-          return null;
-        }
-
-        if (!allowedMemberRoles.has(user.role)) {
-          throw new Error("ACCESS_DENIED");
-        }
-
-        const { passwordHash, ...safeUser } = user;
-        void passwordHash;
-        return safeUser;
-      },
-    }),
-    EmailProvider({
-      maxAge: 15 * 60,
-      from: process.env.AUTH_EMAIL_FROM ?? `HENRYS <mail@henrys.club>`,
-      normalizeIdentifier(identifier) {
-        return identifier.trim();
-      },
-      server: process.env.EMAIL_SERVER ?? {
-        host: process.env.SMTP_HOST ?? "127.0.0.1",
-        port: Number(process.env.SMTP_PORT ?? 2525),
-        auth: process.env.SMTP_USER
-          ? {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASSWORD ?? "",
-            }
-          : undefined,
-      },
-      async sendVerificationRequest({ identifier, url }) {
-        const email = identifier.trim();
-        const rateLimit = checkRateLimit(`magic-link:${email.toLowerCase()}`);
-        if (!rateLimit.allowed) {
-          const error = new Error("RATE_LIMIT_EXCEEDED");
-          (error as Error & { rateLimit?: typeof rateLimit }).rateLimit = rateLimit;
-          throw error;
-        }
-
-        await sendEmail({
-          to: email,
-          subject: `${SITE_COPY.name} — one-click login`,
-          mjml: magicLinkTemplate({ url }),
-          text: `Sign in to ${SITE_COPY.name} by visiting ${url}`,
-          tags: [{ name: "category", value: "magic-link" }],
-        });
-      },
+    Resend({
+      apiKey: process.env.AUTH_RESEND_KEY,
+      from: process.env.AUTH_EMAIL_FROM ?? "HENRYS <no-reply@henrys.club>",
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      if (!user?.id) {
+        return false;
+      }
+
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      });
+
+      if (!dbUser) {
+        return false;
+      }
+
+      return allowedMemberRoles.has(dbUser.role);
+    },
     async jwt({ token, user }) {
       if (user) {
-        const typedUser = user as { id: string; role: Role; email?: string | null; name?: string | null };
+        const typedUser = user as { id: string; role?: Role | null; email?: string | null; name?: string | null };
         token.sub = typedUser.id;
-        token.role = typedUser.role;
+        if (typedUser.role && Object.values(Role).includes(typedUser.role)) {
+          token.role = typedUser.role;
+        } else if (typedUser.id) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: typedUser.id },
+            select: { role: true },
+          });
+          if (dbUser?.role) {
+            token.role = dbUser.role;
+          }
+        }
         if (typedUser.email) {
           token.email = typedUser.email;
         }
         if (typedUser.name) {
           token.name = typedUser.name;
+        }
+      } else if (token.sub && !token.role) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { role: true },
+        });
+        if (dbUser?.role) {
+          token.role = dbUser.role;
         }
       }
       return token;
@@ -150,14 +87,26 @@ export const authConfig = {
       }
       return session;
     },
-    async signIn({ user }) {
-      if (!user) return false;
-      return allowedMemberRoles.has((user as { role: Role }).role);
-    },
   },
   events: {
-    async signOut(event) {
-      const email = extractEmailFromSignOut(event);
+    async signOut(message) {
+      let email: string | null = null;
+
+      if ("token" in message) {
+        email = message.token?.email ?? null;
+      }
+
+      if (!email && "session" in message) {
+        const sessionUserId = message.session?.userId;
+        if (sessionUserId) {
+          const user = await prisma.user.findUnique({
+            where: { id: sessionUserId },
+            select: { email: true },
+          });
+          email = user?.email ?? null;
+        }
+      }
+
       if (!email) {
         return;
       }
@@ -167,18 +116,7 @@ export const authConfig = {
       });
     },
   },
-  cookies: {
-    sessionToken: {
-      name: "henrys.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
 } satisfies NextAuthConfig;
 
