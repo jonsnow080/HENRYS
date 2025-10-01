@@ -90,12 +90,27 @@ export const authConfig = {
   },
   events: {
     async signOut(message) {
-      const email =
-        ("session" in message ? message.session?.user?.email : null) ??
-        ("token" in message ? message.token?.email : null);
+      let email: string | null = null;
+
+      if ("token" in message) {
+        email = message.token?.email ?? null;
+      }
+
+      if (!email && "session" in message) {
+        const sessionUserId = message.session?.userId;
+        if (sessionUserId) {
+          const user = await prisma.user.findUnique({
+            where: { id: sessionUserId },
+            select: { email: true },
+          });
+          email = user?.email ?? null;
+        }
+      }
+
       if (!email) {
         return;
       }
+
       await prisma.verificationToken.deleteMany({
         where: { identifier: email },
       });
