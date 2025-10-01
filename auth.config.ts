@@ -89,8 +89,10 @@ export const authConfig = {
     },
   },
   events: {
-    async signOut({ session }) {
-      const email = session?.user?.email;
+    async signOut(message) {
+      const email =
+        ("session" in message ? message.session?.user?.email : null) ??
+        ("token" in message ? message.token?.email : null);
       if (!email) {
         return;
       }
