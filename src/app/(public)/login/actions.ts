@@ -49,7 +49,7 @@ export async function requestMagicLink(_: LoginFormState, formData: FormData): P
         };
       }
 
-      if (error.type === "EmailSignin" || error.type === "EmailSignInError") {
+      if (error.type === "EmailSignInError") {
         return {
           success: true,
           message: "If your email is registered, a fresh magic link is on the way.",

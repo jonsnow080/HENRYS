@@ -76,7 +76,7 @@ export async function registerAccount(_: RegisterFormState, formData: FormData):
         };
       }
 
-      if (error.type === "EmailSignin" || error.type === "EmailSignInError") {
+      if (error.type === "EmailSignInError") {
         return {
           success: true,
           message: "Account created! Check your inbox for your magic link.",
