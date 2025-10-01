@@ -4,7 +4,7 @@ import { Role } from "@/lib/prisma-constants";
 import { SITE_COPY } from "@/lib/site-copy";
 import { Button } from "@/components/ui/button";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
-import { SignOutButton } from "@/components/sign-out-button";
+import { SignOutButton } from "@/ui/SignOutButton";
 
 const navItems: { href: string; label: string; roles?: Role[] }[] = [
   { href: "/apply", label: "Apply" },

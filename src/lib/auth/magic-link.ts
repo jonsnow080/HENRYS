@@ -36,6 +36,7 @@ export async function createMagicLink({
   authBase.searchParams.set("email", email);
   if (callbackUrl) {
     authBase.searchParams.set("callbackUrl", callbackUrl);
+    authBase.searchParams.set("redirectTo", callbackUrl);
   }
 
   const url = authBase.toString();

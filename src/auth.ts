@@ -1,1 +1,1 @@
-export { auth, handlers, signIn, signOut } from "../auth";
+export { auth, GET, POST, signIn, signOut } from "../auth";

@@ -146,7 +146,7 @@ export async function buildApplicationEmailPayload({
 export async function bulkUpdateApplications(formData: FormData) {
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
-    redirect("/login?callbackUrl=/admin/applications");
+    redirect("/login?redirectTo=/admin/applications&callbackUrl=/admin/applications");
   }
 
   const redirectTarget = typeof formData.get("redirectTo") === "string" && formData.get("redirectTo")

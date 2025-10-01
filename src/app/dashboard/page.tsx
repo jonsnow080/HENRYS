@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { auth } from "@/auth";
+import { SignOutButton } from "@/ui/SignOutButton";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
 import { SubscribeCard, type MembershipPlanOption } from "./_components/subscribe-card";
@@ -86,6 +87,14 @@ export default async function DashboardPage({
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-10 sm:px-6">
+      <div className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Signed in as</p>
+          <p className="text-sm font-medium text-foreground">{session.user.email ?? session.user.name ?? "Member"}</p>
+        </div>
+        <SignOutButton className="self-start sm:self-auto" />
+      </div>
+
       <div className="space-y-4">
         <h1 className="text-3xl font-semibold">Welcome back{session.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}</h1>
         <p className="text-sm text-muted-foreground">
