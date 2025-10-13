@@ -23,7 +23,7 @@ const pillars = [
 ];
 
 const highlights = [
-  "Thoughtfully mixed guest lists capped at 24",
+  "Thoughtfully mixed guest lists capped at 48",
   "Signature conversation menus to melt the ice",
   "Dedicated hosts who remember your preferences",
   "Members-only RSVP drops & event waitlists",
