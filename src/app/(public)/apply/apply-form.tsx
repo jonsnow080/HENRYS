@@ -17,6 +17,20 @@ import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "henrys.apply.draft";
 
+const suspiciousPatterns = [
+  /<\s*script/iu,
+  /\bunion\s+select\b/iu,
+  /\bselect\s+.+\s+from\b/iu,
+  /\binsert\s+into\b/iu,
+  /\bupdate\s+.+\s+set\b/iu,
+  /\bdelete\s+from\b/iu,
+  /\bdrop\s+table\b/iu,
+  /\btruncate\s+table\b/iu,
+  /\b(?:or|and)\b\s+['"`]?1['"`]?\s*=\s*['"`]?1/iu,
+];
+
+const suspiciousSequencePattern = /['"`][^'"`]{0,80}[;#-]{1,2}\s*$/u;
+
 const defaultValues = {
   fullName: "",
   email: "",
@@ -95,6 +109,7 @@ export function ApplyForm() {
   const [isPending, startTransition] = useTransition();
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [clientErrors, setClientErrors] = useState<FieldErrors>({});
+  const [securityError, setSecurityError] = useState<string | null>(null);
 
   useEffect(() => {
     setClientErrors((prev) => {
@@ -170,8 +185,9 @@ export function ApplyForm() {
         delete next[key];
         return next;
       });
+      setSecurityError(null);
     },
-    [setClientErrors],
+    [setClientErrors, setSecurityError, setValues],
   );
 
   const combinedErrors = React.useMemo<FieldErrors>(() => {
@@ -338,6 +354,67 @@ export function ApplyForm() {
     [getValidationMessage, setClientErrors],
   );
 
+  const runSecurityCheck = React.useCallback(() => {
+    const nextErrors: FieldErrors = {};
+    let firstFlaggedField: keyof FormValues | null = null;
+
+    const getSecurityIssue = (value: unknown): string | null => {
+      if (typeof value !== "string") {
+        return null;
+      }
+      const normalized = value.trim();
+      if (!normalized) {
+        return null;
+      }
+      if (suspiciousPatterns.some((pattern) => pattern.test(normalized))) {
+        return "Please remove any code or database commands from this answer.";
+      }
+      if (suspiciousSequencePattern.test(normalized)) {
+        return "This answer includes characters that look unsafe. Try rephrasing it.";
+      }
+      return null;
+    };
+
+    (Object.keys(values) as (keyof FormValues)[]).forEach((key) => {
+      const value = values[key];
+      if (Array.isArray(value)) {
+        for (const entry of value) {
+          const issue = getSecurityIssue(entry);
+          if (issue) {
+            nextErrors[key] = [issue];
+            if (!firstFlaggedField) {
+              firstFlaggedField = key;
+            }
+            break;
+          }
+        }
+        return;
+      }
+
+      const issue = getSecurityIssue(value);
+      if (issue) {
+        nextErrors[key] = [issue];
+        if (!firstFlaggedField) {
+          firstFlaggedField = key;
+        }
+      }
+    });
+
+    if (Object.keys(nextErrors).length) {
+      setClientErrors((prev) => ({ ...prev, ...nextErrors }));
+      setSecurityError(
+        "Some of your answers include characters that look like code or database commands. Please update them before submitting.",
+      );
+      if (firstFlaggedField && fieldSteps[firstFlaggedField]) {
+        setStep(fieldSteps[firstFlaggedField]);
+      }
+      return false;
+    }
+
+    setSecurityError(null);
+    return true;
+  }, [setClientErrors, setSecurityError, setStep, values]);
+
   const handleContinue = React.useCallback(() => {
     if (validateStep(step)) {
       setStep((prev) => Math.min(steps.length, prev + 1));
@@ -346,6 +423,9 @@ export function ApplyForm() {
 
   const submit = (formData: FormData) => {
     if (!validateStep(step)) {
+      return;
+    }
+    if (!runSecurityCheck()) {
       return;
     }
     if (typeof window !== "undefined") {
@@ -373,6 +453,13 @@ export function ApplyForm() {
             tone="warning"
             title="Autosave is unavailable"
             description={storageWarning}
+          />
+        ) : null}
+        {securityError ? (
+          <FormMessage
+            tone="error"
+            title="Check your answers"
+            description={securityError}
           />
         ) : null}
         {state?.message ? (

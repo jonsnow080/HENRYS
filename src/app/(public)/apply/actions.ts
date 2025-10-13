@@ -93,6 +93,11 @@ export async function submitApplicationAction(
     console.error("Error sending confirmation email", error);
   }
 
-  redirect(`/apply/success?email=${encodeURIComponent(payload.email)}`);
+  const params = new URLSearchParams({
+    email: payload.email,
+    fullName: payload.fullName,
+  });
+
+  redirect(`/apply/success?${params.toString()}`);
 }
 

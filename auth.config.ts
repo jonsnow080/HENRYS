@@ -1,10 +1,28 @@
 import type { NextAuthConfig } from "next-auth";
+import Google from "next-auth/providers/google";
 import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/lib/prisma-constants";
 
 const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
+
+const providers: NextAuthConfig["providers"] = [
+  Resend({
+    apiKey: process.env.AUTH_RESEND_KEY,
+    from: process.env.AUTH_EMAIL_FROM ?? "HENRYS <no-reply@henrys.club>",
+  }),
+];
+
+if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+  providers.push(
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      allowDangerousEmailAccountLinking: false,
+    }),
+  );
+}
 
 export const authConfig = {
   adapter: PrismaAdapter(prisma),
@@ -14,12 +32,7 @@ export const authConfig = {
   pages: {
     signIn: "/login",
   },
-  providers: [
-    Resend({
-      apiKey: process.env.AUTH_RESEND_KEY,
-      from: process.env.AUTH_EMAIL_FROM ?? "HENRYS <no-reply@henrys.club>",
-    }),
-  ],
+  providers,
   callbacks: {
     async signIn({ user }) {
       if (!user?.id) {
