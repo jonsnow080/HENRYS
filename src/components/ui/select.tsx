@@ -31,20 +31,22 @@ const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
 >(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Content
-    ref={ref}
-    className={cn(
-      "z-50 min-w-[240px] overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-lg",
-      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className,
-    )}
-    position={position}
-    {...props}
-  >
-    <SelectPrimitive.Viewport className="p-2">
-      {children}
-    </SelectPrimitive.Viewport>
-  </SelectPrimitive.Content>
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
+      ref={ref}
+      className={cn(
+        "z-50 min-w-[240px] overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-lg",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        className,
+      )}
+      position={position}
+      {...props}
+    >
+      <SelectPrimitive.Viewport className="p-2">
+        {children}
+      </SelectPrimitive.Viewport>
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
 ));
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
@@ -60,7 +62,7 @@ const SelectItem = React.forwardRef<
     )}
     {...props}
   >
-    <span className="flex-1 text-left">{children}</span>
+    <SelectPrimitive.ItemText className="flex-1 text-left">{children}</SelectPrimitive.ItemText>
     <SelectPrimitive.ItemIndicator className="absolute right-3 flex items-center justify-center">
       <CheckIcon className="h-4 w-4" />
     </SelectPrimitive.ItemIndicator>
