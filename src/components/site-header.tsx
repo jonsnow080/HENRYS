@@ -16,6 +16,8 @@ const navItems: { href: string; label: string; roles?: Role[] }[] = [
   { href: "/admin", label: "Admin", roles: [Role.ADMIN] },
 ];
 
+const isTestingMode = process.env.NODE_ENV !== "production";
+
 export function SiteHeader({ session }: { session: Session | null }) {
   const role = session?.user.role;
 
@@ -27,6 +29,11 @@ export function SiteHeader({ session }: { session: Session | null }) {
           <span className="hidden text-muted-foreground sm:inline">Slow dating for the wildly interesting</span>
         </Link>
         <div className="flex items-center gap-2">
+          {isTestingMode && (
+            <Button asChild size="sm" variant="outline">
+              <Link href="/admin">Admin dashboard</Link>
+            </Button>
+          )}
           <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
             {navItems
               .filter((item) => !item.roles || (role && item.roles.includes(role)))
