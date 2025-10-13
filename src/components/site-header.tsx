@@ -29,11 +29,6 @@ export function SiteHeader({ session }: { session: Session | null }) {
           <span className="hidden text-muted-foreground sm:inline">Slow dating for the wildly interesting</span>
         </Link>
         <div className="flex items-center gap-2">
-          {isTestingMode && (
-            <Button asChild size="sm" variant="outline">
-              <Link href="/admin">Admin dashboard</Link>
-            </Button>
-          )}
           <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
             {navItems
               .filter((item) => !item.roles || (role && item.roles.includes(role)))
@@ -50,13 +45,25 @@ export function SiteHeader({ session }: { session: Session | null }) {
           <DarkModeToggle />
           {session?.user ? (
             <div className="flex items-center gap-2">
+              {isTestingMode && (
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/admin">Admin View</Link>
+                </Button>
+              )}
               <span className="hidden text-sm text-muted-foreground sm:inline">Hi, {session.user.name ?? "member"}</span>
               <SignOutButton />
             </div>
           ) : (
-            <Button asChild size="sm">
-              <Link href="/login">Member sign-in</Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              {isTestingMode && (
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/admin">Admin View</Link>
+                </Button>
+              )}
+              <Button asChild size="sm">
+                <Link href="/login">Member sign-in</Link>
+              </Button>
+            </div>
           )}
         </div>
       </div>
