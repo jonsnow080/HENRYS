@@ -7,6 +7,8 @@
   --muted: 243 244 246;
   --muted-foreground: 99 102 111;
   --border: 228 228 231;
+  --popover: 255 255 255;
+  --popover-foreground: 20 23 30;
   --card: 255 255 255;
   --card-foreground: 20 23 30;
   --ring: 17 24 39;
@@ -22,6 +24,8 @@
   --muted: 27 34 46;
   --muted-foreground: 166 173 187;
   --border: 40 48 61;
+  --popover: 16 19 27;
+  --popover-foreground: 237 237 237;
   --card: 16 19 27;
   --card-foreground: 237 237 237;
   --ring: 129 140 248;
@@ -36,6 +40,8 @@
   --color-muted: rgb(var(--muted));
   --color-muted-foreground: rgb(var(--muted-foreground));
   --color-border: rgb(var(--border));
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
   --color-card: rgb(var(--card));
   --color-card-foreground: rgb(var(--card-foreground));
   --color-ring: rgb(var(--ring));
