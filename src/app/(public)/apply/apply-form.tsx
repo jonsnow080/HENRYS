@@ -41,10 +41,69 @@ const defaultValues = {
 type FormValues = typeof defaultValues;
 type FieldErrors = Partial<Record<keyof FormValues, string[]>>;
 
+const parseUrl = (value: string): URL | null => {
+  try {
+    const url = new URL(value);
+    if (!["https:", "http:"].includes(url.protocol)) {
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+};
+
+const isValidLinkedInProfileUrl = (value: string): boolean => {
+  const url = parseUrl(value);
+  if (!url) {
+    return false;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  if (!(hostname === "linkedin.com" || hostname.endsWith(".linkedin.com"))) {
+    return false;
+  }
+
+  const segments = url.pathname.split("/").filter(Boolean);
+  if (segments.length < 2) {
+    return false;
+  }
+
+  const category = segments[0].toLowerCase();
+  const allowedCategories = new Set(["in", "company", "school", "showcase", "pub", "profile"]);
+  if (!allowedCategories.has(category)) {
+    return false;
+  }
+
+  return segments[1].length > 0;
+};
+
+const isValidInstagramProfileUrl = (value: string): boolean => {
+  const url = parseUrl(value);
+  if (!url) {
+    return false;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  if (!(hostname === "instagram.com" || hostname.endsWith(".instagram.com"))) {
+    return false;
+  }
+
+  const segments = url.pathname.split("/").filter(Boolean);
+  if (segments.length !== 1) {
+    return false;
+  }
+
+  const username = segments[0];
+  const usernamePattern = /^(?!.*\.{2})[a-z0-9._]{1,30}$/i;
+  const reservedNames = new Set(["accounts", "developer", "directory", "explore", "stories", "about"]);
+  return usernamePattern.test(username) && !reservedNames.has(username.toLowerCase());
+};
+
 // Map of step -> fields that must be valid before advancing past the step the user just completed.
 const stepRequiredFields: Record<number, (keyof FormValues)[]> = {
   1: ["fullName", "email", "age", "city", "occupation"],
-  2: [],
+  2: ["linkedin", "instagram"],
   3: ["motivation", "threeWords", "perfectSaturday", "alcohol", "consentCode", "consentData"],
 };
 
@@ -257,6 +316,26 @@ export function ApplyForm() {
           const words = text.split(/\s+/).filter(Boolean);
           if (words.length > 3) {
             return "Keep it to 3 words or fewer";
+          }
+          return null;
+        }
+        case "linkedin": {
+          const text = String(value ?? "").trim();
+          if (!text) {
+            return null;
+          }
+          if (!isValidLinkedInProfileUrl(text)) {
+            return "Enter a valid LinkedIn profile URL";
+          }
+          return null;
+        }
+        case "instagram": {
+          const text = String(value ?? "").trim();
+          if (!text) {
+            return null;
+          }
+          if (!isValidInstagramProfileUrl(text)) {
+            return "Enter a valid Instagram profile URL";
           }
           return null;
         }
