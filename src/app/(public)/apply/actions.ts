@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { ApplicationStatus } from "@/lib/prisma-constants";
+import { ApplicationStatus, Role } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 import { applicationSchema } from "@/lib/application/schema";
 import { sendEmail } from "@/lib/email/send";
@@ -61,6 +61,26 @@ export async function submitApplicationAction(
         message: "It looks like you've already applied with this email.",
         fieldErrors: {
           email: ["This Gmail address has already been used for an application."],
+        },
+      };
+    }
+
+    const existingMember = await prisma.user.findFirst({
+      where: {
+        email: { equals: payload.email, mode: "insensitive" },
+        OR: [
+          { role: { in: [Role.MEMBER, Role.HOST, Role.ADMIN] } },
+          { memberProfile: { isNot: null } },
+        ],
+      },
+    });
+
+    if (existingMember) {
+      return {
+        success: false,
+        message: "It looks like you're already a member.",
+        fieldErrors: {
+          email: ["This email address already belongs to a member."],
         },
       };
     }
