@@ -44,12 +44,17 @@ export async function submitApplicationAction(
     };
   }
 
-  const payload = parsed.data;
+  const parsedData = parsed.data;
+  const normalizedEmail = parsedData.email.toLowerCase();
+  const payload = {
+    ...parsedData,
+    email: normalizedEmail,
+  };
 
   try {
     const existing = await prisma.application.findFirst({
       where: {
-        email: { equals: payload.email, mode: "insensitive" },
+        email: { equals: normalizedEmail, mode: "insensitive" },
         status: { in: [ApplicationStatus.SUBMITTED, ApplicationStatus.WAITLIST] },
       },
       orderBy: { createdAt: "desc" },
@@ -65,13 +70,58 @@ export async function submitApplicationAction(
       };
     }
 
-    await prisma.application.create({
-      data: {
-        email: payload.email,
-        fullName: payload.fullName,
-        payload,
-        status: ApplicationStatus.SUBMITTED,
-      },
+    await prisma.$transaction(async (tx: typeof prisma) => {
+      await tx.application.create({
+        data: {
+          email: payload.email,
+          fullName: payload.fullName,
+          payload,
+          status: ApplicationStatus.SUBMITTED,
+        },
+      });
+
+      await tx.applicant.upsert({
+        where: { email: payload.email },
+        create: {
+          email: payload.email,
+          fullName: payload.fullName,
+          age: payload.age,
+          city: payload.city,
+          occupation: payload.occupation,
+          linkedin: payload.linkedin,
+          instagram: payload.instagram,
+          vibe: payload.vibe,
+          motivation: payload.motivation,
+          threeWords: payload.threeWords,
+          perfectSaturday: payload.perfectSaturday,
+          dietary: payload.dietary,
+          dietaryNotes: payload.dietaryNotes,
+          alcohol: payload.alcohol,
+          availability: payload.availability,
+          dealBreakers: payload.dealBreakers,
+          consentCode: payload.consentCode,
+          consentData: payload.consentData,
+        },
+        update: {
+          fullName: payload.fullName,
+          age: payload.age,
+          city: payload.city,
+          occupation: payload.occupation,
+          linkedin: payload.linkedin,
+          instagram: payload.instagram,
+          vibe: payload.vibe,
+          motivation: payload.motivation,
+          threeWords: payload.threeWords,
+          perfectSaturday: payload.perfectSaturday,
+          dietary: payload.dietary,
+          dietaryNotes: payload.dietaryNotes,
+          alcohol: payload.alcohol,
+          availability: payload.availability,
+          dealBreakers: payload.dealBreakers,
+          consentCode: payload.consentCode,
+          consentData: payload.consentData,
+        },
+      });
     });
   } catch (error) {
     console.error("Failed to persist application", error);
@@ -83,7 +133,7 @@ export async function submitApplicationAction(
 
   try {
     await sendEmail({
-      to: payload.email,
+      to: parsedData.email,
       subject: `${SITE_COPY.name} application received`,
       mjml: applicationConfirmationTemplate({ name: payload.fullName }),
       text: `Thanks for applying to ${SITE_COPY.name}. We'll be in touch soon.`,
@@ -93,6 +143,6 @@ export async function submitApplicationAction(
     console.error("Error sending confirmation email", error);
   }
 
-  redirect(`/apply/success?email=${encodeURIComponent(payload.email)}`);
+  redirect(`/apply/success?email=${encodeURIComponent(parsedData.email)}`);
 }
 
