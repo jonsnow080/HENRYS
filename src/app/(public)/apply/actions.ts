@@ -70,7 +70,7 @@ export async function submitApplicationAction(
       };
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: typeof prisma) => {
       await tx.application.create({
         data: {
           email: payload.email,
