@@ -16,7 +16,7 @@ const navItems: { href: string; label: string; roles?: Role[] }[] = [
   { href: "/admin", label: "Admin", roles: [Role.ADMIN] },
 ];
 
-const isTestingMode = process.env.NODE_ENV !== "production";
+const showAdminShortcut = process.env.NEXT_PUBLIC_SHOW_ADMIN_SHORTCUT !== "false";
 
 export function SiteHeader({ session }: { session: Session | null }) {
   const role = session?.user.role;
@@ -45,7 +45,7 @@ export function SiteHeader({ session }: { session: Session | null }) {
           <DarkModeToggle />
           {session?.user ? (
             <div className="flex items-center gap-2">
-              {isTestingMode && (
+              {showAdminShortcut && (
                 <Button asChild size="sm" variant="outline">
                   <Link href="/admin">Admin View</Link>
                 </Button>
@@ -55,7 +55,7 @@ export function SiteHeader({ session }: { session: Session | null }) {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              {isTestingMode && (
+              {showAdminShortcut && (
                 <Button asChild size="sm" variant="outline">
                   <Link href="/admin">Admin View</Link>
                 </Button>
