@@ -17,10 +17,13 @@ export default async function AdminHomePage() {
     return null;
   }
 
-  const [submitted, waitlist, approved] = await Promise.all([
+  const now = new Date();
+
+  const [submitted, waitlist, approved, upcomingEvents] = await Promise.all([
     prisma.application.count({ where: { status: ApplicationStatus.SUBMITTED } }),
     prisma.application.count({ where: { status: ApplicationStatus.WAITLIST } }),
     prisma.application.count({ where: { status: ApplicationStatus.APPROVED } }),
+    prisma.event.count({ where: { startAt: { gte: now } } }),
   ]);
 
   return (
@@ -33,17 +36,27 @@ export default async function AdminHomePage() {
         </p>
       </header>
 
-      <section className="grid gap-6 sm:grid-cols-3">
+      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="New" value={submitted} description="Need review" />
         <StatCard label="Waitlist" value={waitlist} description="Pending future cohorts" />
         <StatCard label="Approved" value={approved} description="Invited members" />
+        <StatCard
+          label="Upcoming events"
+          value={upcomingEvents}
+          description="On the calendar"
+        />
       </section>
 
-      <section className="grid gap-4 rounded-[32px] border border-border/70 bg-card/70 p-6 sm:grid-cols-2">
+      <section className="grid gap-4 rounded-[32px] border border-border/70 bg-card/70 p-6 sm:grid-cols-2 lg:grid-cols-3">
         <AdminLinkCard
           href="/admin/applications"
           title="Applications"
           description="Search, filter, and decide on prospective members."
+        />
+        <AdminLinkCard
+          href="/admin/events"
+          title="Events"
+          description="Review RSVPs and spin up new gatherings in minutes."
         />
         <AdminLinkCard
           href="/admin/email-previews"

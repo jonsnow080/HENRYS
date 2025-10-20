@@ -42,14 +42,22 @@ export function SiteHeader({ session }: { session: Session | null }) {
           </nav>
           <DarkModeToggle />
           {session?.user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link href="/admin">Admin View</Link>
+              </Button>
               <span className="hidden text-sm text-muted-foreground sm:inline">Hi, {session.user.name ?? "member"}</span>
               <SignOutButton />
             </div>
           ) : (
-            <Button asChild size="sm">
-              <Link href="/login">Member sign-in</Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link href="/admin">Admin View</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/login">Member sign-in</Link>
+              </Button>
+            </div>
           )}
         </div>
       </div>
