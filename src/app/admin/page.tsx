@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Role, ApplicationStatus } from "@/lib/prisma-constants";
+import { ApplicationStatus, Role } from "@/lib/prisma-constants";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { SITE_COPY } from "@/lib/site-copy";
@@ -16,14 +15,6 @@ export const metadata: Metadata = {
 
 export default async function AdminHomePage() {
   const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login?redirectTo=/admin");
-  }
-
-  if (session.user.role !== Role.ADMIN) {
-    redirect("/dashboard");
-  }
 
   const now = new Date();
 
@@ -68,7 +59,7 @@ export default async function AdminHomePage() {
     <div className="mx-auto flex max-w-5xl flex-col gap-10 px-4 py-12 sm:px-6 lg:px-8">
       <header className="space-y-4">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">Admin</p>
-        <h1 className="text-3xl font-semibold sm:text-4xl">Welcome back, {session.user.name ?? "team"}</h1>
+        <h1 className="text-3xl font-semibold sm:text-4xl">Welcome back, {session?.user?.name ?? "team"}</h1>
         <p className="text-sm text-muted-foreground sm:text-base">
           Review new member applications, manage rosters, and keep vibes immaculate.
         </p>
