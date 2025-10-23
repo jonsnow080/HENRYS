@@ -71,8 +71,9 @@ type ApplicationUpdateArgs = {
 };
 
 type UserWhere = {
-  id?: string;
-  email?: string;
+  id?: IdFilter;
+  email?: string | { in?: string[] };
+  role?: Role | { in?: Role[] };
 };
 
 type UserCreateArgs = {
@@ -1060,13 +1061,65 @@ function createStubApplication(overrides: Partial<ApplicationStub> = {}): Applic
 
 function resolveUser(where: UserWhere): UserStub | null {
   ensureDefaultData();
-  if (where.id) {
+  if (typeof where.id === "string") {
     return stubData.users.find((user) => user.id === where.id) ?? null;
   }
-  if (where.email) {
+  if (typeof where.id === "object" && where.id?.in?.length) {
+    const [firstId] = where.id.in;
+    if (firstId) {
+      return stubData.users.find((user) => user.id === firstId) ?? null;
+    }
+  }
+  if (typeof where.email === "string") {
     return stubData.users.find((user) => user.email === where.email) ?? null;
   }
+  if (typeof where.email === "object" && where.email?.in?.length) {
+    const [firstEmail] = where.email.in;
+    if (firstEmail) {
+      return stubData.users.find((user) => user.email === firstEmail) ?? null;
+    }
+  }
   return null;
+}
+
+function matchesUserWhere(user: UserStub, where?: UserWhere): boolean {
+  if (!where) {
+    return true;
+  }
+  if (where.id !== undefined) {
+    if (typeof where.id === "string" && user.id !== where.id) {
+      return false;
+    }
+    if (typeof where.id === "object") {
+      const ids = where.id?.in ?? [];
+      if (ids.length > 0 && !ids.includes(user.id)) {
+        return false;
+      }
+    }
+  }
+  if (where.email !== undefined) {
+    if (typeof where.email === "string" && user.email !== where.email) {
+      return false;
+    }
+    if (typeof where.email === "object") {
+      const emails = where.email?.in ?? [];
+      if (emails.length > 0 && !emails.includes(user.email)) {
+        return false;
+      }
+    }
+  }
+  if (where.role !== undefined) {
+    if (typeof where.role === "string" && user.role !== where.role) {
+      return false;
+    }
+    if (typeof where.role === "object") {
+      const roles = where.role?.in ?? [];
+      if (roles.length > 0 && !roles.includes(user.role)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 class PrismaClientStub {
@@ -1136,13 +1189,19 @@ class PrismaClientStub {
       return user ? cloneUser(user) : null;
     },
     findFirst: async (args?: { where?: UserWhere }) => {
+      ensureDefaultData();
       if (!args?.where) {
         return stubData.users.length ? cloneUser(stubData.users[0]!) : null;
       }
-      const user = resolveUser(args.where);
+      const user = stubData.users.find((candidate) => matchesUserWhere(candidate, args.where));
       return user ? cloneUser(user) : null;
     },
-    findMany: async () => stubData.users.map((user) => cloneUser(user)),
+    findMany: async (args?: { where?: UserWhere }) => {
+      ensureDefaultData();
+      return stubData.users
+        .filter((user) => matchesUserWhere(user, args?.where))
+        .map((user) => cloneUser(user));
+    },
     create: async (args: UserCreateArgs) => {
       const existing = stubData.users.find((user) => user.email === args.data.email);
       if (existing) {
@@ -1176,6 +1235,10 @@ class PrismaClientStub {
       }
       stubData.users = stubData.users.filter((candidate) => candidate.id !== user.id);
       return cloneUser(user);
+    },
+    count: async (args?: { where?: UserWhere }) => {
+      ensureDefaultData();
+      return stubData.users.filter((user) => matchesUserWhere(user, args?.where)).length;
     },
   };
 
