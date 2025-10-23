@@ -4,7 +4,6 @@ import { auth } from "./auth";
 
 const memberRoutes = ["/dashboard", "/events"];
 const hostRoutes = ["/host"];
-const adminRoutes = ["/admin"];
 const hostRoleSet = new Set<Role>([Role.HOST, Role.ADMIN]);
 const memberRoleSet = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
 
@@ -15,9 +14,7 @@ export default auth((req) => {
 
   const requiresMember = memberRoutes.some((route) => pathname.startsWith(route));
   const requiresHost = hostRoutes.some((route) => pathname.startsWith(route));
-  const requiresAdmin = adminRoutes.some((route) => pathname.startsWith(route));
-
-  if (!requiresMember && !requiresHost && !requiresAdmin) {
+  if (!requiresMember && !requiresHost) {
     return NextResponse.next();
   }
 
@@ -31,10 +28,6 @@ export default auth((req) => {
 
   const role = session.user.role;
 
-  if (requiresAdmin && role !== Role.ADMIN) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
-  }
-
   if (requiresHost && !hostRoleSet.has(role)) {
     return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
   }
@@ -47,5 +40,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*"],
 };
