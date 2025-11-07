@@ -143,6 +143,78 @@ export async function buildApplicationEmailPayload({
   });
 }
 
+export async function updateSingleApplicationStatus(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== Role.ADMIN) {
+    redirect("/login?redirectTo=/admin/applications&callbackUrl=/admin/applications");
+  }
+
+  const redirectTarget = typeof formData.get("redirectTo") === "string" && formData.get("redirectTo")
+    ? String(formData.get("redirectTo"))
+    : "/admin/applications";
+
+  const redirectUrl = new URL(redirectTarget, BASE_URL);
+  for (const key of ["success", "error", "updated", "statusChange", "reason"]) {
+    redirectUrl.searchParams.delete(key);
+  }
+
+  const applicationId = formData.get("applicationId");
+  if (!applicationId || typeof applicationId !== "string") {
+    redirectUrl.searchParams.set("error", "missing-application");
+    redirectUrl.searchParams.set("reason", "Choose an application to update.");
+    redirect(redirectUrl.pathname + redirectUrl.search);
+  }
+
+  const nextStatus = parseStatus(formData.get("nextStatus"));
+  if (!nextStatus) {
+    redirectUrl.searchParams.set("error", "invalid-status");
+    redirectUrl.searchParams.set("reason", "Choose a valid status before updating.");
+    redirect(redirectUrl.pathname + redirectUrl.search);
+  }
+
+  try {
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+    });
+
+    if (!application) {
+      redirectUrl.searchParams.set("error", "not-found");
+      redirectUrl.searchParams.set("reason", "Application not found.");
+      redirect(redirectUrl.pathname + redirectUrl.search);
+    }
+
+    await updateApplicationStatus({
+      application,
+      status: nextStatus,
+      reviewerId: session.user.id,
+    });
+
+    await recordAuditLog({
+      actorId: session.user.id,
+      actorEmail: session.user.email ?? null,
+      action: "application.update", 
+      targetType: "application",
+      targetId: applicationId,
+      diff: {
+        previousStatus: application.status,
+        nextStatus,
+      },
+    });
+
+    revalidatePath("/admin/applications");
+
+    redirectUrl.searchParams.set("success", "1");
+    redirectUrl.searchParams.set("updated", "1");
+    redirectUrl.searchParams.set("statusChange", nextStatus);
+    redirect(redirectUrl.pathname + redirectUrl.search);
+  } catch (error) {
+    console.error("Failed to update application", error);
+    redirectUrl.searchParams.set("error", "server-error");
+    redirectUrl.searchParams.set("reason", "Unable to update the application right now.");
+    redirect(redirectUrl.pathname + redirectUrl.search);
+  }
+}
+
 export async function bulkUpdateApplications(formData: FormData) {
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
