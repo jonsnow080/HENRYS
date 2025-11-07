@@ -147,7 +147,7 @@ const formSchema = z
     tagline: z.string().max(160, "Tagline must be under 160 characters.").optional().or(z.literal("")),
     description: z.string().optional(),
     category: z.enum(CATEGORIES, {
-      errorMap: () => ({ message: "Select a category." }),
+      message: "Select a category.",
     }),
     tags: z.array(z.string().min(1)).max(10, "Add up to 10 tags."),
     organizerName: z.string().min(1, "Organizer name required."),
