@@ -19,6 +19,7 @@ enum Role {
 
 enum ApplicationStatus {
   SUBMITTED
+  IN_REVIEW
   WAITLIST
   APPROVED
   REJECTED
@@ -40,9 +41,11 @@ model User {
   sessions       Session[]
   accounts       Account[]
   inviteCodes    InviteCode[]     @relation("InviteCreator")
+  redeemedInvites InviteCode[]    @relation("InviteRedeemer")
   subscriptions  Subscription[]
   payments       Payment[]
   eventRsvps     EventRsvp[]
+  auditLogs      AuditLog[]       @relation("AuditLogActor")
 }
 
 model Application {
@@ -120,7 +123,7 @@ model InviteCode {
   createdById    String?
   createdBy      User?      @relation("InviteCreator", fields: [createdById], references: [id])
   userId         String?
-  user           User?      @relation(fields: [userId], references: [id])
+  user           User?      @relation("InviteRedeemer", fields: [userId], references: [id])
   expiresAt      DateTime?
   redeemedAt     DateTime?
   createdAt      DateTime   @default(now())
@@ -188,6 +191,7 @@ model Event {
   updatedAt     DateTime  @updatedAt
   rsvps         EventRsvp[]
   seatGroups    SeatGroup[]
+  payments      Payment[]
 }
 
 model MembershipPlan {
@@ -274,7 +278,7 @@ model AuditLog {
   targetId   String
   diffJSON   Json
   createdAt  DateTime @default(now())
-  actor      User?    @relation(fields: [actorId], references: [id])
+  actor      User?    @relation("AuditLogActor", fields: [actorId], references: [id])
 
   @@index([targetType, targetId])
   @@index([createdAt])

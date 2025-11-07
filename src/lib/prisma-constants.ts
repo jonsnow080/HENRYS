@@ -10,6 +10,7 @@ export type Role = (typeof Role)[keyof typeof Role];
 
 export const ApplicationStatus = {
   SUBMITTED: "SUBMITTED",
+  IN_REVIEW: "IN_REVIEW",
   WAITLIST: "WAITLIST",
   APPROVED: "APPROVED",
   REJECTED: "REJECTED",

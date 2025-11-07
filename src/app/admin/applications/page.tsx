@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Role, ApplicationStatus } from "@/lib/prisma-constants";
@@ -7,6 +8,7 @@ import { SITE_COPY } from "@/lib/site-copy";
 import {
   bulkUpdateApplications,
   buildApplicationEmailPayload,
+  updateSingleApplicationStatus,
   type DecisionTemplateOption,
 } from "./actions";
 import { ApplicationNotesDialog } from "./application-notes-dialog";
@@ -248,39 +250,38 @@ export default async function AdminApplicationsPage({
       ) : null}
 
       <div className="overflow-hidden rounded-[36px] border border-border/70 bg-card/80">
-        <form action={bulkUpdateApplications} className="flex flex-col">
-          <input type="hidden" name="redirectTo" value={redirectPath} />
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">Select</TableHead>
+                <TableHead>Applicant</TableHead>
+                <TableHead>Personality & preferences</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-40 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleApplications.length === 0 ? (
                 <TableRow>
-                  <TableHead className="w-12">Select</TableHead>
-                  <TableHead>Applicant</TableHead>
-                  <TableHead>Personality & preferences</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-32 text-right">Actions</TableHead>
+                  <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
+                    No applications found. Adjust your filters or check back soon.
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleApplications.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
-                      No applications found. Adjust your filters or check back soon.
+              ) : (
+                visibleApplications.map((application) => (
+                  <TableRow key={application.id}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        name="applicationId"
+                        value={application.id}
+                        form="bulk-update-form"
+                        className="h-4 w-4 rounded border-border accent-foreground"
+                        aria-label={`Select ${application.fullName}`}
+                      />
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  visibleApplications.map((application) => (
-                    <TableRow key={application.id}>
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          name="applicationId"
-                          value={application.id}
-                          className="h-4 w-4 rounded border-border accent-foreground"
-                          aria-label={`Select ${application.fullName}`}
-                        />
-                      </TableCell>
-                      <TableCell>
+                    <TableCell>
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-sm font-semibold text-foreground">{application.fullName}</p>
@@ -386,61 +387,162 @@ export default async function AdminApplicationsPage({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex justify-end gap-2">
-                          <ApplicationNotesDialog
-                            applicationId={application.id}
-                            applicantName={application.fullName}
-                            defaultNotes={application.notes}
-                          />
-                          <ApplicationEmailDialog
-                            applicationId={application.id}
-                            applicantName={application.fullName}
-                            previews={emailPreviewMap.get(application.id) ?? []}
-                          />
-                        </div>
+                        <ApplicationQuickActions
+                          applicationId={application.id}
+                          applicantName={application.fullName}
+                          currentStatus={application.status}
+                          redirectPath={redirectPath}
+                          defaultNotes={application.notes}
+                          emailPreviews={emailPreviewMap.get(application.id) ?? []}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
             </Table>
-          </div>
+        </div>
 
-          <div className="flex flex-col gap-4 border-t border-border/70 bg-background/60 p-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex flex-col gap-2 sm:w-60">
-              <label htmlFor="nextStatus" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Set status to
-              </label>
-              <select
-                id="nextStatus"
-                name="nextStatus"
-                className="h-11 rounded-xl border border-input bg-background px-4 text-sm font-medium text-foreground"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Choose…
+        <form
+          id="bulk-update-form"
+          action={bulkUpdateApplications}
+          className="flex flex-col gap-4 border-t border-border/70 bg-background/60 p-6 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <input type="hidden" name="redirectTo" value={redirectPath} />
+          <div className="flex flex-col gap-2 sm:w-60">
+            <label htmlFor="nextStatus" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Set status to
+            </label>
+            <select
+              id="nextStatus"
+              name="nextStatus"
+              className="h-11 rounded-xl border border-input bg-background px-4 text-sm font-medium text-foreground"
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Choose…
+              </option>
+              {STATUS_OPTIONS.filter((status) => status !== ApplicationStatus.SUBMITTED).map((status) => (
+                <option key={status} value={status}>
+                  {statusLabel(status)}
                 </option>
-                {STATUS_OPTIONS.filter((status) => status !== ApplicationStatus.SUBMITTED).map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabel(status)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Notes (optional)
-              </label>
-              <Textarea id="notes" name="notes" rows={3} className="mt-2" placeholder="Add context for the team." />
-              <p className="mt-1 text-[11px] text-muted-foreground">Notes apply to all selected applications.</p>
-            </div>
-            <Button type="submit" className="h-11 px-6">
-              Update selected
-            </Button>
+              ))}
+            </select>
           </div>
+          <div className="flex-1">
+            <label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Notes (optional)
+            </label>
+            <Textarea id="notes" name="notes" rows={3} className="mt-2" placeholder="Add context for the team." />
+            <p className="mt-1 text-[11px] text-muted-foreground">Notes apply to all selected applications.</p>
+          </div>
+          <Button type="submit" className="h-11 px-6">
+            Update selected
+          </Button>
         </form>
       </div>
     </div>
+  );
+}
+
+function ApplicationQuickActions({
+  applicationId,
+  applicantName,
+  currentStatus,
+  redirectPath,
+  defaultNotes,
+  emailPreviews,
+}: {
+  applicationId: string;
+  applicantName: string;
+  currentStatus: ApplicationStatus;
+  redirectPath: string;
+  defaultNotes: string;
+  emailPreviews: ApplicationEmailPreview[];
+}) {
+  return (
+    <div className="flex flex-col items-end gap-3">
+      <div className="flex w-full justify-end gap-2">
+        <QuickActionButton
+          label="Review"
+          status={ApplicationStatus.IN_REVIEW}
+          redirectPath={redirectPath}
+          applicationId={applicationId}
+          applicantName={applicantName}
+          currentStatus={currentStatus}
+          variant="secondary"
+        />
+        <QuickActionButton
+          label="Approve"
+          status={ApplicationStatus.APPROVED}
+          redirectPath={redirectPath}
+          applicationId={applicationId}
+          applicantName={applicantName}
+          currentStatus={currentStatus}
+        />
+        <QuickActionButton
+          label="Deny"
+          status={ApplicationStatus.REJECTED}
+          redirectPath={redirectPath}
+          applicationId={applicationId}
+          applicantName={applicantName}
+          currentStatus={currentStatus}
+          variant="destructive"
+        />
+      </div>
+      <div className="flex w-full justify-end gap-2">
+        <ApplicationNotesDialog
+          applicationId={applicationId}
+          applicantName={applicantName}
+          defaultNotes={defaultNotes}
+        />
+        <ApplicationEmailDialog
+          applicationId={applicationId}
+          applicantName={applicantName}
+          previews={emailPreviews}
+        />
+      </div>
+    </div>
+  );
+}
+
+function QuickActionButton({
+  label,
+  status,
+  redirectPath,
+  applicationId,
+  applicantName,
+  currentStatus,
+  variant = "default",
+}: {
+  label: string;
+  status: ApplicationStatus;
+  redirectPath: string;
+  applicationId: string;
+  applicantName: string;
+  currentStatus: ApplicationStatus;
+  variant?: ComponentProps<typeof Button>["variant"];
+}) {
+  const isCurrentStatus = currentStatus === status;
+  return (
+    <form action={updateSingleApplicationStatus} className="inline">
+      <input type="hidden" name="applicationId" value={applicationId} />
+      <input type="hidden" name="nextStatus" value={status} />
+      <input type="hidden" name="redirectTo" value={redirectPath} />
+      <Button
+        type="submit"
+        size="sm"
+        variant={variant}
+        disabled={isCurrentStatus}
+        title={
+          isCurrentStatus
+            ? `${applicantName} is already ${statusLabel(status).toLowerCase()}.`
+            : `${label} ${applicantName}`
+        }
+      >
+        {label}
+      </Button>
+    </form>
   );
 }
 
@@ -469,6 +571,8 @@ function statusLabel(status: ApplicationStatus) {
   switch (status) {
     case ApplicationStatus.SUBMITTED:
       return "Submitted";
+    case ApplicationStatus.IN_REVIEW:
+      return "In review";
     case ApplicationStatus.WAITLIST:
       return "Waitlist";
     case ApplicationStatus.APPROVED:
@@ -488,6 +592,16 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
         className="border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200"
       >
         Approved
+      </Badge>
+    );
+  }
+  if (status === ApplicationStatus.IN_REVIEW) {
+    return (
+      <Badge
+        variant="outline"
+        className="border-blue-500/40 bg-blue-500/10 text-blue-600 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-200"
+      >
+        In review
       </Badge>
     );
   }
