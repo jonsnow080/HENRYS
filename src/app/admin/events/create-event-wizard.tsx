@@ -289,7 +289,7 @@ const formSchema = z
     }
   });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.input<typeof formSchema>;
 
 type AutosaveState =
   | { status: "idle" }
@@ -522,7 +522,14 @@ function generateId(prefix: string): string {
 
 function buildRrule(values: FormValues): string | null {
   if (values.dateType !== "recurring" || !values.recurrence) return null;
-  const { frequency, interval, byWeekday, ends, until, count } = values.recurrence;
+  const {
+    frequency,
+    interval = 1,
+    byWeekday = [],
+    ends = "never",
+    until,
+    count,
+  } = values.recurrence;
   const parts = [`FREQ=${frequency}`, `INTERVAL=${interval}`];
   if (byWeekday.length) {
     parts.push(`BYDAY=${byWeekday.join(",")}`);
