@@ -211,9 +211,7 @@ const formSchema = z
         options: z.string().optional().or(z.literal("")),
       }),
     ),
-    consentAccepted: z.literal(true, {
-      errorMap: () => ({ message: "Consent is required." }),
-    }),
+    consentAccepted: z.literal(true, { message: "Consent is required." }),
     themeColor: z.string().optional().or(z.literal("")),
     organizerLogo: z.any().optional(),
     sponsorLogos: z.any().optional(),
