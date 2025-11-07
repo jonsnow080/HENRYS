@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ApplicationStatus, Role } from "@/lib/prisma-constants";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,24 +15,6 @@ export const metadata: Metadata = {
 
 export default async function AdminHomePage() {
   const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login?redirectTo=/admin");
-  }
-
-  let role = session.user.role;
-  if ((!role || !Object.values(Role).includes(role)) && session.user.id) {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-    role = dbUser?.role ?? role;
-  }
-
-  if (role !== Role.ADMIN) {
-    redirect("/login?redirectTo=/admin");
-  }
-
   const now = new Date();
 
   const [

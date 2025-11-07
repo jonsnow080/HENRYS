@@ -1,9 +1,7 @@
 import type { ComponentProps } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Role, ApplicationStatus } from "@/lib/prisma-constants";
-import { auth } from "@/auth";
+import { ApplicationStatus } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 import { SITE_COPY } from "@/lib/site-copy";
 import {
@@ -78,24 +76,6 @@ export default async function AdminApplicationsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await auth();
-  if (!session?.user) {
-    redirect("/login?redirectTo=/admin/applications");
-  }
-
-  let role = session.user.role;
-  if ((!role || !Object.values(Role).includes(role)) && session.user.id) {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-    role = dbUser?.role ?? role;
-  }
-
-  if (role !== Role.ADMIN) {
-    redirect("/login?redirectTo=/admin/applications");
-  }
-
   const query = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
   const statusParam = typeof searchParams.status === "string" ? searchParams.status : undefined;
   const sortParam = typeof searchParams.sort === "string" ? searchParams.sort : "newest";
