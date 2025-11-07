@@ -78,33 +78,6 @@ const STEP_ORDER = [
 type StepKey = (typeof STEP_ORDER)[number];
 
 
-type TicketType = {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  quantity: number;
-  salesStart?: string;
-  salesEnd?: string;
-  minPerOrder: number;
-  maxPerOrder: number;
-  absorbFees: boolean;
-  earlyBirdTiers: {
-    id: string;
-    label: string;
-    price: number;
-    endsAt?: string;
-  }[];
-};
-
-type AttendeeQuestion = {
-  id: string;
-  label: string;
-  type: "text" | "textarea" | "select";
-  required: boolean;
-  options?: string;
-};
-
 const recurrenceSchema = z
   .object({
     frequency: z.enum(RECURRENCE_FREQUENCIES),
@@ -118,7 +91,7 @@ const recurrenceSchema = z
   })
   .optional();
 
-const ticketTypeSchema: z.ZodType<TicketType> = z.object({
+const ticketTypeSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Enter a ticket name."),
   price: z.number().min(0, "Price cannot be negative."),
@@ -140,6 +113,16 @@ const ticketTypeSchema: z.ZodType<TicketType> = z.object({
     )
     .max(3, "Limit early-bird tiers to three."),
 });
+
+type TicketType = z.infer<typeof ticketTypeSchema>;
+
+type AttendeeQuestion = {
+  id: string;
+  label: string;
+  type: "text" | "textarea" | "select";
+  required: boolean;
+  options?: string;
+};
 
 const formSchema = z
   .object({
