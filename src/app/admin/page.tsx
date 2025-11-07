@@ -75,7 +75,7 @@ export default async function AdminHomePage() {
 
       <section className="grid gap-4 rounded-[32px] border border-border/70 bg-card/70 p-6 sm:grid-cols-2 lg:grid-cols-3">
         <AdminLinkCard
-          href="/admin/applications"
+          href={`/admin/applications?status=${ApplicationStatus.SUBMITTED}`}
           title="Applications"
           description="Search, filter, and decide on prospective members."
         />
@@ -120,7 +120,9 @@ function PendingApplicationsPanel({ applications }: { applications: PendingAppli
           <h2 className="text-xl font-semibold">Awaiting approval</h2>
         </div>
         <Button asChild variant="ghost" size="sm" className="rounded-full px-4">
-          <Link href="/admin/applications">Review all</Link>
+          <Link href={{ pathname: "/admin/applications", query: { status: ApplicationStatus.SUBMITTED } }}>
+            Review all
+          </Link>
         </Button>
       </div>
       {applications.length === 0 ? (
@@ -148,7 +150,11 @@ function PendingApplicationsPanel({ applications }: { applications: PendingAppli
                     Approve
                   </Button>
                   <Button asChild variant="outline" size="sm" className="rounded-full px-4">
-                    <Link href="/admin/applications">Open queue</Link>
+                    <Link
+                      href={{ pathname: "/admin/applications", query: { status: ApplicationStatus.SUBMITTED } }}
+                    >
+                      Open queue
+                    </Link>
                   </Button>
                 </div>
               </form>
