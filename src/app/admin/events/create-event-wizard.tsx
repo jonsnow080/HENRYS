@@ -752,7 +752,7 @@ export function CreateEventWizard() {
           router.push(`/admin/events/${nextState.eventId}`);
         } else if (nextState.status === "error") {
           toast({
-            variant: "destructive",
+            title: "Error",
             description: nextState.message ?? "Unable to publish event.",
           });
         }
@@ -760,7 +760,7 @@ export function CreateEventWizard() {
         console.error(error);
         setActionState({ status: "error", message: "An unexpected error occurred." });
         toast({
-          variant: "destructive",
+          title: "Error",
           description: "We couldn't publish the event. Please try again.",
         });
       }
@@ -774,7 +774,7 @@ export function CreateEventWizard() {
   const handleSchedulePublish = onSubmit((validValues) => {
     if (!validValues.schedulePublishAt) {
       toast({
-        variant: "destructive",
+        title: "Error",
         description: "Add a publish date before scheduling.",
       });
       return;
@@ -2036,7 +2036,7 @@ export function CreateEventWizard() {
                         onChange={(event) => {
                           const file = event.target.files?.[0] ?? null;
                           if (file && !coverFileIsValid(file).valid) {
-                            toast({ variant: "destructive", description: coverFileIsValid(file).message });
+                            toast({ title: "Upload error", description: coverFileIsValid(file).message });
                             return;
                           }
                           setValue("coverImage", file, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
