@@ -1,4 +1,5 @@
-import { PrismaClient, ApplicationStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+import { ApplicationStatus } from "../src/lib/prisma-constants";
 
 const prisma = new PrismaClient();
 
