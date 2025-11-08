@@ -23,12 +23,14 @@ export function FilterForm({ defaultQuery, defaultStatus, defaultSort, defaultAg
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
   const [query, setQuery] = useState(defaultQuery);
+  const [committedQuery, setCommittedQuery] = useState(defaultQuery.trim());
   const [status, setStatus] = useState(defaultStatus ?? '');
   const [ageBand, setAgeBand] = useState(defaultAgeBand ?? '');
   const [sort, setSort] = useState(defaultSort);
 
   useEffect(() => {
     setQuery(defaultQuery);
+    setCommittedQuery(defaultQuery.trim());
   }, [defaultQuery]);
 
   useEffect(() => {
@@ -91,20 +93,39 @@ export function FilterForm({ defaultQuery, defaultStatus, defaultSort, defaultAg
     [updateFilter],
   );
 
-  const handleSearchSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      const formData = new FormData(event.currentTarget);
-      const rawQuery = formData.get('q');
+  useEffect(() => {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery === committedQuery) {
+      return;
+    }
+    const timeout = setTimeout(() => {
       const params = new URLSearchParams(searchParamsString);
-      if (typeof rawQuery === 'string' && rawQuery.trim()) {
-        params.set('q', rawQuery.trim());
+      if (trimmedQuery) {
+        params.set('q', trimmedQuery);
       } else {
         params.delete('q');
       }
+      setCommittedQuery(trimmedQuery);
+      commitParams(params);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [commitParams, committedQuery, query, searchParamsString]);
+
+  const handleSearchSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const trimmedQuery = query.trim();
+      const params = new URLSearchParams(searchParamsString);
+      if (trimmedQuery) {
+        params.set('q', trimmedQuery);
+      } else {
+        params.delete('q');
+      }
+      setCommittedQuery(trimmedQuery);
       commitParams(params);
     },
-    [commitParams, searchParamsString],
+    [commitParams, query, searchParamsString],
   );
 
   return (
