@@ -1,44 +1,34 @@
+import type { ComponentProps } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Role, ApplicationStatus } from "@/lib/prisma-constants";
-import { auth } from "@/auth";
+import { ApplicationStatus } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 import { SITE_COPY } from "@/lib/site-copy";
 import {
   bulkUpdateApplications,
   buildApplicationEmailPayload,
+  updateSingleApplicationStatus,
   type DecisionTemplateOption,
 } from "./actions";
 import { ApplicationNotesDialog } from "./application-notes-dialog";
 import { ApplicationEmailDialog, type ApplicationEmailPreview } from "./application-email-dialog";
 import { readApplicationPayload } from "@/lib/application/admin";
 import type { ApplicationFormInput } from "@/lib/application/schema";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FilterForm } from "./filter-form";
 import { renderMjml } from "@/lib/email/mjml";
+import { AGE_BANDS, SORT_OPTIONS, STATUS_OPTIONS, type AgeBandValue, statusLabel } from "./filter-constants";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-const STATUS_OPTIONS = Object.values(ApplicationStatus);
-const SORT_OPTIONS = ["newest", "oldest", "name", "status"] as const;
 const EMAIL_TEMPLATE_OPTIONS: DecisionTemplateOption[] = [
   ApplicationStatus.APPROVED,
   ApplicationStatus.WAITLIST,
   ApplicationStatus.REJECTED,
 ];
-
-const AGE_BANDS = [
-  { value: "under25", label: "Under 25", test: (age?: number) => typeof age === "number" && age < 25 },
-  { value: "25-34", label: "25-34", test: (age?: number) => typeof age === "number" && age >= 25 && age <= 34 },
-  { value: "35-44", label: "35-44", test: (age?: number) => typeof age === "number" && age >= 35 && age <= 44 },
-  { value: "45+", label: "45+", test: (age?: number) => typeof age === "number" && age >= 45 },
-  { value: "unknown", label: "Unknown", test: (age?: number) => typeof age !== "number" },
-] as const;
-
-type AgeBandValue = (typeof AGE_BANDS)[number]["value"];
 
 type AdminApplication = {
   id: string;
@@ -75,11 +65,6 @@ export default async function AdminApplicationsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== Role.ADMIN) {
-    return null;
-  }
-
   const query = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
   const statusParam = typeof searchParams.status === "string" ? searchParams.status : undefined;
   const sortParam = typeof searchParams.sort === "string" ? searchParams.sort : "newest";
@@ -248,39 +233,38 @@ export default async function AdminApplicationsPage({
       ) : null}
 
       <div className="overflow-hidden rounded-[36px] border border-border/70 bg-card/80">
-        <form action={bulkUpdateApplications} className="flex flex-col">
-          <input type="hidden" name="redirectTo" value={redirectPath} />
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">Select</TableHead>
+                <TableHead>Applicant</TableHead>
+                <TableHead>Personality & preferences</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-40 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visibleApplications.length === 0 ? (
                 <TableRow>
-                  <TableHead className="w-12">Select</TableHead>
-                  <TableHead>Applicant</TableHead>
-                  <TableHead>Personality & preferences</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-32 text-right">Actions</TableHead>
+                  <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
+                    No applications found. Adjust your filters or check back soon.
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleApplications.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
-                      No applications found. Adjust your filters or check back soon.
+              ) : (
+                visibleApplications.map((application) => (
+                  <TableRow key={application.id}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        name="applicationId"
+                        value={application.id}
+                        form="bulk-update-form"
+                        className="h-4 w-4 rounded border-border accent-foreground"
+                        aria-label={`Select ${application.fullName}`}
+                      />
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  visibleApplications.map((application) => (
-                    <TableRow key={application.id}>
-                      <TableCell>
-                        <input
-                          type="checkbox"
-                          name="applicationId"
-                          value={application.id}
-                          className="h-4 w-4 rounded border-border accent-foreground"
-                          aria-label={`Select ${application.fullName}`}
-                        />
-                      </TableCell>
-                      <TableCell>
+                    <TableCell>
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-sm font-semibold text-foreground">{application.fullName}</p>
@@ -386,61 +370,162 @@ export default async function AdminApplicationsPage({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex justify-end gap-2">
-                          <ApplicationNotesDialog
-                            applicationId={application.id}
-                            applicantName={application.fullName}
-                            defaultNotes={application.notes}
-                          />
-                          <ApplicationEmailDialog
-                            applicationId={application.id}
-                            applicantName={application.fullName}
-                            previews={emailPreviewMap.get(application.id) ?? []}
-                          />
-                        </div>
+                        <ApplicationQuickActions
+                          applicationId={application.id}
+                          applicantName={application.fullName}
+                          currentStatus={application.status}
+                          redirectPath={redirectPath}
+                          defaultNotes={application.notes}
+                          emailPreviews={emailPreviewMap.get(application.id) ?? []}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
             </Table>
-          </div>
+        </div>
 
-          <div className="flex flex-col gap-4 border-t border-border/70 bg-background/60 p-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex flex-col gap-2 sm:w-60">
-              <label htmlFor="nextStatus" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Set status to
-              </label>
-              <select
-                id="nextStatus"
-                name="nextStatus"
-                className="h-11 rounded-xl border border-input bg-background px-4 text-sm font-medium text-foreground"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Choose…
+        <form
+          id="bulk-update-form"
+          action={bulkUpdateApplications}
+          className="flex flex-col gap-4 border-t border-border/70 bg-background/60 p-6 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <input type="hidden" name="redirectTo" value={redirectPath} />
+          <div className="flex flex-col gap-2 sm:w-60">
+            <label htmlFor="nextStatus" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Set status to
+            </label>
+            <select
+              id="nextStatus"
+              name="nextStatus"
+              className="h-11 rounded-xl border border-input bg-background px-4 text-sm font-medium text-foreground"
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Choose…
+              </option>
+              {STATUS_OPTIONS.filter((status) => status !== ApplicationStatus.SUBMITTED).map((status) => (
+                <option key={status} value={status}>
+                  {statusLabel(status)}
                 </option>
-                {STATUS_OPTIONS.filter((status) => status !== ApplicationStatus.SUBMITTED).map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabel(status)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Notes (optional)
-              </label>
-              <Textarea id="notes" name="notes" rows={3} className="mt-2" placeholder="Add context for the team." />
-              <p className="mt-1 text-[11px] text-muted-foreground">Notes apply to all selected applications.</p>
-            </div>
-            <Button type="submit" className="h-11 px-6">
-              Update selected
-            </Button>
+              ))}
+            </select>
           </div>
+          <div className="flex-1">
+            <label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Notes (optional)
+            </label>
+            <Textarea id="notes" name="notes" rows={3} className="mt-2" placeholder="Add context for the team." />
+            <p className="mt-1 text-[11px] text-muted-foreground">Notes apply to all selected applications.</p>
+          </div>
+          <Button type="submit" className="h-11 px-6">
+            Update selected
+          </Button>
         </form>
       </div>
     </div>
+  );
+}
+
+function ApplicationQuickActions({
+  applicationId,
+  applicantName,
+  currentStatus,
+  redirectPath,
+  defaultNotes,
+  emailPreviews,
+}: {
+  applicationId: string;
+  applicantName: string;
+  currentStatus: ApplicationStatus;
+  redirectPath: string;
+  defaultNotes: string;
+  emailPreviews: ApplicationEmailPreview[];
+}) {
+  return (
+    <div className="flex flex-col items-end gap-3">
+      <div className="flex w-full justify-end gap-2">
+        <QuickActionButton
+          label="Review"
+          status={ApplicationStatus.IN_REVIEW}
+          redirectPath={redirectPath}
+          applicationId={applicationId}
+          applicantName={applicantName}
+          currentStatus={currentStatus}
+          variant="secondary"
+        />
+        <QuickActionButton
+          label="Approve"
+          status={ApplicationStatus.APPROVED}
+          redirectPath={redirectPath}
+          applicationId={applicationId}
+          applicantName={applicantName}
+          currentStatus={currentStatus}
+        />
+        <QuickActionButton
+          label="Deny"
+          status={ApplicationStatus.REJECTED}
+          redirectPath={redirectPath}
+          applicationId={applicationId}
+          applicantName={applicantName}
+          currentStatus={currentStatus}
+          variant="destructive"
+        />
+      </div>
+      <div className="flex w-full justify-end gap-2">
+        <ApplicationNotesDialog
+          applicationId={applicationId}
+          applicantName={applicantName}
+          defaultNotes={defaultNotes}
+        />
+        <ApplicationEmailDialog
+          applicationId={applicationId}
+          applicantName={applicantName}
+          previews={emailPreviews}
+        />
+      </div>
+    </div>
+  );
+}
+
+function QuickActionButton({
+  label,
+  status,
+  redirectPath,
+  applicationId,
+  applicantName,
+  currentStatus,
+  variant = "default",
+}: {
+  label: string;
+  status: ApplicationStatus;
+  redirectPath: string;
+  applicationId: string;
+  applicantName: string;
+  currentStatus: ApplicationStatus;
+  variant?: ComponentProps<typeof Button>["variant"];
+}) {
+  const isCurrentStatus = currentStatus === status;
+  return (
+    <form action={updateSingleApplicationStatus} className="inline">
+      <input type="hidden" name="applicationId" value={applicationId} />
+      <input type="hidden" name="nextStatus" value={status} />
+      <input type="hidden" name="redirectTo" value={redirectPath} />
+      <Button
+        type="submit"
+        size="sm"
+        variant={variant}
+        disabled={isCurrentStatus}
+        title={
+          isCurrentStatus
+            ? `${applicantName} is already ${statusLabel(status).toLowerCase()}.`
+            : `${label} ${applicantName}`
+        }
+      >
+        {label}
+      </Button>
+    </form>
   );
 }
 
@@ -465,21 +550,6 @@ function formatDate(isoDate: string) {
   }).format(date);
 }
 
-function statusLabel(status: ApplicationStatus) {
-  switch (status) {
-    case ApplicationStatus.SUBMITTED:
-      return "Submitted";
-    case ApplicationStatus.WAITLIST:
-      return "Waitlist";
-    case ApplicationStatus.APPROVED:
-      return "Approved";
-    case ApplicationStatus.REJECTED:
-      return "Rejected";
-    default:
-      return status;
-  }
-}
-
 function StatusBadge({ status }: { status: ApplicationStatus }) {
   if (status === ApplicationStatus.APPROVED) {
     return (
@@ -488,6 +558,16 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
         className="border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200"
       >
         Approved
+      </Badge>
+    );
+  }
+  if (status === ApplicationStatus.IN_REVIEW) {
+    return (
+      <Badge
+        variant="outline"
+        className="border-blue-500/40 bg-blue-500/10 text-blue-600 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-200"
+      >
+        In review
       </Badge>
     );
   }
@@ -517,97 +597,6 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
 function determineAgeBand(age?: number): AgeBandValue {
   const match = AGE_BANDS.find((band) => band.test(age));
   return (match?.value ?? "unknown") as AgeBandValue;
-}
-
-function FilterForm({
-  defaultQuery,
-  defaultStatus,
-  defaultSort,
-  defaultAgeBand,
-}: {
-  defaultQuery: string;
-  defaultStatus: ApplicationStatus | null;
-  defaultSort: (typeof SORT_OPTIONS)[number];
-  defaultAgeBand: AgeBandValue | null;
-}) {
-  return (
-    <form
-      className="grid gap-4 rounded-[28px] border border-border/60 bg-background/80 p-6 sm:grid-cols-[minmax(0,1fr)_160px_160px_160px_auto] sm:items-end"
-      method="get"
-    >
-      <div className="space-y-2">
-        <label htmlFor="search" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Search
-        </label>
-        <Input
-          id="search"
-          name="q"
-          placeholder="Name, email, or note"
-          defaultValue={defaultQuery}
-        />
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="status" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Status
-        </label>
-        <select
-          id="status"
-          name="status"
-          defaultValue={defaultStatus ?? ""}
-          className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-        >
-          <option value="">All statuses</option>
-          {STATUS_OPTIONS.map((status) => (
-            <option key={status} value={status}>
-              {statusLabel(status)}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="ageBand" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Age band
-        </label>
-        <select
-          id="ageBand"
-          name="ageBand"
-          defaultValue={defaultAgeBand ?? ""}
-          className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-        >
-          <option value="">All ages</option>
-          {AGE_BANDS.map((band) => (
-            <option key={band.value} value={band.value}>
-              {band.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="sort" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Sort
-        </label>
-        <select
-          id="sort"
-          name="sort"
-          defaultValue={defaultSort}
-          className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-        >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="name">Name A→Z</option>
-          <option value="status">Status</option>
-        </select>
-      </div>
-      <div className="flex items-end gap-2">
-        <Button type="submit" className="h-11 px-6">
-          Apply
-        </Button>
-        <Link href="/admin/applications" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground">
-          Reset
-        </Link>
-      </div>
-    </form>
-  );
 }
 
 function ResponseBlock({ label, value }: { label: string; value: string }) {
