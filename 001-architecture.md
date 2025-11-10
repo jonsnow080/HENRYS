@@ -87,15 +87,15 @@ We need a cohesive system for managing a private community: a premium applicatio
 
 ```mermaid
 flowchart LR
-  A[Client (Browser)] --> B[Next.js App<br/>(SSR/ISR + Server Actions)]
-  B --> C[Auth.js (NextAuth)<br/>+ Prisma Adapter]
-  B --> D[PostgreSQL<br/>(via Prisma)]
-  B --> E[Stripe APIs<br/>Checkout + Billing Portal]
-  E --> F[/api/stripe/webhooks<br/>(Node runtime)]
+  A["Client (Browser)"] --> B["Next.js App\n(SSR/ISR + Server Actions)"]
+  B --> C["Auth.js (NextAuth)\n+ Prisma Adapter"]
+  B --> D["PostgreSQL\n(via Prisma)"]
+  B --> E["Stripe APIs\n(Checkout + Billing Portal)"]
+  E --> F["/api/stripe/webhooks\n(Node runtime)"]
   F --> D
-  B --> G[Email Providers<br/>Resend / SMTP via Nodemailer]
+  B --> G["Email Providers\n(Resend / SMTP via Nodemailer)"]
   subgraph Admin
-    H[Admin Console<br/>(/admin/*)]
+    H["Admin Console\n(/admin/*)"]
   end
   H --> B
 ```
