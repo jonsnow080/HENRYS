@@ -7,7 +7,7 @@ import { SignInForm } from "./sign-in-form";
 
 export const metadata: Metadata = {
   title: `Member login · ${SITE_COPY.name}`,
-  description: "Request a one-time magic link to access your HENRYS dashboard and events.",
+  description: "Sign in with a magic link or your password to access your HENRYS dashboard and events.",
 };
 
 export default async function LoginPage({
@@ -37,8 +37,8 @@ export default async function LoginPage({
       <header className="space-y-3 text-left">
         <h1 className="text-3xl font-semibold">Sign in</h1>
         <p className="text-sm text-muted-foreground">
-          Enter your member email and we&apos;ll email you a one-time magic link. The link expires in 15 minutes and
-          works on any device.
+          Choose whether to receive a one-time magic link or enter your password. Magic links expire in 15 minutes and
+          work on any device.
         </p>
       </header>
       <SignInForm redirectTo={redirectTo} initialEmail={initialEmail} />
