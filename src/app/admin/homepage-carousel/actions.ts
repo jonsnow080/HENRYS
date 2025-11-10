@@ -27,7 +27,7 @@ export async function createHomepageCarouselImageAction(formData: FormData) {
   const altText = formData.get("altText");
 
   if (typeof imageUrl !== "string" || imageUrl.trim().length === 0) {
-    return { error: "Image URL is required." };
+    throw new Error("Image URL is required.");
   }
 
   const trimmedUrl = imageUrl.trim();
@@ -48,7 +48,6 @@ export async function createHomepageCarouselImageAction(formData: FormData) {
   revalidatePath("/admin/homepage-carousel");
   revalidatePath("/");
 
-  return { success: true };
 }
 
 export async function deleteHomepageCarouselImageAction(formData: FormData) {
@@ -56,17 +55,11 @@ export async function deleteHomepageCarouselImageAction(formData: FormData) {
 
   const imageId = formData.get("imageId");
   if (typeof imageId !== "string" || imageId.trim().length === 0) {
-    return { error: "Missing image id." };
+    throw new Error("Missing image id.");
   }
 
-  try {
-    await prisma.homepageCarouselImage.delete({ where: { id: imageId } });
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "Unable to delete image." };
-  }
+  await prisma.homepageCarouselImage.delete({ where: { id: imageId } });
 
   revalidatePath("/admin/homepage-carousel");
   revalidatePath("/");
-
-  return { success: true };
 }
