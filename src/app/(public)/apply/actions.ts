@@ -1,9 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { ApplicationStatus } from "@/lib/prisma-constants";
-import { prisma } from "@/lib/prisma";
 import { applicationSchema } from "@/lib/application/schema";
+import { isCommonEmailDomain } from "@/lib/application/common-email-domains";
+import { ApplicationStatus, Role } from "@/lib/prisma-constants";
+import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email/send";
 import { applicationConfirmationTemplate } from "@/lib/email/templates";
 import { SITE_COPY } from "@/lib/site-copy";
@@ -52,6 +53,20 @@ export async function submitApplicationAction(
   };
 
   try {
+    const emailDomainIsTrusted = isCommonEmailDomain(payload.email);
+
+    if (!emailDomainIsTrusted) {
+      return {
+        success: false,
+        message: "Use a personal email from a well-known provider.",
+        fieldErrors: {
+          email: [
+            "This email provider doesn't look familiar. Please use something like Gmail, Outlook, or iCloud.",
+          ],
+        },
+      };
+    }
+
     const existing = await prisma.application.findFirst({
       where: {
         email: { equals: normalizedEmail, mode: "insensitive" },
@@ -65,7 +80,27 @@ export async function submitApplicationAction(
         success: false,
         message: "It looks like you've already applied with this email.",
         fieldErrors: {
-          email: ["This Gmail address has already been used for an application."],
+          email: ["This email address has already been used for an application."],
+        },
+      };
+    }
+
+    const existingMember = await prisma.user.findFirst({
+      where: {
+        email: { equals: payload.email, mode: "insensitive" },
+        OR: [
+          { role: { in: [Role.MEMBER, Role.HOST, Role.ADMIN] } },
+          { memberProfile: { isNot: null } },
+        ],
+      },
+    });
+
+    if (existingMember) {
+      return {
+        success: false,
+        message: "It looks like you're already a member.",
+        fieldErrors: {
+          email: ["This email address already belongs to a member."],
         },
       };
     }
