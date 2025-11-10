@@ -1,10 +1,12 @@
 import NextAuth from "next-auth";
 import type { NextAuthConfig } from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/lib/prisma-constants";
+import { verifyPassword } from "@/lib/password";
 
 const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
 
@@ -20,6 +22,52 @@ export const authConfig = {
     Resend({
       apiKey: process.env.AUTH_RESEND_KEY,
       from: process.env.AUTH_EMAIL_FROM ?? "HENRYS <no-reply@henrys.club>",
+    }),
+    Credentials({
+      name: "Password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email;
+        const password = credentials?.password;
+
+        if (typeof email !== "string" || typeof password !== "string") {
+          return null;
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+        if (!normalizedEmail || !password) {
+          return null;
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+          select: { id: true, email: true, name: true, passwordHash: true, role: true },
+        });
+
+        if (!user?.passwordHash) {
+          return null;
+        }
+
+        const validPassword = await verifyPassword(password, user.passwordHash);
+        if (!validPassword) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        } satisfies {
+          id: string;
+          email: string;
+          name: string | null;
+          role: Role;
+        };
+      },
     }),
   ],
   callbacks: {
