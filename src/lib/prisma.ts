@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { JsonValue } from "@/types/json";
 
 import { ApplicationStatus, Role, RsvpStatus } from "@/lib/prisma-constants";
 
@@ -388,7 +388,7 @@ type EventRsvpStub = {
   eventId: string;
   status: RsvpStatus;
   seatGroupId: string | null;
-  preferences: Prisma.JsonValue | null;
+  preferences: JsonValue | null;
   noShow: boolean;
   attended: boolean;
   createdAt: Date;
@@ -526,14 +526,14 @@ type EventRsvpUpsertArgs = {
     eventId: string;
     status?: RsvpStatus;
     seatGroupId?: string | null;
-    preferences?: Prisma.JsonValue | null;
+    preferences?: JsonValue | null;
     noShow?: boolean;
     attended?: boolean;
   };
   update: {
     status?: RsvpStatus;
     seatGroupId?: string | null;
-    preferences?: Prisma.JsonValue | null;
+    preferences?: JsonValue | null;
     noShow?: boolean;
     attended?: boolean;
   };
@@ -607,7 +607,7 @@ type EventRsvpUpdateArgs = {
   data: {
     status?: RsvpStatus;
     seatGroupId?: string | null;
-    preferences?: Prisma.JsonValue | null;
+    preferences?: JsonValue | null;
     noShow?: boolean;
     attended?: boolean;
   };
@@ -693,11 +693,11 @@ function clonePayload(payload: ApplicationPayload): ApplicationPayload {
   return JSON.parse(JSON.stringify(payload)) as ApplicationPayload;
 }
 
-function cloneJsonValue(value: Prisma.JsonValue | null | undefined): Prisma.JsonValue | null {
+function cloneJsonValue(value: JsonValue | null | undefined): JsonValue | null {
   if (value === null || value === undefined) {
     return value ?? null;
   }
-  return JSON.parse(JSON.stringify(value)) as Prisma.JsonValue;
+  return JSON.parse(JSON.stringify(value)) as JsonValue;
 }
 
 function cloneApplication(application: ApplicationStub): ApplicationStub {
