@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isCommonEmailDomain } from "./common-email-domains";
+
 export const dealBreakerOptions = [
   "Smoking",
   "Heavy drinking",
@@ -37,8 +39,8 @@ export const applicationSchema = z.object({
     .trim()
     .min(1, "An email is required")
     .email("Enter a valid email")
-    .refine((value) => value.toLowerCase().endsWith("@gmail.com"), {
-      message: "Use a personal Gmail address",
+    .refine(isCommonEmailDomain, {
+      message: "Use a personal email from a common provider (e.g. Gmail, Outlook, iCloud)",
     }),
   age: z
     .string()
