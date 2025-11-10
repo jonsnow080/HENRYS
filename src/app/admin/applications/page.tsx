@@ -20,7 +20,13 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FilterForm } from "./filter-form";
 import { renderMjml } from "@/lib/email/mjml";
-import { AGE_BANDS, SORT_OPTIONS, STATUS_OPTIONS, type AgeBandValue, statusLabel } from "./filter-constants";
+import {
+  AGE_BANDS,
+  SORT_OPTIONS,
+  STATUS_LABELS,
+  STATUS_OPTIONS,
+  type AgeBandValue,
+} from "./filter-constants";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -196,7 +202,7 @@ export default async function AdminApplicationsPage({
         <div className="flex flex-wrap gap-2 text-xs font-medium">
           {STATUS_OPTIONS.map((status) => (
             <Badge key={status} variant="muted" className="gap-2">
-              <span>{statusLabel(status)}</span>
+              <span>{STATUS_LABELS[status] ?? status}</span>
               <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
                 {statusCounts[status] ?? 0}
               </span>
@@ -407,7 +413,7 @@ export default async function AdminApplicationsPage({
               </option>
               {STATUS_OPTIONS.filter((status) => status !== ApplicationStatus.SUBMITTED).map((status) => (
                 <option key={status} value={status}>
-                  {statusLabel(status)}
+                  {STATUS_LABELS[status] ?? status}
                 </option>
               ))}
             </select>
@@ -519,7 +525,7 @@ function QuickActionButton({
         disabled={isCurrentStatus}
         title={
           isCurrentStatus
-            ? `${applicantName} is already ${statusLabel(status).toLowerCase()}.`
+            ? `${applicantName} is already ${(STATUS_LABELS[status] ?? status).toLowerCase()}.`
             : `${label} ${applicantName}`
         }
       >
@@ -539,7 +545,7 @@ function buildSuccessMessage(searchParams: SearchParams, fallbackCount: number) 
   if (!count || !status) {
     return `Updated ${count || "several"} applications.`;
   }
-  return `Updated ${count} application${count === 1 ? "" : "s"} to ${statusLabel(status)}.`;
+  return `Updated ${count} application${count === 1 ? "" : "s"} to ${STATUS_LABELS[status] ?? status}.`;
 }
 
 function formatDate(isoDate: string) {

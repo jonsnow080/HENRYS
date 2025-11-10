@@ -8,7 +8,7 @@ import type { ApplicationStatus } from '@/lib/prisma-constants';
 
 import { Input } from '@/components/ui/input';
 
-import { AGE_BANDS, SORT_OPTIONS, STATUS_OPTIONS, type AgeBandValue, statusLabel } from './filter-constants';
+import { AGE_BANDS, SORT_OPTIONS, STATUS_LABELS, STATUS_OPTIONS, type AgeBandValue } from './filter-constants';
 
 type FilterFormProps = {
   defaultQuery: string;
@@ -163,7 +163,7 @@ export function FilterForm({ defaultQuery, defaultStatus, defaultSort, defaultAg
           <option value="">All statuses</option>
           {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
-              {statusLabel(status)}
+              {STATUS_LABELS[status] ?? status}
             </option>
           ))}
         </select>

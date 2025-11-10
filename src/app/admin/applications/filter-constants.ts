@@ -2,6 +2,14 @@ import { ApplicationStatus } from '@/lib/prisma-constants';
 
 export const STATUS_OPTIONS = Object.values(ApplicationStatus);
 
+export const STATUS_LABELS: Record<ApplicationStatus, string> = {
+  [ApplicationStatus.SUBMITTED]: 'Submitted',
+  [ApplicationStatus.IN_REVIEW]: 'In review',
+  [ApplicationStatus.WAITLIST]: 'Waitlist',
+  [ApplicationStatus.APPROVED]: 'Approved',
+  [ApplicationStatus.REJECTED]: 'Rejected',
+};
+
 export const SORT_OPTIONS = ["newest", "oldest", "name", "status"] as const;
 
 export const AGE_BANDS = [
@@ -13,20 +21,3 @@ export const AGE_BANDS = [
 ] as const;
 
 export type AgeBandValue = (typeof AGE_BANDS)[number]['value'];
-
-export function statusLabel(status: ApplicationStatus) {
-  switch (status) {
-    case ApplicationStatus.SUBMITTED:
-      return "Submitted";
-    case ApplicationStatus.IN_REVIEW:
-      return "In review";
-    case ApplicationStatus.WAITLIST:
-      return "Waitlist";
-    case ApplicationStatus.APPROVED:
-      return "Approved";
-    case ApplicationStatus.REJECTED:
-      return "Rejected";
-    default:
-      return status;
-  }
-}
