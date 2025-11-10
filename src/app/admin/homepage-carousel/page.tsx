@@ -99,7 +99,7 @@ export default async function AdminHomepageCarouselPage() {
                       </span>
                       <CardTitle className="mt-1 text-base">{image.altText ?? "No alt text"}</CardTitle>
                     </div>
-                    <Badge variant={image.isEnabled ? "secondary" : "outline"} className="w-fit uppercase tracking-[0.25em]">
+                    <Badge variant={image.isEnabled ? "default" : "outline"} className="w-fit uppercase tracking-[0.25em]">
                       {image.isEnabled ? "Active" : "Disabled"}
                     </Badge>
                   </CardHeader>
