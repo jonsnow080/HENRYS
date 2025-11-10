@@ -202,7 +202,7 @@ export default async function AdminApplicationsPage({
         <div className="flex flex-wrap gap-2 text-xs font-medium">
           {STATUS_OPTIONS.map((status) => (
             <Badge key={status} variant="muted" className="gap-2">
-              <span>{STATUS_LABELS[status] ?? status}</span>
+              <span>{statusLabel(status)}</span>
               <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
                 {statusCounts[status] ?? 0}
               </span>
@@ -413,7 +413,7 @@ export default async function AdminApplicationsPage({
               </option>
               {STATUS_OPTIONS.filter((status) => status !== ApplicationStatus.SUBMITTED).map((status) => (
                 <option key={status} value={status}>
-                  {STATUS_LABELS[status] ?? status}
+                  {statusLabel(status)}
                 </option>
               ))}
             </select>
@@ -525,7 +525,7 @@ function QuickActionButton({
         disabled={isCurrentStatus}
         title={
           isCurrentStatus
-            ? `${applicantName} is already ${(STATUS_LABELS[status] ?? status).toLowerCase()}.`
+            ? `${applicantName} is already ${statusLabel(status).toLowerCase()}.`
             : `${label} ${applicantName}`
         }
       >
@@ -545,7 +545,11 @@ function buildSuccessMessage(searchParams: SearchParams, fallbackCount: number) 
   if (!count || !status) {
     return `Updated ${count || "several"} applications.`;
   }
-  return `Updated ${count} application${count === 1 ? "" : "s"} to ${STATUS_LABELS[status] ?? status}.`;
+  return `Updated ${count} application${count === 1 ? "" : "s"} to ${statusLabel(status)}.`;
+}
+
+function statusLabel(status: ApplicationStatus) {
+  return STATUS_LABELS[status] ?? status;
 }
 
 function formatDate(isoDate: string) {
