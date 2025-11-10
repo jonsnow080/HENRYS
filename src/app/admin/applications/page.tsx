@@ -93,7 +93,11 @@ export default async function AdminApplicationsPage({
   }
 
   type ApplicationFindManyArgs = Parameters<typeof prisma.application.findMany>[0];
-  type ApplicationOrderBy = NonNullable<NonNullable<ApplicationFindManyArgs>["orderBy"]>;
+  type ApplicationOrderBy = NonNullable<
+    NonNullable<ApplicationFindManyArgs> extends { orderBy?: infer OrderBy }
+      ? OrderBy
+      : never
+  >;
 
   const orderBy = (() => {
     switch (sort) {
