@@ -84,6 +84,11 @@ export default async function AdminHomePage() {
           description="Review RSVPs and spin up new gatherings in minutes."
         />
         <AdminLinkCard
+          href="/admin/homepage-carousel"
+          title="Homepage carousel"
+          description="Refresh the photos featured on the public site."
+        />
+        <AdminLinkCard
           href="/admin/email-previews"
           title="Email previews"
           description="Review transactional templates before they go out."

@@ -39,6 +39,55 @@ async function main() {
     });
   }
 
+  const carouselImages = [
+    {
+      imageUrl: "https://images.unsplash.com/photo-1529634898388-84d0fb4fb9b8?auto=format&fit=crop&w=1024&q=80",
+      altText: "Couple clinking cocktails at a candlelit bar table.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1024&q=80",
+      altText: "Friends laughing together in a vibrant lounge.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1544075571-21005b86c60c?auto=format&fit=crop&w=1024&q=80",
+      altText: "Couple sharing a toast in a dimly lit speakeasy.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1024&q=80",
+      altText: "Elegant pair posing beside the bar lights.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1024&q=80",
+      altText: "Group of friends sharing dinner and wine.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1511988617509-a57c8a288659?auto=format&fit=crop&w=1024&q=80",
+      altText: "Couple enjoying cocktails at a rooftop party.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1024&q=80",
+      altText: "Stylish guests mingling in a neon bar.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1506089676908-3592f7389d4d?auto=format&fit=crop&w=1024&q=80",
+      altText: "Smiling couple leaning in over candlelight.",
+    },
+  ];
+
+  const existingCarouselImages = await prisma.homepageCarouselImage.count();
+  if (existingCarouselImages === 0) {
+    for (const [index, image] of carouselImages.entries()) {
+      await prisma.homepageCarouselImage.create({
+        data: {
+          imageUrl: image.imageUrl,
+          altText: image.altText,
+          isEnabled: true,
+          sortOrder: index + 1,
+        },
+      });
+    }
+  }
+
   const now = Date.now();
   const fakeApplications = [
     {
