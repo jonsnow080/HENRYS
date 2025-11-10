@@ -80,8 +80,12 @@ type UserCreateArgs = {
   data: {
     email: string;
     name?: string | null;
+    emailVerified?: Date | null;
+    image?: string | null;
     role?: Role;
     passwordHash?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
   };
 };
 
@@ -90,34 +94,47 @@ type UserUpdateArgs = {
   data: {
     email?: string;
     name?: string | null;
+    emailVerified?: Date | null;
+    image?: string | null;
     role?: Role;
     passwordHash?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
   };
 };
 
+type SessionWhereUniqueInput =
+  | { id: string }
+  | { sessionToken: string };
+
 type SessionCreateArgs = {
   data: {
+    id?: string;
     sessionToken: string;
     userId: string;
     expires: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
   };
 };
 
 type SessionUpdateArgs = {
-  where: { sessionToken: string };
+  where: SessionWhereUniqueInput;
   data: Partial<{
     sessionToken: string;
     userId: string;
     expires: Date;
+    createdAt: Date;
+    updatedAt: Date;
   }>;
 };
 
 type SessionDeleteArgs = {
-  where: { sessionToken: string };
+  where: SessionWhereUniqueInput;
 };
 
 type SessionFindUniqueArgs = {
-  where: { sessionToken: string };
+  where: SessionWhereUniqueInput;
   include?: { user?: boolean };
 };
 
@@ -140,23 +157,53 @@ type VerificationTokenDeleteArgs = {
 type InviteCodeCreateArgs = {
   data: {
     code: string;
-    applicationId: string;
-    userId: string;
-    expiresAt: Date;
+    applicationId?: string | null;
+    userId?: string | null;
+    createdById?: string | null;
+    expiresAt?: Date | null;
+    redeemedAt?: Date | null;
+    createdAt?: Date;
   };
+};
+
+type MemberProfileInput = {
+  userId: string;
+  fullName: string;
+  age?: number | null;
+  city?: string | null;
+  occupation?: string | null;
+  linkedinUrl?: string | null;
+  instagramUrl?: string | null;
+  about?: string | null;
+  threeWords?: string | null;
+  perfectSaturday?: string | null;
+  dietaryPreferences?: string | null;
+  dietaryNotes?: string | null;
+  alcoholPreferences?: string | null;
+  vibeEnergy?: number | null;
+  dealBreakers?: string[];
+  personalityTags?: string[];
+  availabilityWindows?: unknown;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 type MemberProfileUpsertArgs = {
   where: { userId: string };
-  create: Record<string, unknown>;
-  update: Record<string, unknown>;
+  create: MemberProfileInput;
+  update: Partial<MemberProfileInput>;
 };
+
+type AccountWhereUniqueInput =
+  | { id: string }
+  | { provider_providerAccountId: { provider: string; providerAccountId: string } };
 
 type AccountCreateArgs = {
   data: {
+    id?: string;
     provider: string;
     providerAccountId: string;
-    type?: string;
+    type: string;
     userId: string;
     refresh_token?: string | null;
     access_token?: string | null;
@@ -167,20 +214,26 @@ type AccountCreateArgs = {
     session_state?: string | null;
     oauth_token_secret?: string | null;
     oauth_token?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
   };
 };
 
 type AccountDeleteArgs = {
-  where: { provider_providerAccountId: string };
+  where: AccountWhereUniqueInput;
 };
 
 type AccountFindUniqueArgs = {
-  where: { provider_providerAccountId: string };
+  where: AccountWhereUniqueInput;
   include?: { user?: boolean };
 };
 
 type AccountFindFirstArgs = {
-  where: { providerAccountId?: string; provider?: string };
+  where?: {
+    providerAccountId?: string;
+    provider?: string;
+    userId?: string;
+  };
 };
 
 type AuthenticatorCreateArgs = {
@@ -222,23 +275,47 @@ type ApplicationStub = {
 type UserStub = {
   id: string;
   email: string;
+  emailVerified: Date | null;
   name: string | null;
+  image: string | null;
   role: Role;
   passwordHash: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type MemberProfileStub = {
   id: string;
   userId: string;
-  data: Record<string, unknown>;
+  fullName: string;
+  age: number | null;
+  city: string | null;
+  occupation: string | null;
+  linkedinUrl: string | null;
+  instagramUrl: string | null;
+  about: string | null;
+  threeWords: string | null;
+  perfectSaturday: string | null;
+  dietaryPreferences: string | null;
+  dietaryNotes: string | null;
+  alcoholPreferences: string | null;
+  vibeEnergy: number | null;
+  dealBreakers: string[];
+  personalityTags: string[];
+  availabilityWindows: unknown;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type InviteCodeStub = {
   id: string;
   code: string;
-  applicationId: string;
-  userId: string;
-  expiresAt: Date;
+  applicationId: string | null;
+  userId: string | null;
+  createdById: string | null;
+  expiresAt: Date | null;
+  redeemedAt: Date | null;
+  createdAt: Date;
 };
 
 type SessionStub = {
@@ -246,6 +323,8 @@ type SessionStub = {
   sessionToken: string;
   userId: string;
   expires: Date;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type VerificationTokenStub = {
@@ -593,10 +672,11 @@ type AuditLogFindManyArgs = {
 };
 
 type AccountStub = {
+  id: string;
   provider_providerAccountId: string;
   provider: string;
   providerAccountId: string;
-  type?: string;
+  type: string;
   userId: string;
   refresh_token?: string | null;
   access_token?: string | null;
@@ -607,7 +687,11 @@ type AccountStub = {
   session_state?: string | null;
   oauth_token_secret?: string | null;
   oauth_token?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
+
+type AccountResult = Omit<AccountStub, "provider_providerAccountId">;
 
 type AuthenticatorStub = {
   id: string;
@@ -661,7 +745,12 @@ function cloneApplication(application: ApplicationStub): ApplicationStub {
 }
 
 function cloneUser(user: UserStub): UserStub {
-  return { ...user };
+  return {
+    ...user,
+    emailVerified: user.emailVerified ? new Date(user.emailVerified.getTime()) : null,
+    createdAt: new Date(user.createdAt.getTime()),
+    updatedAt: new Date(user.updatedAt.getTime()),
+  };
 }
 
 function cloneMembershipPlan(plan: MembershipPlanStub): MembershipPlanStub {
@@ -676,7 +765,13 @@ function cloneMembershipPlan(plan: MembershipPlanStub): MembershipPlanStub {
 function cloneMemberProfile(profile: MemberProfileStub): MemberProfileStub {
   return {
     ...profile,
-    data: JSON.parse(JSON.stringify(profile.data)),
+    dealBreakers: [...profile.dealBreakers],
+    personalityTags: [...profile.personalityTags],
+    availabilityWindows: profile.availabilityWindows
+      ? JSON.parse(JSON.stringify(profile.availabilityWindows))
+      : profile.availabilityWindows,
+    createdAt: new Date(profile.createdAt.getTime()),
+    updatedAt: new Date(profile.updatedAt.getTime()),
   };
 }
 
@@ -742,6 +837,45 @@ function cloneAuditLog(entry: AuditLogStub): AuditLogStub {
     ...entry,
     createdAt: new Date(entry.createdAt.getTime()),
     diffJSON: JSON.parse(JSON.stringify(entry.diffJSON)),
+  };
+}
+
+function cloneInviteCode(invite: InviteCodeStub): InviteCodeStub {
+  return {
+    ...invite,
+    expiresAt: invite.expiresAt ? new Date(invite.expiresAt.getTime()) : null,
+    redeemedAt: invite.redeemedAt ? new Date(invite.redeemedAt.getTime()) : null,
+    createdAt: new Date(invite.createdAt.getTime()),
+  };
+}
+
+function cloneSession(session: SessionStub): SessionStub {
+  return {
+    ...session,
+    expires: new Date(session.expires.getTime()),
+    createdAt: new Date(session.createdAt.getTime()),
+    updatedAt: new Date(session.updatedAt.getTime()),
+  };
+}
+
+function cloneAccount(account: AccountStub): AccountResult {
+  return {
+    id: account.id,
+    provider: account.provider,
+    providerAccountId: account.providerAccountId,
+    type: account.type,
+    userId: account.userId,
+    refresh_token: account.refresh_token ?? null,
+    access_token: account.access_token ?? null,
+    expires_at: account.expires_at ?? null,
+    token_type: account.token_type ?? null,
+    scope: account.scope ?? null,
+    id_token: account.id_token ?? null,
+    session_state: account.session_state ?? null,
+    oauth_token_secret: account.oauth_token_secret ?? null,
+    oauth_token: account.oauth_token ?? null,
+    createdAt: new Date(account.createdAt.getTime()),
+    updatedAt: new Date(account.updatedAt.getTime()),
   };
 }
 
@@ -954,20 +1088,30 @@ function hydrateApplication(application: ApplicationStub, include?: ApplicationI
 function ensureDefaultData() {
   if (stubData.users.length > 0 || stubData.applications.length > 0) return;
 
+  const now = new Date();
+
   const adminUser: UserStub = {
     id: "user-admin",
     email: "admin@henrys.club",
+    emailVerified: null,
     name: "Avery Admin",
+    image: null,
     role: Role.ADMIN,
     passwordHash: null,
+    createdAt: new Date(now.getTime()),
+    updatedAt: new Date(now.getTime()),
   };
 
   const memberUser: UserStub = {
     id: "user-member",
     email: "member@henrys.club",
+    emailVerified: null,
     name: "Morgan Member",
+    image: null,
     role: Role.MEMBER,
     passwordHash: null,
+    createdAt: new Date(now.getTime()),
+    updatedAt: new Date(now.getTime()),
   };
 
   stubData.users.push(adminUser, memberUser);
@@ -1205,6 +1349,49 @@ function matchesUserWhere(user: UserStub, where?: UserWhere): boolean {
   return true;
 }
 
+function resolveSession(where: SessionWhereUniqueInput): SessionStub | undefined {
+  if ("id" in where) {
+    return stubData.sessions.find((session) => session.id === where.id);
+  }
+  if ("sessionToken" in where) {
+    return stubData.sessions.find((session) => session.sessionToken === where.sessionToken);
+  }
+  return undefined;
+}
+
+function resolveSessionIndex(where: SessionWhereUniqueInput): number {
+  if ("id" in where) {
+    return stubData.sessions.findIndex((session) => session.id === where.id);
+  }
+  if ("sessionToken" in where) {
+    return stubData.sessions.findIndex((session) => session.sessionToken === where.sessionToken);
+  }
+  return -1;
+}
+
+function accountCompositeId(provider: string, providerAccountId: string): string {
+  return `${provider}_${providerAccountId}`;
+}
+
+function resolveAccountIndex(where: AccountWhereUniqueInput): number {
+  if ("id" in where) {
+    return stubData.accounts.findIndex((account) => account.id === where.id);
+  }
+  if ("provider_providerAccountId" in where) {
+    const compositeId = accountCompositeId(
+      where.provider_providerAccountId.provider,
+      where.provider_providerAccountId.providerAccountId,
+    );
+    return stubData.accounts.findIndex((account) => account.provider_providerAccountId === compositeId);
+  }
+  return -1;
+}
+
+function resolveAccount(where: AccountWhereUniqueInput): AccountStub | undefined {
+  const index = resolveAccountIndex(where);
+  return index === -1 ? undefined : stubData.accounts[index];
+}
+
 class PrismaClientStub {
   constructor() {
     ensureDefaultData();
@@ -1293,9 +1480,15 @@ class PrismaClientStub {
       const user: UserStub = {
         id: nextId("user"),
         email: args.data.email,
+        emailVerified: args.data.emailVerified ? new Date(args.data.emailVerified.getTime()) : null,
         name: args.data.name ?? null,
+        image: args.data.image ?? null,
         role: args.data.role ?? Role.MEMBER,
         passwordHash: args.data.passwordHash ?? null,
+        createdAt: args.data.createdAt ? new Date(args.data.createdAt.getTime()) : new Date(),
+        updatedAt: args.data.updatedAt
+          ? new Date(args.data.updatedAt.getTime())
+          : new Date(),
       };
       stubData.users.push(user);
       return cloneUser(user);
@@ -1307,8 +1500,20 @@ class PrismaClientStub {
       }
       if (args.data.email !== undefined) target.email = args.data.email;
       if (args.data.name !== undefined) target.name = args.data.name ?? null;
+      if (args.data.emailVerified !== undefined) {
+        target.emailVerified = args.data.emailVerified
+          ? new Date(args.data.emailVerified.getTime())
+          : null;
+      }
+      if (args.data.image !== undefined) target.image = args.data.image ?? null;
       if (args.data.role !== undefined) target.role = args.data.role;
       if (args.data.passwordHash !== undefined) target.passwordHash = args.data.passwordHash ?? null;
+      if (args.data.createdAt !== undefined) {
+        target.createdAt = new Date(args.data.createdAt.getTime());
+      }
+      target.updatedAt = args.data.updatedAt
+        ? new Date(args.data.updatedAt.getTime())
+        : new Date();
       return cloneUser(target);
     },
     delete: async (args: { where: UserWhere }) => {
@@ -1347,12 +1552,65 @@ class PrismaClientStub {
       ensureDefaultData();
       let profile = stubData.memberProfiles.find((entry) => entry.userId === args.where.userId);
       if (profile) {
-        profile.data = { ...profile.data, ...args.update };
+        if (args.update.fullName !== undefined) profile.fullName = args.update.fullName ?? profile.fullName;
+        if (args.update.age !== undefined) profile.age = args.update.age ?? null;
+        if (args.update.city !== undefined) profile.city = args.update.city ?? null;
+        if (args.update.occupation !== undefined) profile.occupation = args.update.occupation ?? null;
+        if (args.update.linkedinUrl !== undefined) profile.linkedinUrl = args.update.linkedinUrl ?? null;
+        if (args.update.instagramUrl !== undefined) profile.instagramUrl = args.update.instagramUrl ?? null;
+        if (args.update.about !== undefined) profile.about = args.update.about ?? null;
+        if (args.update.threeWords !== undefined) profile.threeWords = args.update.threeWords ?? null;
+        if (args.update.perfectSaturday !== undefined)
+          profile.perfectSaturday = args.update.perfectSaturday ?? null;
+        if (args.update.dietaryPreferences !== undefined)
+          profile.dietaryPreferences = args.update.dietaryPreferences ?? null;
+        if (args.update.dietaryNotes !== undefined) profile.dietaryNotes = args.update.dietaryNotes ?? null;
+        if (args.update.alcoholPreferences !== undefined)
+          profile.alcoholPreferences = args.update.alcoholPreferences ?? null;
+        if (args.update.vibeEnergy !== undefined) profile.vibeEnergy = args.update.vibeEnergy ?? null;
+        if (args.update.dealBreakers !== undefined)
+          profile.dealBreakers = args.update.dealBreakers ? [...args.update.dealBreakers] : [];
+        if (args.update.personalityTags !== undefined)
+          profile.personalityTags = args.update.personalityTags ? [...args.update.personalityTags] : [];
+        if (args.update.availabilityWindows !== undefined) {
+          profile.availabilityWindows = args.update.availabilityWindows
+            ? JSON.parse(JSON.stringify(args.update.availabilityWindows))
+            : null;
+        }
+        if (args.update.createdAt !== undefined) {
+          profile.createdAt = new Date(args.update.createdAt.getTime());
+        }
+        profile.updatedAt = args.update.updatedAt
+          ? new Date(args.update.updatedAt.getTime())
+          : new Date();
       } else {
         profile = {
           id: nextId("profile"),
-          userId: args.where.userId,
-          data: { ...args.create },
+          userId: args.create.userId ?? args.where.userId,
+          fullName: args.create.fullName,
+          age: args.create.age ?? null,
+          city: args.create.city ?? null,
+          occupation: args.create.occupation ?? null,
+          linkedinUrl: args.create.linkedinUrl ?? null,
+          instagramUrl: args.create.instagramUrl ?? null,
+          about: args.create.about ?? null,
+          threeWords: args.create.threeWords ?? null,
+          perfectSaturday: args.create.perfectSaturday ?? null,
+          dietaryPreferences: args.create.dietaryPreferences ?? null,
+          dietaryNotes: args.create.dietaryNotes ?? null,
+          alcoholPreferences: args.create.alcoholPreferences ?? null,
+          vibeEnergy: args.create.vibeEnergy ?? null,
+          dealBreakers: args.create.dealBreakers ? [...args.create.dealBreakers] : [],
+          personalityTags: args.create.personalityTags ? [...args.create.personalityTags] : [],
+          availabilityWindows: args.create.availabilityWindows
+            ? JSON.parse(JSON.stringify(args.create.availabilityWindows))
+            : null,
+          createdAt: args.create.createdAt
+            ? new Date(args.create.createdAt.getTime())
+            : new Date(),
+          updatedAt: args.create.updatedAt
+            ? new Date(args.create.updatedAt.getTime())
+            : new Date(),
         };
         stubData.memberProfiles.push(profile);
       }
@@ -1365,12 +1623,15 @@ class PrismaClientStub {
       const invite: InviteCodeStub = {
         id: nextId("invite"),
         code: args.data.code,
-        applicationId: args.data.applicationId,
-        userId: args.data.userId,
-        expiresAt: new Date(args.data.expiresAt.getTime()),
+        applicationId: args.data.applicationId ?? null,
+        userId: args.data.userId ?? null,
+        createdById: args.data.createdById ?? null,
+        expiresAt: args.data.expiresAt ? new Date(args.data.expiresAt.getTime()) : null,
+        redeemedAt: args.data.redeemedAt ? new Date(args.data.redeemedAt.getTime()) : null,
+        createdAt: args.data.createdAt ? new Date(args.data.createdAt.getTime()) : new Date(),
       };
       stubData.inviteCodes.push(invite);
-      return { ...invite };
+      return cloneInviteCode(invite);
     },
   };
 
@@ -1895,43 +2156,50 @@ class PrismaClientStub {
   session = {
     create: async (args: SessionCreateArgs) => {
       const session: SessionStub = {
-        id: nextId("session"),
+        id: args.data.id ?? nextId("session"),
         sessionToken: args.data.sessionToken,
         userId: args.data.userId,
         expires: new Date(args.data.expires.getTime()),
+        createdAt: args.data.createdAt ? new Date(args.data.createdAt.getTime()) : new Date(),
+        updatedAt: args.data.updatedAt ? new Date(args.data.updatedAt.getTime()) : new Date(),
       };
       stubData.sessions.push(session);
-      return { ...session };
+      return cloneSession(session);
     },
     update: async (args: SessionUpdateArgs) => {
-      const target = stubData.sessions.find((session) => session.sessionToken === args.where.sessionToken);
+      const target = resolveSession(args.where);
       if (!target) {
         throw new Error("Session not found in stub");
       }
       if (args.data.sessionToken !== undefined) target.sessionToken = args.data.sessionToken;
       if (args.data.userId !== undefined) target.userId = args.data.userId;
       if (args.data.expires !== undefined) target.expires = new Date(args.data.expires.getTime());
-      return { ...target };
+      if (args.data.createdAt !== undefined) target.createdAt = new Date(args.data.createdAt.getTime());
+      target.updatedAt = args.data.updatedAt
+        ? new Date(args.data.updatedAt.getTime())
+        : new Date();
+      return cloneSession(target);
     },
     delete: async (args: SessionDeleteArgs) => {
-      const index = stubData.sessions.findIndex((session) => session.sessionToken === args.where.sessionToken);
+      const index = resolveSessionIndex(args.where);
       if (index === -1) {
         throw new Error("Session not found in stub");
       }
       const [removed] = stubData.sessions.splice(index, 1);
-      return { ...removed };
+      return cloneSession(removed);
     },
     findUnique: async (args: SessionFindUniqueArgs) => {
-      const session = stubData.sessions.find((entry) => entry.sessionToken === args.where.sessionToken);
+      const session = resolveSession(args.where);
       if (!session) return null;
+      const base = cloneSession(session);
       if (args.include?.user) {
         const user = stubData.users.find((candidate) => candidate.id === session.userId) ?? null;
         return {
-          ...session,
+          ...base,
           user: user ? cloneUser(user) : null,
         };
       }
-      return { ...session };
+      return base;
     },
     deleteMany: async (args?: SessionDeleteManyArgs) => {
       if (!args?.where?.user?.email) {
@@ -1950,54 +2218,57 @@ class PrismaClientStub {
 
   account = {
     create: async (args: AccountCreateArgs) => {
-      const compositeId = `${args.data.provider}_${args.data.providerAccountId}`;
+      const compositeId = accountCompositeId(args.data.provider, args.data.providerAccountId);
       const account: AccountStub = {
+        id: args.data.id ?? nextId("account"),
         provider_providerAccountId: compositeId,
         provider: args.data.provider,
         providerAccountId: args.data.providerAccountId,
         type: args.data.type,
         userId: args.data.userId,
-        refresh_token: args.data.refresh_token,
-        access_token: args.data.access_token,
-        expires_at: args.data.expires_at,
-        token_type: args.data.token_type,
-        scope: args.data.scope,
-        id_token: args.data.id_token,
-        session_state: args.data.session_state,
-        oauth_token_secret: args.data.oauth_token_secret,
-        oauth_token: args.data.oauth_token,
+        refresh_token: args.data.refresh_token ?? null,
+        access_token: args.data.access_token ?? null,
+        expires_at: args.data.expires_at ?? null,
+        token_type: args.data.token_type ?? null,
+        scope: args.data.scope ?? null,
+        id_token: args.data.id_token ?? null,
+        session_state: args.data.session_state ?? null,
+        oauth_token_secret: args.data.oauth_token_secret ?? null,
+        oauth_token: args.data.oauth_token ?? null,
+        createdAt: args.data.createdAt ? new Date(args.data.createdAt.getTime()) : new Date(),
+        updatedAt: args.data.updatedAt ? new Date(args.data.updatedAt.getTime()) : new Date(),
       };
       stubData.accounts.push(account);
-      return { ...account };
+      return cloneAccount(account);
     },
     delete: async (args: AccountDeleteArgs) => {
-      const index = stubData.accounts.findIndex(
-        (account) => account.provider_providerAccountId === args.where.provider_providerAccountId,
-      );
+      const index = resolveAccountIndex(args.where);
       if (index === -1) {
         throw new Error("Account not found in stub");
       }
       const [removed] = stubData.accounts.splice(index, 1);
-      return { ...removed };
+      return cloneAccount(removed);
     },
     findUnique: async (args: AccountFindUniqueArgs) => {
-      const account = stubData.accounts.find(
-        (entry) => entry.provider_providerAccountId === args.where.provider_providerAccountId,
-      );
+      const account = resolveAccount(args.where);
       if (!account) return null;
+      const base = cloneAccount(account);
       if (args.include?.user) {
         const user = stubData.users.find((candidate) => candidate.id === account.userId) ?? null;
-        return { ...account, user: user ? cloneUser(user) : null };
+        return { ...base, user: user ? cloneUser(user) : null };
       }
-      return { ...account };
+      return base;
     },
     findFirst: async (args: AccountFindFirstArgs) => {
       const account = stubData.accounts.find((entry) => {
+        if (!args?.where) return true;
         if (args.where.provider && entry.provider !== args.where.provider) return false;
-        if (args.where.providerAccountId && entry.providerAccountId !== args.where.providerAccountId) return false;
+        if (args.where.providerAccountId && entry.providerAccountId !== args.where.providerAccountId)
+          return false;
+        if (args.where.userId && entry.userId !== args.where.userId) return false;
         return true;
       });
-      return account ? { ...account } : null;
+      return account ? cloneAccount(account) : null;
     },
   };
 
