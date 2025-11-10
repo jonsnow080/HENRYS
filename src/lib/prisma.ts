@@ -287,6 +287,15 @@ type PaymentStub = {
   createdAt: Date;
 };
 
+type HomepageCarouselImageStub = {
+  id: string;
+  imageUrl: string;
+  altText: string | null;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type EventStub = {
   id: string;
   slug: string;
@@ -428,6 +437,28 @@ type PaymentUpdateArgs = {
     receiptUrl?: string | null;
     description?: string | null;
   };
+};
+
+type SortDirection = "asc" | "desc";
+
+type HomepageCarouselImageFindManyArgs = {
+  orderBy?:
+    | { sortOrder?: SortDirection; createdAt?: SortDirection }
+    | { sortOrder?: SortDirection; createdAt?: SortDirection }[];
+};
+
+type HomepageCarouselImageFindFirstArgs = HomepageCarouselImageFindManyArgs;
+
+type HomepageCarouselImageCreateArgs = {
+  data: {
+    imageUrl: string;
+    altText?: string | null;
+    sortOrder?: number;
+  };
+};
+
+type HomepageCarouselImageDeleteArgs = {
+  where: { id: string };
 };
 
 type EventFindManyArgs = {
@@ -602,6 +633,7 @@ const stubData = {
   membershipPlans: [] as MembershipPlanStub[],
   subscriptions: [] as SubscriptionStub[],
   payments: [] as PaymentStub[],
+  homepageCarouselImages: [] as HomepageCarouselImageStub[],
   events: [] as EventStub[],
   eventRsvps: [] as EventRsvpStub[],
   seatGroups: [] as SeatGroupStub[],
@@ -663,6 +695,14 @@ function clonePayment(payment: PaymentStub): PaymentStub {
   return {
     ...payment,
     createdAt: new Date(payment.createdAt.getTime()),
+  };
+}
+
+function cloneHomepageCarouselImage(image: HomepageCarouselImageStub): HomepageCarouselImageStub {
+  return {
+    ...image,
+    createdAt: new Date(image.createdAt.getTime()),
+    updatedAt: new Date(image.updatedAt.getTime()),
   };
 }
 
@@ -998,6 +1038,49 @@ function ensureDefaultData() {
     };
 
     stubData.membershipPlans.push(monthly, annual);
+  }
+
+  if (stubData.homepageCarouselImages.length === 0) {
+    const defaults: HomepageCarouselImageStub[] = [
+      {
+        id: "carousel-1",
+        imageUrl:
+          "https://images.unsplash.com/photo-1529634898388-84d0fb4fb9b8?auto=format&fit=crop&w=1024&q=80",
+        altText: "Couple clinking cocktails at a candlelit bar table.",
+        sortOrder: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-2",
+        imageUrl:
+          "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1024&q=80",
+        altText: "Friends laughing together in a vibrant lounge.",
+        sortOrder: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-3",
+        imageUrl:
+          "https://images.unsplash.com/photo-1544075571-21005b86c60c?auto=format&fit=crop&w=1024&q=80",
+        altText: "Couple sharing a toast in a dimly lit speakeasy.",
+        sortOrder: 3,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-4",
+        imageUrl:
+          "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1024&q=80",
+        altText: "Elegant pair posing beside the bar lights.",
+        sortOrder: 4,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    stubData.homepageCarouselImages.push(...defaults);
   }
 
   if (stubData.events.length === 0) {
@@ -1490,6 +1573,75 @@ class PrismaClientStub {
       if (args.data.receiptUrl !== undefined) payment.receiptUrl = args.data.receiptUrl;
       if (args.data.description !== undefined) payment.description = args.data.description;
       return clonePayment(payment);
+    },
+  };
+
+  homepageCarouselImage = {
+    findMany: async (args?: HomepageCarouselImageFindManyArgs) => {
+      ensureDefaultData();
+      let images = stubData.homepageCarouselImages.map((image) =>
+        cloneHomepageCarouselImage(image),
+      );
+
+      if (args?.orderBy) {
+        const rules = Array.isArray(args.orderBy)
+          ? args.orderBy
+          : [args.orderBy];
+        for (const rule of rules) {
+          if (rule.sortOrder) {
+            const direction = rule.sortOrder;
+            images = images.sort((a, b) =>
+              direction === "asc"
+                ? a.sortOrder - b.sortOrder
+                : b.sortOrder - a.sortOrder,
+            );
+            continue;
+          }
+          if (rule.createdAt) {
+            const direction = rule.createdAt;
+            images = images.sort((a, b) =>
+              direction === "asc"
+                ? a.createdAt.getTime() - b.createdAt.getTime()
+                : b.createdAt.getTime() - a.createdAt.getTime(),
+            );
+          }
+        }
+      }
+
+      return images;
+    },
+    findFirst: async (args?: HomepageCarouselImageFindFirstArgs) => {
+      const results = await this.homepageCarouselImage.findMany({
+        orderBy: args?.orderBy,
+      });
+      return results[0] ?? null;
+    },
+    create: async (args: HomepageCarouselImageCreateArgs) => {
+      ensureDefaultData();
+      const image: HomepageCarouselImageStub = {
+        id: nextId("carousel"),
+        imageUrl: args.data.imageUrl,
+        altText: args.data.altText ?? null,
+        sortOrder:
+          args.data.sortOrder ??
+          (stubData.homepageCarouselImages[stubData.homepageCarouselImages.length - 1]?.sortOrder ?? 0) +
+            1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      stubData.homepageCarouselImages.push(image);
+      return cloneHomepageCarouselImage(image);
+    },
+    delete: async (args: HomepageCarouselImageDeleteArgs) => {
+      ensureDefaultData();
+      const index = stubData.homepageCarouselImages.findIndex(
+        (image) => image.id === args.where.id,
+      );
+      if (index === -1) {
+        throw new Error("Carousel image not found in stub");
+      }
+      const [removed] = stubData.homepageCarouselImages.splice(index, 1);
+      return cloneHomepageCarouselImage(removed);
     },
   };
 

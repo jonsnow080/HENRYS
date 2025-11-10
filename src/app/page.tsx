@@ -3,7 +3,14 @@ import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { prisma } from "@/lib/prisma";
 import { SITE_COPY } from "@/lib/site-copy";
+
+export const revalidate = 0;
+
+type HomepageCarouselImageRecord = Awaited<
+  ReturnType<typeof prisma.homepageCarouselImage.findMany>
+>[number];
 
 const pillars = [
   {
@@ -48,7 +55,7 @@ const membershipSteps = [
   },
 ];
 
-const eventGallery = [
+const DEFAULT_EVENT_GALLERY = [
   {
     src: "/images/event-gallery/date-night-toast.svg",
     alt: "Graphic treatment of a date night toast in twilight tones.",
@@ -127,8 +134,19 @@ const eventGallery = [
   },
 ];
 
-export default function HomePage() {
-  const marqueeImages = [...eventGallery, ...eventGallery];
+export default async function HomePage() {
+  const carouselRecords = await prisma.homepageCarouselImage.findMany({
+    orderBy: { sortOrder: "asc" },
+  });
+
+  const carouselImages = carouselRecords.length
+    ? carouselRecords.map((image: HomepageCarouselImageRecord) => ({
+        src: image.imageUrl,
+        alt: image.altText ?? "Members enjoying a HENRYS gathering.",
+      }))
+    : DEFAULT_EVENT_GALLERY;
+
+  const marqueeImages = [...carouselImages, ...carouselImages];
 
   return (
     <div className="px-4 pb-16 pt-12 sm:px-6 lg:px-8">
