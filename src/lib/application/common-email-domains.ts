@@ -52,7 +52,7 @@ export const COMMON_EMAIL_DOMAINS = [
   "rediffmail.com",
 ] as const;
 
-const COMMON_EMAIL_DOMAIN_SET = new Set(COMMON_EMAIL_DOMAINS);
+const COMMON_EMAIL_DOMAIN_SET = new Set<string>(COMMON_EMAIL_DOMAINS);
 
 export function getEmailDomain(email: string): string | null {
   const [, domain] = email.toLowerCase().split("@");
