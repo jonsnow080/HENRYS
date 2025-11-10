@@ -86,7 +86,7 @@ export default async function AdminHomepageCarouselPage() {
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {images.map((image: HomepageCarouselImage, index) => {
+            {images.map((image: HomepageCarouselImage, index: number) => {
               const isFirst = index === 0;
               const isLast = index === images.length - 1;
 
