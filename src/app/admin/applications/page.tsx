@@ -1,6 +1,5 @@
 import type { ComponentProps } from "react";
 import type { Metadata } from "next";
-import type { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { ApplicationStatus } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
@@ -93,19 +92,21 @@ export default async function AdminApplicationsPage({
     where.status = selectedStatus;
   }
 
-  const orderBy: Prisma.ApplicationOrderByWithRelationInput | Prisma.ApplicationOrderByWithRelationInput[] =
-    (() => {
-      switch (sort) {
-        case "oldest":
-          return { createdAt: "asc" } as const;
-        case "name":
-          return [{ fullName: "asc" }, { createdAt: "desc" }] as const;
-        case "status":
-          return [{ status: "asc" }, { createdAt: "desc" }] as const;
-        default:
-          return { createdAt: "desc" } as const;
-      }
-    })();
+  type ApplicationFindManyArgs = Parameters<typeof prisma.application.findMany>[0];
+  type ApplicationOrderBy = NonNullable<NonNullable<ApplicationFindManyArgs>["orderBy"]>;
+
+  const orderBy = (() => {
+    switch (sort) {
+      case "oldest":
+        return { createdAt: "asc" } as const;
+      case "name":
+        return [{ fullName: "asc" }, { createdAt: "desc" }] as const;
+      case "status":
+        return [{ status: "asc" }, { createdAt: "desc" }] as const;
+      default:
+        return { createdAt: "desc" } as const;
+    }
+  })() satisfies ApplicationOrderBy;
 
   const applications = (await prisma.application.findMany({
     where,
