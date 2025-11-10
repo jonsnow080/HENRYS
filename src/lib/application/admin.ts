@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
 
 import { ApplicationStatus, Role } from "@/lib/prisma-constants";
@@ -63,7 +64,7 @@ export async function approveApplication({
 
   const transactionalPrisma = prisma as unknown as PrismaClient;
 
-  return transactionalPrisma.$transaction(async (tx) => {
+  return transactionalPrisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const client = tx as typeof prisma;
 
     let user = await client.user.findUnique({ where: { email: application.email } });
