@@ -8,6 +8,10 @@ import { SITE_COPY } from "@/lib/site-copy";
 
 export const revalidate = 0;
 
+type HomepageCarouselImageRecord = Awaited<
+  ReturnType<typeof prisma.homepageCarouselImage.findMany>
+>[number];
+
 const pillars = [
   {
     title: "Curation first",
@@ -136,7 +140,7 @@ export default async function HomePage() {
   });
 
   const carouselImages = carouselRecords.length
-    ? carouselRecords.map((image) => ({
+    ? carouselRecords.map((image: HomepageCarouselImageRecord) => ({
         src: image.imageUrl,
         alt: image.altText ?? "Members enjoying a HENRYS gathering.",
       }))
