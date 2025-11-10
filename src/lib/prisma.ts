@@ -26,9 +26,7 @@ type ApplicationWhere = {
 
 type OrderRule = Record<string, "asc" | "desc">;
 
-type PrismaOrderBy = Prisma.ApplicationOrderByWithRelationInput | Prisma.ApplicationOrderByWithRelationInput[];
-
-type OrderBy = OrderRule | OrderRule[] | PrismaOrderBy | undefined;
+type OrderBy = OrderRule | OrderRule[] | undefined;
 
 type ReviewerSelection = {
   select?: {
