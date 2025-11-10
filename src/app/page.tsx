@@ -50,6 +50,22 @@ const membershipSteps = [
 
 const eventGallery = [
   {
+    src: "/images/event-gallery/date-night-toast.svg",
+    alt: "Graphic treatment of a date night toast in twilight tones.",
+  },
+  {
+    src: "/images/event-gallery/speakeasy-lounge.svg",
+    alt: "Graphic treatment of a speakeasy lounge scene in gold light.",
+  },
+  {
+    src: "/images/event-gallery/rooftop-soiree.svg",
+    alt: "Graphic treatment of a rooftop soirée in teal night hues.",
+  },
+  {
+    src: "/images/event-gallery/supper-club.svg",
+    alt: "Graphic treatment of a supper club moment in warm gradients.",
+  },
+  {
     src: "https://images.unsplash.com/photo-1529634898388-84d0fb4fb9b8?auto=format&fit=crop&w=1024&q=80",
     alt: "Couple clinking cocktails at a candlelit bar table.",
   },

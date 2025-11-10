@@ -1,0 +1,19 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1200' role='img' aria-labelledby='title'>
+  <title>Speakeasy Lounge</title>
+  <defs>
+    <linearGradient id='g' x1='0%' y1='0%' x2='0%' y2='100%'>
+      <stop offset='0%' stop-color='#0f203f' />
+      <stop offset='100%' stop-color='#fcbf49' />
+    </linearGradient>
+  </defs>
+  <rect width='1600' height='1200' fill='url(#g)' rx='120' />
+  <g fill='rgba(255, 245, 235, 0.85)' font-family="'Poppins', 'Helvetica Neue', Arial, sans-serif" font-weight='600' font-size='120' text-anchor='middle'>
+    <text x='800' y='620'>Speakeasy Lounge</text>
+  </g>
+  <g stroke='rgba(255,255,255,0.32)' stroke-width='8'>
+    <path d='M420 380 q80 -120 200 0' fill='none' />
+    <path d='M1180 420 q-120 -180 -260 20' fill='none' />
+    <path d='M530 830 q160 140 360 -40' fill='none' />
+    <path d='M1100 780 q-200 200 -420 40' fill='none' />
+  </g>
+</svg>
