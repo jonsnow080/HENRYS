@@ -86,8 +86,48 @@ export default async function EventRsvpsPage({
   for (const rsvp of rsvps) {
     const user = userMap.get(rsvp.userId);
     const profile = profileMap.get(rsvp.userId);
-    const data = (profile?.data ?? {}) as Record<string, unknown>;
     const seatGroup = rsvp.seatGroupId ? seatGroupMap.get(rsvp.seatGroupId) : null;
+
+    let age: number | undefined;
+    let vibe: number | undefined;
+    let dietary: string | undefined;
+    let dietaryNotes: string | undefined;
+
+    if (profile && typeof profile === "object") {
+      if ("data" in profile && profile.data && typeof profile.data === "object") {
+        const data = profile.data as Record<string, unknown>;
+        if (typeof data.age === "number") {
+          age = data.age;
+        }
+        if (typeof data.vibeEnergy === "number") {
+          vibe = data.vibeEnergy;
+        }
+        if (typeof data.dietaryPreferences === "string") {
+          dietary = data.dietaryPreferences;
+        }
+        if (typeof data.dietaryNotes === "string") {
+          dietaryNotes = data.dietaryNotes;
+        }
+      } else {
+        const maybeAge = (profile as { age?: unknown }).age;
+        if (typeof maybeAge === "number") {
+          age = maybeAge;
+        }
+        const maybeVibe = (profile as { vibeEnergy?: unknown }).vibeEnergy;
+        if (typeof maybeVibe === "number") {
+          vibe = maybeVibe;
+        }
+        const maybeDietary = (profile as { dietaryPreferences?: unknown }).dietaryPreferences;
+        if (typeof maybeDietary === "string") {
+          dietary = maybeDietary;
+        }
+        const maybeDietaryNotes = (profile as { dietaryNotes?: unknown }).dietaryNotes;
+        if (typeof maybeDietaryNotes === "string") {
+          dietaryNotes = maybeDietaryNotes;
+        }
+      }
+    }
+
     adminRsvps.push({
       id: rsvp.id,
       status: rsvp.status as RsvpStatus,
@@ -99,10 +139,10 @@ export default async function EventRsvpsPage({
         email: user?.email ?? "",
       },
       profile: {
-        age: typeof data.age === "number" ? data.age : undefined,
-        vibe: typeof data.vibeEnergy === "number" ? (data.vibeEnergy as number) : undefined,
-        dietary: typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : undefined,
-        dietaryNotes: typeof data.dietaryNotes === "string" ? (data.dietaryNotes as string) : undefined,
+        age,
+        vibe,
+        dietary,
+        dietaryNotes,
       },
       seatGroup: seatGroup
         ? {

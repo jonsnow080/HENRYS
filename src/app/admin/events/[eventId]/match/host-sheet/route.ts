@@ -54,9 +54,30 @@ export async function GET(
     for (const rsvp of assignments) {
       const user = userMap.get(rsvp.userId);
       const profile = profileMap.get(rsvp.userId);
-      const data = (profile?.data ?? {}) as Record<string, unknown>;
-      const dietary = typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : "";
-      const vibe = typeof data.vibeEnergy === "number" ? `${data.vibeEnergy}/10` : "";
+      let dietary = "";
+      let vibe = "";
+
+      if (profile && typeof profile === "object") {
+        if ("data" in profile && profile.data && typeof profile.data === "object") {
+          const data = profile.data as Record<string, unknown>;
+          if (typeof data.dietaryPreferences === "string") {
+            dietary = data.dietaryPreferences;
+          }
+          if (typeof data.vibeEnergy === "number") {
+            vibe = `${data.vibeEnergy}/10`;
+          }
+        } else {
+          const maybeDietary = (profile as { dietaryPreferences?: unknown }).dietaryPreferences;
+          if (typeof maybeDietary === "string") {
+            dietary = maybeDietary;
+          }
+          const maybeVibe = (profile as { vibeEnergy?: unknown }).vibeEnergy;
+          if (typeof maybeVibe === "number") {
+            vibe = `${maybeVibe}/10`;
+          }
+        }
+      }
+
       rowsParts.push(
         `<tr><td>${user?.name ?? ""}</td><td>${user?.email ?? ""}</td><td>${dietary}</td><td>${vibe}</td></tr>`,
       );

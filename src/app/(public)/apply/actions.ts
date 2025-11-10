@@ -1,5 +1,7 @@
 "use server";
 
+import type { PrismaClient } from "@prisma/client";
+
 import { redirect } from "next/navigation";
 import { applicationSchema } from "@/lib/application/schema";
 import { isCommonEmailDomain } from "@/lib/application/common-email-domains";
@@ -105,8 +107,12 @@ export async function submitApplicationAction(
       };
     }
 
-    await prisma.$transaction(async (tx: typeof prisma) => {
-      await tx.application.create({
+    const transactionalPrisma = prisma as unknown as PrismaClient;
+
+    await transactionalPrisma.$transaction(async (tx) => {
+      const client = tx as typeof prisma;
+
+      await client.application.create({
         data: {
           email: payload.email,
           fullName: payload.fullName,
@@ -115,7 +121,7 @@ export async function submitApplicationAction(
         },
       });
 
-      await tx.applicant.upsert({
+      await client.applicant.upsert({
         where: { email: payload.email },
         create: {
           email: payload.email,

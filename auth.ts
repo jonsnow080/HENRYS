@@ -10,8 +10,12 @@ import { verifyPassword } from "@/lib/password";
 
 const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
 
+type PrismaAdapterClient = Parameters<typeof PrismaAdapter>[0];
+
+const prismaAdapterClient = prisma as unknown as PrismaAdapterClient;
+
 export const authConfig = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prismaAdapterClient),
   session: {
     strategy: "jwt",
   },

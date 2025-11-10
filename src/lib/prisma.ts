@@ -1,4 +1,6 @@
-import { ApplicationStatus, Role } from "@/lib/prisma-constants";
+import type { Prisma } from "@prisma/client";
+
+import { ApplicationStatus, Role, RsvpStatus } from "@/lib/prisma-constants";
 
 type ApplicationPayload = Record<string, unknown>;
 
@@ -24,7 +26,9 @@ type ApplicationWhere = {
 
 type OrderRule = Record<string, "asc" | "desc">;
 
-type OrderBy = OrderRule | OrderRule[] | undefined;
+type PrismaOrderBy = Prisma.ApplicationOrderByWithRelationInput | Prisma.ApplicationOrderByWithRelationInput[];
+
+type OrderBy = OrderRule | OrderRule[] | PrismaOrderBy | undefined;
 
 type ReviewerSelection = {
   select?: {
@@ -135,6 +139,53 @@ type VerificationTokenCreateArgs = {
 
 type VerificationTokenDeleteArgs = {
   where: { identifier_token: { identifier: string; token: string } };
+};
+
+type VerificationTokenDeleteManyArgs = {
+  where?: { identifier?: string };
+};
+
+type ApplicantUpsertArgs = {
+  where: { email: string };
+  create: {
+    fullName: string;
+    email: string;
+    age: number;
+    city: string;
+    occupation: string;
+    linkedin?: string | null;
+    instagram?: string | null;
+    vibe: number;
+    motivation: string;
+    threeWords: string;
+    perfectSaturday: string;
+    dietary?: string | null;
+    dietaryNotes?: string | null;
+    alcohol: string;
+    availability?: string | null;
+    dealBreakers?: string[];
+    consentCode: boolean;
+    consentData: boolean;
+  };
+  update: {
+    fullName?: string;
+    age?: number;
+    city?: string;
+    occupation?: string;
+    linkedin?: string | null;
+    instagram?: string | null;
+    vibe?: number;
+    motivation?: string;
+    threeWords?: string;
+    perfectSaturday?: string;
+    dietary?: string | null;
+    dietaryNotes?: string | null;
+    alcohol?: string;
+    availability?: string | null;
+    dealBreakers?: string[];
+    consentCode?: boolean;
+    consentData?: boolean;
+  };
 };
 
 type InviteCodeCreateArgs = {
@@ -254,6 +305,30 @@ type VerificationTokenStub = {
   expires: Date;
 };
 
+type ApplicantStub = {
+  id: string;
+  fullName: string;
+  email: string;
+  age: number;
+  city: string;
+  occupation: string;
+  linkedin: string | null;
+  instagram: string | null;
+  vibe: number;
+  motivation: string;
+  threeWords: string;
+  perfectSaturday: string;
+  dietary: string | null;
+  dietaryNotes: string | null;
+  alcohol: string;
+  availability: string | null;
+  dealBreakers: string[];
+  consentCode: boolean;
+  consentData: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 type MembershipPlanStub = {
   id: string;
   name: string;
@@ -313,9 +388,9 @@ type EventRsvpStub = {
   id: string;
   userId: string;
   eventId: string;
-  status: string;
+  status: RsvpStatus;
   seatGroupId: string | null;
-  preferences: unknown;
+  preferences: Prisma.JsonValue | null;
   noShow: boolean;
   attended: boolean;
   createdAt: Date;
@@ -443,7 +518,7 @@ type EventRsvpFindFirstArgs = {
 };
 
 type EventRsvpFindUniqueArgs = {
-  where: { userId_eventId: { userId: string; eventId: string } };
+  where: { userId_eventId: { userId: string; eventId: string } } | { id: string };
 };
 
 type EventRsvpUpsertArgs = {
@@ -451,16 +526,16 @@ type EventRsvpUpsertArgs = {
   create: {
     userId: string;
     eventId: string;
-    status?: string;
+    status?: RsvpStatus;
     seatGroupId?: string | null;
-    preferences?: unknown;
+    preferences?: Prisma.JsonValue | null;
     noShow?: boolean;
     attended?: boolean;
   };
   update: {
-    status?: string;
+    status?: RsvpStatus;
     seatGroupId?: string | null;
-    preferences?: unknown;
+    preferences?: Prisma.JsonValue | null;
     noShow?: boolean;
     attended?: boolean;
   };
@@ -532,9 +607,9 @@ type EventRsvpFindManyArgs = {
 type EventRsvpUpdateArgs = {
   where: { id: string };
   data: {
-    status?: string;
+    status?: RsvpStatus;
     seatGroupId?: string | null;
-    preferences?: unknown;
+    preferences?: Prisma.JsonValue | null;
     noShow?: boolean;
     attended?: boolean;
   };
@@ -597,6 +672,7 @@ const stubData = {
   inviteCodes: [] as InviteCodeStub[],
   sessions: [] as SessionStub[],
   verificationTokens: [] as VerificationTokenStub[],
+  applicants: [] as ApplicantStub[],
   accounts: [] as AccountStub[],
   authenticators: [] as AuthenticatorStub[],
   membershipPlans: [] as MembershipPlanStub[],
@@ -619,6 +695,13 @@ function clonePayload(payload: ApplicationPayload): ApplicationPayload {
   return JSON.parse(JSON.stringify(payload)) as ApplicationPayload;
 }
 
+function cloneJsonValue(value: Prisma.JsonValue | null | undefined): Prisma.JsonValue | null {
+  if (value === null || value === undefined) {
+    return value ?? null;
+  }
+  return JSON.parse(JSON.stringify(value)) as Prisma.JsonValue;
+}
+
 function cloneApplication(application: ApplicationStub): ApplicationStub {
   return {
     ...application,
@@ -638,6 +721,15 @@ function cloneMembershipPlan(plan: MembershipPlanStub): MembershipPlanStub {
     createdAt: new Date(plan.createdAt.getTime()),
     updatedAt: new Date(plan.updatedAt.getTime()),
     perksJSON: JSON.parse(JSON.stringify(plan.perksJSON)),
+  };
+}
+
+function cloneApplicant(applicant: ApplicantStub): ApplicantStub {
+  return {
+    ...applicant,
+    dealBreakers: [...applicant.dealBreakers],
+    createdAt: new Date(applicant.createdAt.getTime()),
+    updatedAt: new Date(applicant.updatedAt.getTime()),
   };
 }
 
@@ -681,9 +773,7 @@ function cloneEvent(event: EventStub): EventStub {
 function cloneEventRsvp(rsvp: EventRsvpStub): EventRsvpStub {
   return {
     ...rsvp,
-    preferences: rsvp.preferences
-      ? JSON.parse(JSON.stringify(rsvp.preferences))
-      : rsvp.preferences ?? null,
+    preferences: cloneJsonValue(rsvp.preferences),
     createdAt: new Date(rsvp.createdAt.getTime()),
     updatedAt: new Date(rsvp.updatedAt.getTime()),
   };
@@ -822,8 +912,8 @@ function matchesEvent(event: EventStub, where?: EventWhere): boolean {
 type EventRsvpWhere = {
   id?: string;
   userId?: string;
-  eventId?: string;
-  status?: string | { in?: string[] };
+  eventId?: string | { in?: string[] };
+  status?: RsvpStatus | { in?: RsvpStatus[] };
   seatGroupId?: string | null | { in?: (string | null)[] };
   noShow?: boolean;
   attended?: boolean;
@@ -833,7 +923,17 @@ function matchesEventRsvp(rsvp: EventRsvpStub, where?: EventRsvpWhere): boolean 
   if (!where) return true;
   if (where.id && rsvp.id !== where.id) return false;
   if (where.userId && rsvp.userId !== where.userId) return false;
-  if (where.eventId && rsvp.eventId !== where.eventId) return false;
+  if (where.eventId !== undefined) {
+    if (typeof where.eventId === "string" && rsvp.eventId !== where.eventId) return false;
+    if (
+      typeof where.eventId === "object" &&
+      where.eventId !== null &&
+      Array.isArray(where.eventId.in) &&
+      !where.eventId.in.includes(rsvp.eventId)
+    ) {
+      return false;
+    }
+  }
   if (where.status) {
     if (typeof where.status === "string" && rsvp.status !== where.status) return false;
     if (typeof where.status === "object" && where.status.in && !where.status.in.includes(rsvp.status)) {
@@ -1291,6 +1391,64 @@ class PrismaClientStub {
     },
   };
 
+  applicant = {
+    upsert: async (args: ApplicantUpsertArgs) => {
+      let applicant = stubData.applicants.find((entry) => entry.email === args.where.email);
+
+      if (!applicant) {
+        const now = new Date();
+        applicant = {
+          id: nextId("applicant"),
+          email: args.create.email,
+          fullName: args.create.fullName,
+          age: args.create.age,
+          city: args.create.city,
+          occupation: args.create.occupation,
+          linkedin: args.create.linkedin ?? null,
+          instagram: args.create.instagram ?? null,
+          vibe: args.create.vibe,
+          motivation: args.create.motivation,
+          threeWords: args.create.threeWords,
+          perfectSaturday: args.create.perfectSaturday,
+          dietary: args.create.dietary ?? null,
+          dietaryNotes: args.create.dietaryNotes ?? null,
+          alcohol: args.create.alcohol,
+          availability: args.create.availability ?? null,
+          dealBreakers: [...(args.create.dealBreakers ?? [])],
+          consentCode: args.create.consentCode,
+          consentData: args.create.consentData,
+          createdAt: now,
+          updatedAt: now,
+        };
+        stubData.applicants.push(applicant);
+      } else {
+        if (args.update.fullName !== undefined) applicant.fullName = args.update.fullName;
+        if (args.update.age !== undefined) applicant.age = args.update.age;
+        if (args.update.city !== undefined) applicant.city = args.update.city;
+        if (args.update.occupation !== undefined) applicant.occupation = args.update.occupation;
+        if (args.update.linkedin !== undefined) applicant.linkedin = args.update.linkedin ?? null;
+        if (args.update.instagram !== undefined) applicant.instagram = args.update.instagram ?? null;
+        if (args.update.vibe !== undefined) applicant.vibe = args.update.vibe;
+        if (args.update.motivation !== undefined) applicant.motivation = args.update.motivation;
+        if (args.update.threeWords !== undefined) applicant.threeWords = args.update.threeWords;
+        if (args.update.perfectSaturday !== undefined) applicant.perfectSaturday = args.update.perfectSaturday;
+        if (args.update.dietary !== undefined) applicant.dietary = args.update.dietary ?? null;
+        if (args.update.dietaryNotes !== undefined) applicant.dietaryNotes = args.update.dietaryNotes ?? null;
+        if (args.update.alcohol !== undefined) applicant.alcohol = args.update.alcohol;
+        if (args.update.availability !== undefined)
+          applicant.availability = args.update.availability ?? null;
+        if (args.update.dealBreakers !== undefined) {
+          applicant.dealBreakers = [...args.update.dealBreakers];
+        }
+        if (args.update.consentCode !== undefined) applicant.consentCode = args.update.consentCode;
+        if (args.update.consentData !== undefined) applicant.consentData = args.update.consentData;
+        applicant.updatedAt = new Date();
+      }
+
+      return cloneApplicant(applicant);
+    },
+  };
+
   verificationToken = {
     create: async (args: VerificationTokenCreateArgs) => {
       const token: VerificationTokenStub = {
@@ -1314,6 +1472,20 @@ class PrismaClientStub {
       }
       const [removed] = stubData.verificationTokens.splice(index, 1);
       return { ...removed };
+    },
+    deleteMany: async (args?: VerificationTokenDeleteManyArgs) => {
+      if (!args?.where?.identifier) {
+        const count = stubData.verificationTokens.length;
+        stubData.verificationTokens = [];
+        return { count };
+      }
+
+      const identifier = args.where.identifier;
+      const beforeLength = stubData.verificationTokens.length;
+      stubData.verificationTokens = stubData.verificationTokens.filter(
+        (token) => token.identifier !== identifier,
+      );
+      return { count: beforeLength - stubData.verificationTokens.length };
     },
   };
 
@@ -1588,11 +1760,19 @@ class PrismaClientStub {
     },
     findUnique: async (args: EventRsvpFindUniqueArgs) => {
       ensureDefaultData();
-      const { userId, eventId } = args.where.userId_eventId;
-      const rsvp = stubData.eventRsvps.find(
-        (entry) => entry.userId === userId && entry.eventId === eventId,
-      );
-      return rsvp ? cloneEventRsvp(rsvp) : null;
+      if ("userId_eventId" in args.where) {
+        const { userId, eventId } = args.where.userId_eventId;
+        const rsvp = stubData.eventRsvps.find(
+          (entry) => entry.userId === userId && entry.eventId === eventId,
+        );
+        return rsvp ? cloneEventRsvp(rsvp) : null;
+      }
+      if ("id" in args.where) {
+        const { id } = args.where as { id: string };
+        const rsvp = stubData.eventRsvps.find((entry) => entry.id === id);
+        return rsvp ? cloneEventRsvp(rsvp) : null;
+      }
+      return null;
     },
     upsert: async (args: EventRsvpUpsertArgs) => {
       ensureDefaultData();
@@ -1603,10 +1783,9 @@ class PrismaClientStub {
       if (rsvp) {
         if (args.update.status !== undefined) rsvp.status = args.update.status;
         if (args.update.seatGroupId !== undefined) rsvp.seatGroupId = args.update.seatGroupId ?? null;
-        if (args.update.preferences !== undefined)
-          rsvp.preferences = args.update.preferences
-            ? JSON.parse(JSON.stringify(args.update.preferences))
-            : args.update.preferences ?? null;
+        if (args.update.preferences !== undefined) {
+          rsvp.preferences = cloneJsonValue(args.update.preferences);
+        }
         if (args.update.noShow !== undefined) rsvp.noShow = args.update.noShow;
         if (args.update.attended !== undefined) rsvp.attended = args.update.attended;
         rsvp.updatedAt = new Date();
@@ -1615,11 +1794,9 @@ class PrismaClientStub {
           id: nextId("eventRsvp"),
           userId,
           eventId,
-          status: args.create.status ?? "WAITLISTED",
+          status: args.create.status ?? RsvpStatus.WAITLISTED,
           seatGroupId: args.create.seatGroupId ?? null,
-          preferences: args.create.preferences
-            ? JSON.parse(JSON.stringify(args.create.preferences))
-            : args.create.preferences ?? null,
+          preferences: cloneJsonValue(args.create.preferences),
           noShow: args.create.noShow ?? false,
           attended: args.create.attended ?? false,
           createdAt: new Date(),
@@ -1637,10 +1814,9 @@ class PrismaClientStub {
       }
       if (args.data.status !== undefined) rsvp.status = args.data.status;
       if (args.data.seatGroupId !== undefined) rsvp.seatGroupId = args.data.seatGroupId ?? null;
-      if (args.data.preferences !== undefined)
-        rsvp.preferences = args.data.preferences
-          ? JSON.parse(JSON.stringify(args.data.preferences))
-          : args.data.preferences ?? null;
+      if (args.data.preferences !== undefined) {
+        rsvp.preferences = cloneJsonValue(args.data.preferences);
+      }
       if (args.data.noShow !== undefined) rsvp.noShow = args.data.noShow;
       if (args.data.attended !== undefined) rsvp.attended = args.data.attended;
       rsvp.updatedAt = new Date();

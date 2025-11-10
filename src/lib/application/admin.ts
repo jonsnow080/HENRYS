@@ -1,3 +1,5 @@
+import type { PrismaClient } from "@prisma/client";
+
 import { ApplicationStatus, Role } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 import type { ApplicationFormInput } from "./schema";
@@ -59,11 +61,15 @@ export async function approveApplication({
   const payload = readApplicationPayload(application.payload);
   const now = new Date();
 
-  return prisma.$transaction(async (tx: typeof prisma) => {
-    let user = await tx.user.findUnique({ where: { email: application.email } });
+  const transactionalPrisma = prisma as unknown as PrismaClient;
+
+  return transactionalPrisma.$transaction(async (tx) => {
+    const client = tx as typeof prisma;
+
+    let user = await client.user.findUnique({ where: { email: application.email } });
 
     if (!user) {
-      user = await tx.user.create({
+      user = await client.user.create({
         data: {
           email: application.email,
           name: application.fullName,
@@ -71,8 +77,9 @@ export async function approveApplication({
         },
       });
     } else {
-      const nextRole = [Role.ADMIN, Role.HOST].includes(user.role) ? user.role : Role.MEMBER;
-      user = await tx.user.update({
+      const isPrivileged = user.role === Role.ADMIN || user.role === Role.HOST;
+      const nextRole = isPrivileged ? user.role : Role.MEMBER;
+      user = await client.user.update({
         where: { id: user.id },
         data: {
           role: nextRole,
@@ -89,7 +96,7 @@ export async function approveApplication({
             .filter(Boolean)
         : [];
 
-      await tx.memberProfile.upsert({
+      await client.memberProfile.upsert({
         where: { userId: user.id },
         update: {
           fullName: application.fullName,
@@ -131,7 +138,7 @@ export async function approveApplication({
       });
     }
 
-    const invite = await tx.inviteCode.create({
+    const invite = await client.inviteCode.create({
       data: {
         code: generateInviteCode(application.email),
         applicationId: application.id,
@@ -140,7 +147,7 @@ export async function approveApplication({
       },
     });
 
-    await tx.application.update({
+    await client.application.update({
       where: { id: application.id },
       data: {
         status: ApplicationStatus.APPROVED,

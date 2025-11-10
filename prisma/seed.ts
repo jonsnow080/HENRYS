@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { ApplicationStatus } from "../src/lib/prisma-constants";
+import { ApplicationStatus, Role } from "../src/lib/prisma-constants";
+import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
 
@@ -38,6 +39,25 @@ async function main() {
       },
     });
   }
+
+  const adminEmail = "rileyhaase090@gmail.com";
+  const adminPassword = "Admin1";
+  const adminPasswordHash = await hashPassword(adminPassword);
+
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      role: Role.ADMIN,
+      name: "Riley Haase",
+      passwordHash: adminPasswordHash,
+    },
+    create: {
+      email: adminEmail,
+      name: "Riley Haase",
+      role: Role.ADMIN,
+      passwordHash: adminPasswordHash,
+    },
+  });
 
   const now = Date.now();
   const fakeApplications = [
