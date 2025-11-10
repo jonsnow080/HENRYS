@@ -6,7 +6,9 @@ import { auth } from "@/auth";
 import { Role } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 
-function requireAdmin(session: Awaited<ReturnType<typeof auth>>) {
+async function requireAdmin() {
+  const session = await auth();
+
   if (!session?.user) {
     redirect("/login?redirectTo=/admin/homepage-carousel");
   }
@@ -14,11 +16,12 @@ function requireAdmin(session: Awaited<ReturnType<typeof auth>>) {
   if (session.user.role !== Role.ADMIN) {
     redirect("/dashboard");
   }
+
+  return session;
 }
 
 export async function createHomepageCarouselImageAction(formData: FormData) {
-  const session = await auth();
-  requireAdmin(session);
+  await requireAdmin();
 
   const imageUrl = formData.get("imageUrl");
   const altText = formData.get("altText");
@@ -49,8 +52,7 @@ export async function createHomepageCarouselImageAction(formData: FormData) {
 }
 
 export async function deleteHomepageCarouselImageAction(formData: FormData) {
-  const session = await auth();
-  requireAdmin(session);
+  await requireAdmin();
 
   const imageId = formData.get("imageId");
   if (typeof imageId !== "string" || imageId.trim().length === 0) {
