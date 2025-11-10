@@ -1,5 +1,5 @@
-import { PrismaClient, Role } from "@prisma/client";
-import { ApplicationStatus } from "../src/lib/prisma-constants";
+import { PrismaClient } from "@prisma/client";
+import { ApplicationStatus, Role } from "../src/lib/prisma-constants";
 import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
