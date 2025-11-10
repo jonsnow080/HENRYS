@@ -1,6 +1,6 @@
 "use server";
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { redirect } from "next/navigation";
 import { applicationSchema } from "@/lib/application/schema";
@@ -109,7 +109,7 @@ export async function submitApplicationAction(
 
     const transactionalPrisma = prisma as unknown as PrismaClient;
 
-    await transactionalPrisma.$transaction(async (tx) => {
+    await transactionalPrisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const client = tx as typeof prisma;
 
       await client.application.create({
