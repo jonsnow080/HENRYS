@@ -392,18 +392,19 @@ export default async function AdminApplicationsPage({
             </Table>
         </div>
 
-        <form
-          id="bulk-update-form"
-          action={bulkUpdateApplications}
-          className="flex flex-col gap-4 border-t border-border/70 bg-background/60 p-6 sm:flex-row sm:items-end sm:justify-between"
-        >
-          <input type="hidden" name="redirectTo" value={redirectPath} />
-          <div className="flex flex-col gap-2 sm:w-60">
-            <label htmlFor="nextStatus" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Set status to
-            </label>
-            <select
-              id="nextStatus"
+        <div className="border-t border-border/70 bg-background/60 p-6">
+          <form
+            id="bulk-update-form"
+            action={bulkUpdateApplications}
+            className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+          >
+            <input type="hidden" name="redirectTo" value={redirectPath} />
+            <div className="flex flex-col gap-2 sm:w-60">
+              <label htmlFor="nextStatus" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Set status to
+              </label>
+              <select
+                id="nextStatus"
               name="nextStatus"
               className="h-11 rounded-xl border border-input bg-background px-4 text-sm font-medium text-foreground"
               defaultValue=""
@@ -416,19 +417,20 @@ export default async function AdminApplicationsPage({
                   {statusLabel(status)}
                 </option>
               ))}
-            </select>
-          </div>
-          <div className="flex-1">
-            <label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Notes (optional)
-            </label>
-            <Textarea id="notes" name="notes" rows={3} className="mt-2" placeholder="Add context for the team." />
-            <p className="mt-1 text-[11px] text-muted-foreground">Notes apply to all selected applications.</p>
-          </div>
-          <Button type="submit" className="h-11 px-6">
-            Update selected
-          </Button>
-        </form>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Notes (optional)
+              </label>
+              <Textarea id="notes" name="notes" rows={3} className="mt-2" placeholder="Add context for the team." />
+              <p className="mt-1 text-[11px] text-muted-foreground">Notes apply to all selected applications.</p>
+            </div>
+            <Button type="submit" className="h-11 px-6">
+              Update selected
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -549,7 +551,16 @@ function buildSuccessMessage(searchParams: SearchParams, fallbackCount: number) 
 }
 
 function statusLabel(status: ApplicationStatus) {
-  return STATUS_LABELS[status] ?? status;
+  switch (status) {
+    case ApplicationStatus.SUBMITTED:
+    case ApplicationStatus.IN_REVIEW:
+    case ApplicationStatus.WAITLIST:
+    case ApplicationStatus.APPROVED:
+    case ApplicationStatus.REJECTED:
+      return STATUS_LABELS[status];
+    default:
+      return status;
+  }
 }
 
 function formatDate(isoDate: string) {
