@@ -13,6 +13,10 @@ import {
   deleteHomepageCarouselImageAction,
 } from "./actions";
 
+type HomepageCarouselImage = Awaited<
+  ReturnType<typeof prisma.homepageCarouselImage.findMany>
+>[number];
+
 export const metadata: Metadata = {
   title: `Homepage carousel · ${SITE_COPY.name}`,
   description: "Add and curate the photos that appear on the public homepage carousel.",
@@ -74,7 +78,7 @@ export default async function AdminHomepageCarouselPage() {
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {images.map((image) => (
+            {images.map((image: HomepageCarouselImage) => (
               <Card key={image.id} className="border-border/70 bg-card/80">
                 <CardHeader className="flex flex-row items-center justify-between gap-4">
                   <div>
