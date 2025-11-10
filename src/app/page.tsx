@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,88 @@ const membershipSteps = [
   },
 ];
 
+const eventGallery = [
+  {
+    src: "/images/event-gallery/date-night-toast.svg",
+    alt: "Graphic treatment of a date night toast in twilight tones.",
+  },
+  {
+    src: "/images/event-gallery/speakeasy-lounge.svg",
+    alt: "Graphic treatment of a speakeasy lounge scene in gold light.",
+  },
+  {
+    src: "/images/event-gallery/rooftop-soiree.svg",
+    alt: "Graphic treatment of a rooftop soirée in teal night hues.",
+  },
+  {
+    src: "/images/event-gallery/supper-club.svg",
+    alt: "Graphic treatment of a supper club moment in warm gradients.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1529634898388-84d0fb4fb9b8?auto=format&fit=crop&w=1024&q=80",
+    alt: "Couple clinking cocktails at a candlelit bar table.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1024&q=80",
+    alt: "Friends laughing together in a vibrant lounge.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1544075571-21005b86c60c?auto=format&fit=crop&w=1024&q=80",
+    alt: "Couple sharing a toast in a dimly lit speakeasy.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1024&q=80",
+    alt: "Elegant pair posing beside the bar lights.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1024&q=80",
+    alt: "Group of friends sharing dinner and wine.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1511988617509-a57c8a288659?auto=format&fit=crop&w=1024&q=80",
+    alt: "Couple enjoying cocktails at a rooftop party.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1024&q=80",
+    alt: "Stylish guests mingling in a neon bar.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1506089676908-3592f7389d4d?auto=format&fit=crop&w=1024&q=80",
+    alt: "Smiling couple leaning in over candlelight.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1024&q=80",
+    alt: "Couple sharing a laugh at a cocktail bar.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1519677125930-b67ecfb37c51?auto=format&fit=crop&w=1024&q=80",
+    alt: "Friends celebrating with champagne at night.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1545912452-74fdc76b8413?auto=format&fit=crop&w=1024&q=80",
+    alt: "Couple leaning close during a live jazz set.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=1024&q=80",
+    alt: "Pair laughing together at a cocktail table.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1024&q=80",
+    alt: "Stylish duo toasting at a glowing bar.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1510821469-5a1c981f82c7?auto=format&fit=crop&w=1024&q=80",
+    alt: "Couple smiling during a dinner date.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1517164850305-96c3a05fe590?auto=format&fit=crop&w=1024&q=80",
+    alt: "Friends dressed up for a night out in the city.",
+  },
+];
+
 export default function HomePage() {
+  const marqueeImages = [...eventGallery, ...eventGallery];
+
   return (
     <div className="px-4 pb-16 pt-12 sm:px-6 lg:px-8">
       <div className="space-y-12 md:hidden">
@@ -71,6 +153,33 @@ export default function HomePage() {
               <Link href="/faq">Browse the FAQ</Link>
             </Button>
           </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[28px] border border-border/60 bg-card/80">
+          <div className="relative">
+            <div className="flex w-max animate-marquee gap-4 p-4" aria-hidden={true}>
+              {marqueeImages.map((image, index) => (
+                <div
+                  key={`${image.src}-${index}`}
+                  className="h-40 w-48 overflow-hidden rounded-2xl border border-border/60 bg-background/70"
+                >
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    width={320}
+                    height={256}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-background via-card/80 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-background via-card/80 to-transparent" />
+          </div>
+          <p className="px-6 pb-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Moments from recent salons and after-hours adventures
+          </p>
         </section>
 
         <section className="space-y-4">
@@ -176,6 +285,33 @@ export default function HomePage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="mx-auto mt-12 w-full max-w-5xl overflow-hidden rounded-[36px] border border-border/70 bg-card/80">
+          <div className="relative">
+            <div className="flex w-max animate-marquee gap-6 p-6" aria-hidden={true}>
+              {marqueeImages.map((image, index) => (
+                <div
+                  key={`${image.src}-${index}`}
+                  className="h-52 w-64 overflow-hidden rounded-3xl border border-border/60 bg-background/70"
+                >
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    width={512}
+                    height={416}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-background via-card/80 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-background via-card/80 to-transparent" />
+          </div>
+          <p className="px-10 pb-8 text-center text-sm font-medium uppercase tracking-[0.28em] text-muted-foreground">
+            Glimpses from members-only dinners, speakeasies & after-parties
+          </p>
         </section>
 
         <section className="mx-auto mt-16 grid max-w-5xl gap-6 md:grid-cols-3">
