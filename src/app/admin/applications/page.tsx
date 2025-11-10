@@ -14,32 +14,21 @@ import { ApplicationNotesDialog } from "./application-notes-dialog";
 import { ApplicationEmailDialog, type ApplicationEmailPreview } from "./application-email-dialog";
 import { readApplicationPayload } from "@/lib/application/admin";
 import type { ApplicationFormInput } from "@/lib/application/schema";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { renderMjml } from "@/lib/email/mjml";
+import { FilterForm } from "./filter-form";
+import { AGE_BANDS, SORT_OPTIONS, STATUS_OPTIONS, statusLabel, type AgeBandValue } from "./filters";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-const STATUS_OPTIONS = Object.values(ApplicationStatus);
-const SORT_OPTIONS = ["newest", "oldest", "name", "status"] as const;
 const EMAIL_TEMPLATE_OPTIONS: DecisionTemplateOption[] = [
   ApplicationStatus.APPROVED,
   ApplicationStatus.WAITLIST,
   ApplicationStatus.REJECTED,
 ];
-
-const AGE_BANDS = [
-  { value: "under25", label: "Under 25", test: (age?: number) => typeof age === "number" && age < 25 },
-  { value: "25-34", label: "25-34", test: (age?: number) => typeof age === "number" && age >= 25 && age <= 34 },
-  { value: "35-44", label: "35-44", test: (age?: number) => typeof age === "number" && age >= 35 && age <= 44 },
-  { value: "45+", label: "45+", test: (age?: number) => typeof age === "number" && age >= 45 },
-  { value: "unknown", label: "Unknown", test: (age?: number) => typeof age !== "number" },
-] as const;
-
-type AgeBandValue = (typeof AGE_BANDS)[number]["value"];
 
 type AdminApplication = {
   id: string;
@@ -561,23 +550,6 @@ function formatDate(isoDate: string) {
   }).format(date);
 }
 
-function statusLabel(status: ApplicationStatus) {
-  switch (status) {
-    case ApplicationStatus.SUBMITTED:
-      return "Submitted";
-    case ApplicationStatus.IN_REVIEW:
-      return "In review";
-    case ApplicationStatus.WAITLIST:
-      return "Waitlist";
-    case ApplicationStatus.APPROVED:
-      return "Approved";
-    case ApplicationStatus.REJECTED:
-      return "Rejected";
-    default:
-      return status;
-  }
-}
-
 function StatusBadge({ status }: { status: ApplicationStatus }) {
   if (status === ApplicationStatus.APPROVED) {
     return (
@@ -625,97 +597,6 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
 function determineAgeBand(age?: number): AgeBandValue {
   const match = AGE_BANDS.find((band) => band.test(age));
   return (match?.value ?? "unknown") as AgeBandValue;
-}
-
-function FilterForm({
-  defaultQuery,
-  defaultStatus,
-  defaultSort,
-  defaultAgeBand,
-}: {
-  defaultQuery: string;
-  defaultStatus: ApplicationStatus | null;
-  defaultSort: (typeof SORT_OPTIONS)[number];
-  defaultAgeBand: AgeBandValue | null;
-}) {
-  return (
-    <form
-      className="grid gap-4 rounded-[28px] border border-border/60 bg-background/80 p-6 sm:grid-cols-[minmax(0,1fr)_160px_160px_160px_auto] sm:items-end"
-      method="get"
-    >
-      <div className="space-y-2">
-        <label htmlFor="search" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Search
-        </label>
-        <Input
-          id="search"
-          name="q"
-          placeholder="Name, email, or note"
-          defaultValue={defaultQuery}
-        />
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="status" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Status
-        </label>
-        <select
-          id="status"
-          name="status"
-          defaultValue={defaultStatus ?? ""}
-          className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-        >
-          <option value="">All statuses</option>
-          {STATUS_OPTIONS.map((status) => (
-            <option key={status} value={status}>
-              {statusLabel(status)}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="ageBand" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Age band
-        </label>
-        <select
-          id="ageBand"
-          name="ageBand"
-          defaultValue={defaultAgeBand ?? ""}
-          className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-        >
-          <option value="">All ages</option>
-          {AGE_BANDS.map((band) => (
-            <option key={band.value} value={band.value}>
-              {band.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="sort" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Sort
-        </label>
-        <select
-          id="sort"
-          name="sort"
-          defaultValue={defaultSort}
-          className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-        >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="name">Name A→Z</option>
-          <option value="status">Status</option>
-        </select>
-      </div>
-      <div className="flex items-end gap-2">
-        <Button type="submit" className="h-11 px-6">
-          Apply
-        </Button>
-        <Link href="/admin/applications" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground">
-          Reset
-        </Link>
-      </div>
-    </form>
-  );
 }
 
 function ResponseBlock({ label, value }: { label: string; value: string }) {
