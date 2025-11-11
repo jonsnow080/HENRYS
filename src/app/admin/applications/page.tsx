@@ -111,7 +111,9 @@ export default async function AdminApplicationsPage({
   const statusCounts = Object.fromEntries(statusCountsEntries) as Record<ApplicationStatus, number>;
   const totalApplications = Object.values(statusCounts).reduce((sum, value) => sum + value, 0);
 
-  const adminApplications: AdminApplication[] = applications.map((application) => {
+  type ApplicationWithReviewer = (typeof applications)[number];
+
+  const adminApplications: AdminApplication[] = applications.map((application: ApplicationWithReviewer) => {
     const payload = readApplicationPayload(application.payload);
     const age = typeof payload?.age === "number" ? payload.age : undefined;
     return {
