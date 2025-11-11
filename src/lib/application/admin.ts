@@ -59,7 +59,7 @@ export async function approveApplication({
   const payload = readApplicationPayload(application.payload);
   const now = new Date();
 
-  return prisma.$transaction(async (tx: typeof prisma) => {
+  return prisma.$transaction(async (tx) => {
     let user = await tx.user.findUnique({ where: { email: application.email } });
 
     if (!user) {
@@ -71,7 +71,7 @@ export async function approveApplication({
         },
       });
     } else {
-      const nextRole = [Role.ADMIN, Role.HOST].includes(user.role) ? user.role : Role.MEMBER;
+      const nextRole = user.role === Role.ADMIN || user.role === Role.HOST ? user.role : Role.MEMBER;
       user = await tx.user.update({
         where: { id: user.id },
         data: {

@@ -32,7 +32,7 @@ export default async function SeatingMatchPage({ params }: { params: { eventId: 
   }
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
   const profiles = userIds.length
-    ? await prisma.memberProfile.findMany({ where: { userId_in: userIds } })
+    ? await prisma.memberProfile.findMany({ where: { userId: { in: userIds } } })
     : [];
 
   const userMap = new Map<string, (typeof users)[number]>();
@@ -59,7 +59,6 @@ export default async function SeatingMatchPage({ params }: { params: { eventId: 
   for (const rsvp of goingRsvps) {
     const user = userMap.get(rsvp.userId);
     const profile = profileMap.get(rsvp.userId);
-    const data = (profile?.data ?? {}) as Record<string, unknown>;
     const preferences = (rsvp.preferences ?? {}) as { dontPairWithIds?: string[] };
     attendees.push({
       id: rsvp.id,
@@ -67,10 +66,10 @@ export default async function SeatingMatchPage({ params }: { params: { eventId: 
       name: user?.name ?? "Unknown guest",
       email: user?.email ?? "",
       seatGroupId: rsvp.seatGroupId,
-      age: typeof data.age === "number" ? data.age : undefined,
-      vibe: typeof data.vibeEnergy === "number" ? (data.vibeEnergy as number) : undefined,
-      dietary: typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : undefined,
-      dietaryNotes: typeof data.dietaryNotes === "string" ? (data.dietaryNotes as string) : undefined,
+      age: typeof profile?.age === "number" ? profile.age : undefined,
+      vibe: typeof profile?.vibeEnergy === "number" ? profile.vibeEnergy : undefined,
+      dietary: profile?.dietaryPreferences ?? undefined,
+      dietaryNotes: profile?.dietaryNotes ?? undefined,
       dontPairWithIds: Array.isArray(preferences.dontPairWithIds)
         ? (preferences.dontPairWithIds as string[])
         : [],

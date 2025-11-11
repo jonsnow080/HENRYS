@@ -1,4 +1,5 @@
 import { ApplicationStatus, Role } from "@/lib/prisma-constants";
+import type { PrismaClient } from "@prisma/client";
 
 type ApplicationPayload = Record<string, unknown>;
 
@@ -1659,6 +1660,19 @@ class PrismaClientStub {
       const [removed] = stubData.verificationTokens.splice(index, 1);
       return { ...removed };
     },
+    deleteMany: async (args?: { where?: { identifier?: string } }) => {
+      const identifier = args?.where?.identifier;
+      if (!identifier) {
+        const count = stubData.verificationTokens.length;
+        stubData.verificationTokens = [];
+        return { count };
+      }
+      const before = stubData.verificationTokens.length;
+      stubData.verificationTokens = stubData.verificationTokens.filter(
+        (token) => token.identifier !== identifier,
+      );
+      return { count: before - stubData.verificationTokens.length };
+    },
   };
 
   membershipPlan = {
@@ -2355,7 +2369,7 @@ const PrismaClientCtor = await (async () => {
 })();
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: InstanceType<typeof PrismaClientCtor> | undefined;
+  prisma: PrismaClient | undefined;
 };
 function instantiatePrismaClient(): InstanceType<typeof PrismaClientCtor> {
   if (PrismaClientCtor === PrismaClientStub) {
@@ -2377,11 +2391,11 @@ function instantiatePrismaClient(): InstanceType<typeof PrismaClientCtor> {
     throw error;
   }
 }
-
-const prismaClient = globalForPrisma.prisma ?? instantiatePrismaClient();
+const prismaClient =
+  globalForPrisma.prisma ?? (instantiatePrismaClient() as unknown as PrismaClient);
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prismaClient;
 }
 
-export const prisma = prismaClient;
+export const prisma: PrismaClient = prismaClient;

@@ -43,18 +43,6 @@ type AdminApplication = {
   ageBand: AgeBandValue;
 };
 
-type RawApplication = {
-  id: string;
-  fullName: string;
-  email: string;
-  status: ApplicationStatus;
-  createdAt: Date;
-  reviewedAt: Date | null;
-  reviewer: { name: string | null; email: string | null } | null;
-  notes: string | null;
-  payload: unknown;
-};
-
 export const metadata: Metadata = {
   title: `Applications · ${SITE_COPY.name}`,
   description: "Review and manage incoming HENRYS applications.",
@@ -95,21 +83,27 @@ export default async function AdminApplicationsPage({
   const orderBy = (() => {
     switch (sort) {
       case "oldest":
-        return { createdAt: "asc" };
+        return { createdAt: "asc" as const };
       case "name":
-        return [{ fullName: "asc" }, { createdAt: "desc" }];
+        return [
+          { fullName: "asc" as const },
+          { createdAt: "desc" as const },
+        ];
       case "status":
-        return [{ status: "asc" }, { createdAt: "desc" }];
+        return [
+          { status: "asc" as const },
+          { createdAt: "desc" as const },
+        ];
       default:
-        return { createdAt: "desc" };
+        return { createdAt: "desc" as const };
     }
   })();
 
-  const applications = (await prisma.application.findMany({
+  const applications = await prisma.application.findMany({
     where,
     orderBy,
     include: { reviewer: { select: { name: true, email: true } } },
-  })) as RawApplication[];
+  });
 
   const statusCountsEntries = await Promise.all(
     STATUS_OPTIONS.map(async (status) => [status, await prisma.application.count({ where: { status } })] as const),
