@@ -1,5 +1,6 @@
 "use server";
 
+import type { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { applicationSchema } from "@/lib/application/schema";
 import { isCommonEmailDomain } from "@/lib/application/common-email-domains";
@@ -105,7 +106,7 @@ export async function submitApplicationAction(
       };
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.application.create({
         data: {
           email: payload.email,
