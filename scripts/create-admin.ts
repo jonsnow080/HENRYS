@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, $Enums } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -14,11 +14,11 @@ async function main() {
     where: { email: ADMIN_EMAIL },
     create: {
       email: ADMIN_EMAIL,
-      role: Role.ADMIN,
+      role: $Enums.Role.ADMIN,
       passwordHash,
     },
     update: {
-      role: Role.ADMIN,
+      role: $Enums.Role.ADMIN,
       passwordHash,
     },
   });
