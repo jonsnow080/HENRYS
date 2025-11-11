@@ -1,10 +1,10 @@
-import { PrismaClient, $Enums } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 const ADMIN_EMAIL = 'rileyhaase090@gmail.com';
-const ADMIN_ROLE = $Enums.Role.ADMIN;
+const ADMIN_ROLE = 'ADMIN' as const;
 const SALT_ROUNDS = 12;
 
 async function main() {
