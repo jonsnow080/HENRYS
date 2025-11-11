@@ -4,21 +4,21 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 const ADMIN_EMAIL = 'rileyhaase090@gmail.com';
-const ADMIN_PASSWORD = 'Admin1';
+const ADMIN_ROLE = $Enums.Role.ADMIN;
 const SALT_ROUNDS = 12;
 
 async function main() {
-  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, SALT_ROUNDS);
+  const passwordHash = await bcrypt.hash('Admin1', SALT_ROUNDS);
 
   await prisma.user.upsert({
     where: { email: ADMIN_EMAIL },
     create: {
       email: ADMIN_EMAIL,
-      role: $Enums.Role.ADMIN,
+      role: ADMIN_ROLE,
       passwordHash,
     },
     update: {
-      role: $Enums.Role.ADMIN,
+      role: ADMIN_ROLE,
       passwordHash,
     },
   });
