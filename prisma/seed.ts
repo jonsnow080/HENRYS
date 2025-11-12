@@ -72,6 +72,66 @@ async function main() {
       imageUrl: "https://images.unsplash.com/photo-1506089676908-3592f7389d4d?auto=format&fit=crop&w=1024&q=80",
       altText: "Smiling couple leaning in over candlelight.",
     },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=1024&q=80",
+      altText: "Friends raising champagne flutes at a candlelit dinner party.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1024&q=80",
+      altText: "Stylish women laughing over cocktails at a sleek bar.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1024&q=80",
+      altText: "Guests sharing wine under string lights at a garden supper.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1024&q=80",
+      altText: "Glittering crowd dancing through confetti in a nightclub.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1530023367847-a683933f4176?auto=format&fit=crop&w=1024&q=80",
+      altText: "DJ leading a packed club of friends under neon lights.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1024&q=80",
+      altText: "Trendy group smiling with cocktails at a brick-walled bar.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1533139502658-0198f920d8e8?auto=format&fit=crop&w=1024&q=80",
+      altText: "Bartender sliding drinks to chic patrons at a glowing counter.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1024&q=80",
+      altText: "Beautiful friends cheering at a beachside sunset party.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1024&q=80",
+      altText: "Fashionable group relaxing with drinks at a beach bonfire.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=1024&q=80",
+      altText: "Elegant dinner party on a rooftop terrace at twilight.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1024&q=80",
+      altText: "Trendy friends laughing together in a buzzing lounge.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1513553404607-988bf2703777?auto=format&fit=crop&w=1024&q=80",
+      altText: "Guests enjoying a gourmet spread at an intimate dinner party.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1541140911322-1b2c608c0625?auto=format&fit=crop&w=1024&q=80",
+      altText: "Couple posing with cocktails against a glowing city bar backdrop.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1515165562835-c4c1b572ef9b?auto=format&fit=crop&w=1024&q=80",
+      altText: "Stylish group lounging on blankets at a chic beach picnic party.",
+    },
+    {
+      imageUrl: "https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=1024&q=80",
+      altText: "Friends celebrating with sparklers on a vibrant rooftop club.",
+    },
   ];
 
   const existingCarouselImages = await prisma.homepageCarouselImage.count();
