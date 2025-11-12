@@ -83,7 +83,13 @@ export async function moveHomepageCarouselImageAction(formData: FormData) {
     orderBy: { sortOrder: "asc" },
   });
 
-  const currentIndex = orderedImages.findIndex((image) => image.id === imageId);
+  let currentIndex = -1;
+  for (let index = 0; index < orderedImages.length; index += 1) {
+    if (orderedImages[index]?.id === imageId) {
+      currentIndex = index;
+      break;
+    }
+  }
   if (currentIndex === -1) {
     throw new Error("Image not found.");
   }
