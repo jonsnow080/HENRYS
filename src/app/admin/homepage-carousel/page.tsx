@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
-import { Role } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 import { SITE_COPY } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
@@ -28,16 +25,6 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminHomepageCarouselPage() {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login?redirectTo=/admin/homepage-carousel");
-  }
-
-  if (session.user.role !== Role.ADMIN) {
-    redirect("/admin");
-  }
-
   const images = await prisma.homepageCarouselImage.findMany({
     orderBy: { sortOrder: "asc" },
   });
