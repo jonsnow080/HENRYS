@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { auth } from "@/auth";
-import { Role, RsvpStatus } from "@/lib/prisma-constants";
+import { RsvpStatus } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 import { SITE_COPY } from "@/lib/site-copy";
 import { Badge } from "@/components/ui/badge";
@@ -93,11 +92,6 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminEventsPage({ searchParams }: { searchParams: SearchParams }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== Role.ADMIN) {
-    return null;
-  }
-
   const now = new Date();
 
   const query = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
