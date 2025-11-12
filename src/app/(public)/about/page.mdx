@@ -125,12 +125,14 @@ import { EMAIL_CONTACTS } from "@/lib/site/emails";
         <div className="flex items-center gap-4 text-sm text-slate-300">
           <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
           <p>
-            Curious about hosting or partnering? Email <a
+            Curious about hosting or partnering? Email{' '}
+            <a
               className="font-semibold text-rose-200 hover:text-rose-100"
               href={`mailto:${EMAIL_CONTACTS.partners}`}
             >
               {EMAIL_CONTACTS.partners}
-            </a>.
+            </a>
+            .
           </p>
         </div>
       </div>
