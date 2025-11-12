@@ -105,32 +105,64 @@ const DEFAULT_EVENT_GALLERY = [
     alt: "Smiling couple leaning in over candlelight.",
   },
   {
-    src: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1024&q=80",
-    alt: "Couple sharing a laugh at a cocktail bar.",
+    src: "https://images.unsplash.com/photo-1521335629791-ce4aec67dd53?auto=format&fit=crop&w=1024&q=80",
+    alt: "Friends dancing with cocktails under club lights.",
   },
   {
-    src: "https://images.unsplash.com/photo-1519677125930-b67ecfb37c51?auto=format&fit=crop&w=1024&q=80",
-    alt: "Friends celebrating with champagne at night.",
+    src: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=1024&q=80",
+    alt: "Beach bonfire crew celebrating at sunset.",
   },
   {
-    src: "https://images.unsplash.com/photo-1545912452-74fdc76b8413?auto=format&fit=crop&w=1024&q=80",
-    alt: "Couple leaning close during a live jazz set.",
+    src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1024&q=80",
+    alt: "Candlelit garden dinner party with wine.",
   },
   {
-    src: "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=1024&q=80",
-    alt: "Pair laughing together at a cocktail table.",
+    src: "https://images.unsplash.com/photo-1530023367847-a683933f4177?auto=format&fit=crop&w=1024&q=80",
+    alt: "Stylish friends gathered for a rooftop supper.",
   },
   {
-    src: "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1024&q=80",
-    alt: "Stylish duo toasting at a glowing bar.",
+    src: "https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=1024&q=80",
+    alt: "DJ leading a packed nightclub dance floor.",
   },
   {
-    src: "https://images.unsplash.com/photo-1510821469-5a1c981f82c7?auto=format&fit=crop&w=1024&q=80",
-    alt: "Couple smiling during a dinner date.",
+    src: "https://images.unsplash.com/photo-1520288824200-8558b1c1f34b?auto=format&fit=crop&w=1024&q=80",
+    alt: "Couple toasting at an intimate dinner party.",
   },
   {
-    src: "https://images.unsplash.com/photo-1517164850305-96c3a05fe590?auto=format&fit=crop&w=1024&q=80",
-    alt: "Friends dressed up for a night out in the city.",
+    src: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1024&q=80",
+    alt: "Romantic duo savoring a tasting menu.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1024&q=80",
+    alt: "Friends embracing beneath string lights at a bar.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1515165562835-c4c34b564cdf?auto=format&fit=crop&w=1024&q=80",
+    alt: "Neon-lit club crowd celebrating together.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1513639725746-c5d3e861f32a?auto=format&fit=crop&w=1024&q=80",
+    alt: "Friends dancing amid concert-style lighting.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1532635241-17e820acc59f?auto=format&fit=crop&w=1024&q=80",
+    alt: "Sun-kissed friends cheering on a tropical beach.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1024&q=80",
+    alt: "Champagne toast around a luxe cocktail table.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1528712306091-ed0763094c98?auto=format&fit=crop&w=1024&q=80",
+    alt: "Couple lounging in a candlelit speakeasy booth.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1518976024611-28bf4b48222e?auto=format&fit=crop&w=1024&q=80",
+    alt: "Friends celebrating with surfside cocktails.",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1525286116112-b59af11adad1?auto=format&fit=crop&w=1024&q=80",
+    alt: "Rooftop lounge crowd clinking glasses at dusk.",
   },
 ];
 
