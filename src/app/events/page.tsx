@@ -37,8 +37,8 @@ const EVENT_CARD_IMAGE_SIZES = "(min-width: 1024px) 320px, (min-width: 640px) 50
 type GenderBucket = "female" | "male" | "other";
 
 function getGalleryImage(event: Event) {
-  const key = event.slug ?? event.id;
-  const total = Array.from(key).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const key = (event.slug ?? event.id ?? "").toString();
+  const total = [...key].reduce((sum, char) => sum + char.charCodeAt(0), 0);
   return EVENT_GALLERY[total % EVENT_GALLERY.length];
 }
 
