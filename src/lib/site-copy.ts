@@ -3,5 +3,5 @@ export const SITE_COPY = {
   tagLine: "Invite-only IRL dating club for wildly interesting people.",
   city: "London",
   description:
-    "A mobile-first members club curating slow dating salons, dinner parties, and cultural adventures across London.",
+    "A mobile-first members club curating slow dating supper clubs, dinner parties, and cultural adventures across London.",
 };
