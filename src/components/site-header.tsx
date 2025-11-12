@@ -20,7 +20,7 @@ export function SiteHeader({ session }: { session: Session | null }) {
   const role = session?.user.role;
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur">
+    <header className="site-header sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
           <span className="rounded-full bg-foreground px-3 py-1 text-background">{SITE_COPY.name}</span>

@@ -44,7 +44,7 @@ export default async function RootLayout({
             <main className="flex-1 bg-gradient-to-b from-background via-background to-muted/40">
               {children}
             </main>
-            <footer className="border-t border-border/60 bg-background/80">
+            <footer className="site-footer border-t border-border/60 bg-background/80">
               <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <span>© {new Date().getFullYear()} {SITE_COPY.name}. All rights reserved.</span>
                 <div className="flex flex-wrap gap-3">
