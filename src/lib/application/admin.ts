@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { ApplicationStatus, Role } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 import type { ApplicationFormInput } from "./schema";
@@ -59,7 +60,7 @@ export async function approveApplication({
   const payload = readApplicationPayload(application.payload);
   const now = new Date();
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     let user = await tx.user.findUnique({ where: { email: application.email } });
 
     if (!user) {
