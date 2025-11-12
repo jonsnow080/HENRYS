@@ -2,6 +2,10 @@ import { Resend } from "resend";
 import nodemailer from "nodemailer";
 import type Mail from "nodemailer/lib/mailer";
 import { renderMjml } from "./mjml";
+import {
+  CANONICAL_FROM_EMAIL,
+  CANONICAL_REPLY_TO,
+} from "@/lib/site/emails";
 
 const resendClient = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -51,12 +55,16 @@ export async function sendEmail({
 
   if (resendClient) {
     await resendClient.emails.send({
-      from: process.env.RESEND_FROM_EMAIL ?? process.env.AUTH_EMAIL_FROM ?? "HENRYS <mail@henrys.club>",
+      from:
+        process.env.RESEND_FROM_EMAIL ??
+        process.env.AUTH_EMAIL_FROM ??
+        CANONICAL_FROM_EMAIL,
       to: recipients,
       bcc,
       subject,
       html,
       text,
+      reply_to: process.env.RESEND_REPLY_TO_EMAIL ?? CANONICAL_REPLY_TO,
       tags,
     });
     return;
@@ -73,12 +81,13 @@ export async function sendEmail({
   }
 
   const message: Mail.Options = {
-    from: process.env.AUTH_EMAIL_FROM ?? "HENRYS Club <no-reply@henrys.club>",
+    from: process.env.AUTH_EMAIL_FROM ?? CANONICAL_FROM_EMAIL,
     to: recipients,
     bcc,
     subject,
     html,
     text,
+    replyTo: process.env.SMTP_REPLY_TO ?? CANONICAL_REPLY_TO,
   };
 
   await nodemailerTransport.sendMail(message);

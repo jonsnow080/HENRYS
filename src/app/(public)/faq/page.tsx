@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { SITE_COPY } from "@/lib/site-copy";
+import { EMAIL_CONTACTS } from "@/lib/site/emails";
 
 export const metadata: Metadata = {
   title: "FAQ · HENRYS",
@@ -174,7 +175,12 @@ export default function FaqPage() {
       <section className="mx-auto max-w-3xl rounded-3xl border border-indigo-200/50 bg-indigo-50/60 p-10 text-center dark:border-indigo-400/40 dark:bg-indigo-500/10">
         <h2 className="text-2xl font-semibold text-indigo-900 dark:text-indigo-200">Still have a question?</h2>
         <p className="mt-3 text-base text-indigo-900/80 dark:text-indigo-200/80">
-          Email <a className="font-semibold underline decoration-indigo-400/80 decoration-2 underline-offset-4" href="mailto:about@henrys.club">about@henrys.club</a> and the team will get back to you faster than you can say “see you soon.”
+          Email <a
+            className="font-semibold underline decoration-indigo-400/80 decoration-2 underline-offset-4"
+            href={`mailto:${EMAIL_CONTACTS.about}`}
+          >
+            {EMAIL_CONTACTS.about}
+          </a> and the team will get back to you faster than you can say “see you soon.”
         </p>
       </section>
     </div>

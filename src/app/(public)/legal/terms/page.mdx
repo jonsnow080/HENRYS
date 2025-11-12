@@ -4,6 +4,8 @@ export const metadata = {
     "Terms governing participation in HENRYS events, memberships, and services.",
 };
 
+import { EMAIL_CONTACTS } from "@/lib/site/emails";
+
 # Terms of Service
 
 _Last updated: April 4, 2024_
@@ -30,7 +32,7 @@ We collect and process personal data in accordance with our Privacy Policy. By u
 
 ## 6. Marketing and Media Consent
 
-By attending a HENRYS event, participating in any HENRYS activation, or uploading, sharing, or otherwise providing photographs, video, audio, testimonials, or other content to us (including tagging HENRYS on social platforms), you grant HENRYS a perpetual, worldwide, royalty-free licence to capture, use, reproduce, adapt, publish, and display that content for marketing and promotional purposes without the need for additional consent, notification, or compensation. If you prefer not to be featured, please let a host know in advance or contact us at hello@henrys.house and we will make reasonable efforts to accommodate your request for future events.
+By attending a HENRYS event, participating in any HENRYS activation, or uploading, sharing, or otherwise providing photographs, video, audio, testimonials, or other content to us (including tagging HENRYS on social platforms), you grant HENRYS a perpetual, worldwide, royalty-free licence to capture, use, reproduce, adapt, publish, and display that content for marketing and promotional purposes without the need for additional consent, notification, or compensation. If you prefer not to be featured, please let a host know in advance or contact us at <a href={`mailto:${EMAIL_CONTACTS.support}`}>{EMAIL_CONTACTS.support}</a> and we will make reasonable efforts to accommodate your request for future events.
 
 ## 7. Liability
 
@@ -42,4 +44,4 @@ We may update these Terms from time to time. Continued participation in HENRYS e
 
 ## 9. Contact Us
 
-For questions about these Terms please email hello@henrys.house.
+For questions about these Terms please email <a href={`mailto:${EMAIL_CONTACTS.support}`}>{EMAIL_CONTACTS.support}</a>.

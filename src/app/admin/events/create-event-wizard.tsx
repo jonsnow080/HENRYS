@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { EMAIL_CONTACTS } from "@/lib/site/emails";
 import { useToast } from "@/components/ui/use-toast";
 import { createEventAction, type CreateEventState } from "./actions";
 
@@ -958,7 +959,7 @@ export function CreateEventWizard() {
                       <Input
                         id="contactEmail"
                         type="email"
-                        placeholder="events@henrys.xyz"
+                        placeholder={EMAIL_CONTACTS.events}
                         {...register("contactEmail")}
                         aria-invalid={formState.errors.contactEmail ? "true" : "false"}
                       />
