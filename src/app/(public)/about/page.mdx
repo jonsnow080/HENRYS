@@ -3,6 +3,8 @@ export const metadata = {
   description: "The story, rituals, and team behind HENRYS.",
 };
 
+import { EMAIL_CONTACTS } from "@/lib/site/emails";
+
 <div className="mx-auto flex max-w-5xl flex-col gap-16">
   <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-rose-100 via-white to-amber-100 px-10 py-16 text-slate-900 shadow-xl">
     <div className="absolute inset-y-0 right-10 hidden h-72 w-72 rounded-full bg-white/40 blur-3xl md:block" aria-hidden />
@@ -123,7 +125,12 @@ export const metadata = {
         <div className="flex items-center gap-4 text-sm text-slate-300">
           <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
           <p>
-            Curious about hosting or partnering? Email <a className="font-semibold text-rose-200 hover:text-rose-100" href="mailto:partners@henrys.club">partners@henrys.club</a>.
+            Curious about hosting or partnering? Email <a
+              className="font-semibold text-rose-200 hover:text-rose-100"
+              href={`mailto:${EMAIL_CONTACTS.partners}`}
+            >
+              {EMAIL_CONTACTS.partners}
+            </a>.
           </p>
         </div>
       </div>

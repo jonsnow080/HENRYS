@@ -7,6 +7,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/lib/prisma-constants";
 import { verifyPassword } from "@/lib/password";
+import { CANONICAL_FROM_EMAIL } from "@/lib/site/emails";
 
 const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
 
@@ -21,7 +22,7 @@ export const authConfig = {
   providers: [
     Resend({
       apiKey: process.env.AUTH_RESEND_KEY,
-      from: process.env.AUTH_EMAIL_FROM ?? "HENRYS <no-reply@henrys.club>",
+      from: process.env.AUTH_EMAIL_FROM ?? CANONICAL_FROM_EMAIL,
     }),
     Credentials({
       name: "Password",
