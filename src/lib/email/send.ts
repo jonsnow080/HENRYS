@@ -64,7 +64,7 @@ export async function sendEmail({
       subject,
       html,
       text,
-      reply_to: process.env.RESEND_REPLY_TO_EMAIL ?? CANONICAL_REPLY_TO,
+      replyTo: process.env.RESEND_REPLY_TO_EMAIL ?? CANONICAL_REPLY_TO,
       tags,
     });
     return;
