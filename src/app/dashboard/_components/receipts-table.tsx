@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { IntlConfig } from "@/lib/intl/resolveIntlConfig";
 
 export type ReceiptRow = {
   id: string;
@@ -9,7 +10,7 @@ export type ReceiptRow = {
   receiptUrl?: string | null;
 };
 
-export function ReceiptsTable({ receipts }: { receipts: ReceiptRow[] }) {
+export function ReceiptsTable({ receipts, intlConfig }: { receipts: ReceiptRow[]; intlConfig: IntlConfig }) {
   if (receipts.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-muted-foreground/40 bg-muted/20 p-6 text-sm text-muted-foreground">
@@ -17,6 +18,12 @@ export function ReceiptsTable({ receipts }: { receipts: ReceiptRow[] }) {
       </div>
     );
   }
+
+  const dateFormatter = new Intl.DateTimeFormat(intlConfig.locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: intlConfig.tz,
+  });
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-background shadow-sm">
@@ -33,10 +40,7 @@ export function ReceiptsTable({ receipts }: { receipts: ReceiptRow[] }) {
           {receipts.map((receipt) => (
             <TableRow key={receipt.id}>
               <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                {receipt.createdAt.toLocaleString("en-GB", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
+                {dateFormatter.format(receipt.createdAt)}
               </TableCell>
               <TableCell className="text-sm">{receipt.description}</TableCell>
               <TableCell className="text-right text-sm font-medium">{receipt.amount}</TableCell>

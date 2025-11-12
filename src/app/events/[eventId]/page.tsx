@@ -2,7 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { Metadata } from "next";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatEventDateTime, formatPrice } from "@/lib/intl/formatters";
+import { resolveIntlConfig } from "@/lib/intl/resolveIntlConfig";
 import { RsvpStatus } from "@/lib/prisma-constants";
 import { PurchaseTicketForm } from "./_components/purchase-ticket-form";
 
@@ -27,12 +28,21 @@ export default async function EventDetailPage({
     notFound();
   }
 
+  const intlConfig = resolveIntlConfig();
   const rsvp = await prisma.eventRsvp.findFirst({
     where: { userId: session.user.id, eventId: event.id },
   });
 
   const status = rsvp?.status ?? null;
-  const priceLabel = event.priceCents > 0 ? formatCurrency(event.priceCents, event.currency) : "complimentary";
+  const priceLabel =
+    event.priceCents > 0
+      ? formatPrice({ amountMinor: event.priceCents, currencyOverride: event.currency, intlConfig })
+      : "complimentary";
+  const eventDateLabels = formatEventDateTime({
+    start: event.startAt,
+    end: event.endAt,
+    intlConfig,
+  });
   const checkoutStatus = typeof searchParams?.checkout === "string" ? searchParams?.checkout : undefined;
 
   return (
@@ -41,7 +51,7 @@ export default async function EventDetailPage({
         <p className="text-sm uppercase tracking-wide text-muted-foreground">Upcoming salon</p>
         <h1 className="text-4xl font-semibold">{event.name}</h1>
         <div className="text-sm text-muted-foreground">
-          <p>{formatDate(event.startAt)} → {formatDate(event.endAt)}</p>
+          <p>{eventDateLabels.detail}</p>
           {event.venue && <p>{event.venue}</p>}
         </div>
       </div>
