@@ -1,0 +1,39 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+          <title>Neon club dancefloor</title>
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#050510" />
+              <stop offset="100%" stop-color="#ff4f8b" />
+            </linearGradient>
+          </defs>
+          <rect width="800" height="600" fill="url(#bg)" />
+          <rect y="320" width="800" height="280" fill="#ffd0f0" opacity="0.4" />
+          <g opacity="0.6">
+  <path d="M 0 0 L 200 220" stroke="#5eead4" stroke-width="6" />
+  <path d="M 800 0 L 600 220" stroke="#a855f7" stroke-width="6" />
+  <path d="M 400 0 L 400 220" stroke="#f97316" stroke-width="6" />
+</g>
+<circle cx="400" cy="140" r="60" fill="#fef2f8" opacity="0.75" />
+<g opacity="0.75">
+  <rect x="120" y="60" width="6" height="24" fill="#facc15" />
+  <rect x="620" y="90" width="6" height="18" fill="#60a5fa" />
+  <rect x="300" y="110" width="6" height="20" fill="#fb7185" />
+  <rect x="520" y="70" width="6" height="22" fill="#34d399" />
+  <rect x="700" y="140" width="6" height="18" fill="#a855f7" />
+</g>
+          <g transform="translate(200, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#dbe0ff" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#5d61ff" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#dbe0ff" opacity="0.6" />
+</g>
+<g transform="translate(340, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#ffe2ce" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#ff8a5c" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#ffe2ce" opacity="0.6" />
+</g>
+<g transform="translate(480, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#ddfff6" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#41d3bd" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#ddfff6" opacity="0.6" />
+</g>
+        </svg>

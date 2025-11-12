@@ -1,0 +1,40 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+          <title>Chic lounge bar gathering</title>
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0b101f" />
+              <stop offset="100%" stop-color="#f7876e" />
+            </linearGradient>
+          </defs>
+          <rect width="800" height="600" fill="url(#bg)" />
+          <rect y="320" width="800" height="280" fill="#f6d3c4" opacity="0.4" />
+          <g transform="translate(400, 420)">
+  <rect x="-260" y="-60" width="520" height="140" fill="rgba(38, 20, 43, 0.7)" rx="30" />
+  <rect x="-220" y="-80" width="440" height="40" fill="rgba(255, 224, 200, 0.6)" rx="20" />
+</g>
+<g transform="translate(400, 470)" opacity="0.65">
+  <rect x="-260" y="-40" width="200" height="80" rx="40" fill="#fcd5ce" />
+  <rect x="60" y="-40" width="200" height="80" rx="40" fill="#fecdd3" />
+</g>
+<g fill="#ffd7a8" opacity="0.7">
+  <path d="M 200 120 L 200 220" stroke="#ffd7a8" stroke-width="4" />
+  <ellipse cx="200" cy="240" rx="24" ry="16" />
+  <path d="M 600 120 L 600 220" stroke="#ffd7a8" stroke-width="4" />
+  <ellipse cx="600" cy="240" rx="24" ry="16" />
+</g>
+          <g transform="translate(200, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#ffd6dc" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#fb7185" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#ffd6dc" opacity="0.6" />
+</g>
+<g transform="translate(340, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#d3ffe8" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#34d399" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#d3ffe8" opacity="0.6" />
+</g>
+<g transform="translate(480, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#ffeec5" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#fbbf24" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#ffeec5" opacity="0.6" />
+</g>
+        </svg>

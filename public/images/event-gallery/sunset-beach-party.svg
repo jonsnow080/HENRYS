@@ -1,0 +1,34 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+          <title>Sunset beach party</title>
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#051937" />
+              <stop offset="100%" stop-color="#f45c43" />
+            </linearGradient>
+          </defs>
+          <rect width="800" height="600" fill="url(#bg)" />
+          <rect y="320" width="800" height="280" fill="#ffd4a6" opacity="0.4" />
+          <circle cx="140" cy="140" r="70" fill="#ffd783" opacity="0.75" />
+<path d="M 0 420 Q 100 380 200 420 T 400 420 T 600 420 T 800 420 V 600 H 0 Z" fill="rgba(99, 179, 237, 0.45)" />
+<path d="M 0 460 Q 120 430 240 460 T 480 460 T 720 460 T 840 460 V 600 H 0 Z" fill="rgba(56, 189, 248, 0.4)" />
+<g transform="translate(620, 240)">
+  <rect x="-8" y="0" width="16" height="220" fill="#4f2c1d" />
+  <path d="M 0 0 C 80 -40 120 -10 140 40 C 60 20 20 40 0 0 Z" fill="#1acaa1" opacity="0.7" />
+  <path d="M 0 20 C 70 -10 110 20 130 70 C 50 40 20 60 0 20 Z" fill="#25f5c7" opacity="0.6" />
+</g>
+          <g transform="translate(200, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#ffd6cf" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#ff6b6b" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#ffd6cf" opacity="0.6" />
+</g>
+<g transform="translate(340, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#d6fff7" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#4fd1c5" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#d6fff7" opacity="0.6" />
+</g>
+<g transform="translate(480, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#fff5c7" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#ffe66d" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#fff5c7" opacity="0.6" />
+</g>
+        </svg>

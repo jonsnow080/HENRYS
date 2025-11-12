@@ -15,6 +15,66 @@ export const metadata: Metadata = {
 
 const EVENT_GALLERY = [
   {
+    src: "/images/event-gallery/beach-bonfire-celebration.svg",
+    alt: "Friends laughing around a bonfire on the beach at night",
+  },
+  {
+    src: "/images/event-gallery/sunset-yacht-party.svg",
+    alt: "Guests celebrating on a yacht during a fiery sunset",
+  },
+  {
+    src: "/images/event-gallery/garden-dinner-party.svg",
+    alt: "Elegant dinner party set beneath glowing garden lanterns",
+  },
+  {
+    src: "/images/event-gallery/speakeasy-cocktails.svg",
+    alt: "Well-dressed friends sharing cocktails inside a speakeasy lounge",
+  },
+  {
+    src: "/images/event-gallery/dancefloor-neon-club.svg",
+    alt: "Stylish crowd dancing under saturated neon club lights",
+  },
+  {
+    src: "/images/event-gallery/poolside-celebration.svg",
+    alt: "Friends mingling beside a shimmering pool on a warm evening",
+  },
+  {
+    src: "/images/event-gallery/fireworks-rooftop-party.svg",
+    alt: "Rooftop soiree watching fireworks burst over the city skyline",
+  },
+  {
+    src: "/images/event-gallery/lounge-bar-friends.svg",
+    alt: "Chic guests relaxing on lounge seating with signature cocktails",
+  },
+  {
+    src: "/images/event-gallery/sunset-beach-party.svg",
+    alt: "Beach party crowd dancing in front of a glowing sunset",
+  },
+  {
+    src: "/images/event-gallery/candlelit-supper-club.svg",
+    alt: "Candlelit supper club table surrounded by animated conversation",
+  },
+  {
+    src: "/images/event-gallery/neon-bar-toast.svg",
+    alt: "Friends raising cocktails for a toast at a neon-lit bar",
+  },
+  {
+    src: "/images/event-gallery/tropical-beach-dancing.svg",
+    alt: "Dancing crowd celebrating at a tropical beach party",
+  },
+  {
+    src: "/images/event-gallery/festival-night-crowd.svg",
+    alt: "Festival goers cheering beneath dramatic nighttime stage lights",
+  },
+  {
+    src: "/images/event-gallery/white-party-terrace.svg",
+    alt: "Guests in chic white attire gathered on a sunset terrace",
+  },
+  {
+    src: "/images/event-gallery/coastal-dinner-gathering.svg",
+    alt: "Coastal dinner party sharing stories overlooking the sea",
+  },
+  {
     src: "/images/event-gallery/date-night-toast.svg",
     alt: "Two glasses clinking during a candlelit salon",
   },

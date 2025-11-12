@@ -1,0 +1,43 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+          <title>Moonlit beach bonfire</title>
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0f1235" />
+              <stop offset="100%" stop-color="#f89b4c" />
+            </linearGradient>
+          </defs>
+          <rect width="800" height="600" fill="url(#bg)" />
+          <rect y="320" width="800" height="280" fill="#fce5c3" opacity="0.4" />
+          <g transform="translate(400, 360)">
+  <path d="M -30 60 L 0 -20 L 30 60 Z" fill="#ffb347" opacity="0.85" />
+  <path d="M -20 60 L 0 0 L 20 60 Z" fill="#ff6f61" opacity="0.8" />
+  <ellipse cx="0" cy="70" rx="70" ry="20" fill="#402312" opacity="0.6" />
+</g>
+<g transform="translate(620, 240)">
+  <rect x="-8" y="0" width="16" height="220" fill="#4f2c1d" />
+  <path d="M 0 0 C 80 -40 120 -10 140 40 C 60 20 20 40 0 0 Z" fill="#1acaa1" opacity="0.7" />
+  <path d="M 0 20 C 70 -10 110 20 130 70 C 50 40 20 60 0 20 Z" fill="#25f5c7" opacity="0.6" />
+</g>
+<g fill="#ffe7b3" opacity="0.7">
+  <circle cx="120" cy="120" r="3" />
+  <circle cx="680" cy="80" r="4" />
+  <circle cx="540" cy="150" r="2.5" />
+  <circle cx="300" cy="60" r="3.5" />
+  <circle cx="460" cy="40" r="2" />
+</g>
+          <g transform="translate(200, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#ffd6cc" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#f0748d" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#ffd6cc" opacity="0.6" />
+</g>
+<g transform="translate(340, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#f6f0ff" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#4fbecf" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#f6f0ff" opacity="0.6" />
+</g>
+<g transform="translate(480, 250)">
+  <circle cx="0" cy="-70" r="34" fill="#ffe9cf" opacity="0.9" />
+  <path d="M -42 60 C -30 10 -18 -30 0 -30 C 18 -30 30 10 42 60 Z" fill="#f5a05c" opacity="0.92" />
+  <path d="M -50 50 Q 0 -10 50 50 Z" fill="#ffe9cf" opacity="0.6" />
+</g>
+        </svg>
