@@ -21,12 +21,12 @@ const pillars = [
   {
     title: "IRL beats the feed",
     description:
-      "From salons and chef's tables to gallery takeovers, our events are designed for real chemistry—not endless swiping.",
+      "From supper clubs and chef's tables to gallery takeovers, our events are designed for real chemistry—not endless swiping.",
   },
   {
-    title: "Privacy obsessed",
+    title: "Discretion comes standard",
     description:
-      "No public directory. No surprise photo walls. You choose what to share and who to share it with.",
+      "No public directory. No surprise photo walls. You choose what to share and who sees it.",
   },
 ];
 
@@ -46,12 +46,12 @@ const membershipSteps = [
   {
     title: "Interview",
     description:
-      "We meet 1:1—virtually or over a martini—to understand your story and what you seek.",
+      "Once your application clears the first screen, we hop on a 5-minute virtual vibe check to ensure it's a fit.",
   },
   {
     title: "Party",
     description:
-      "Choose your first salon, RSVP with one tap, and let the hosts take care of the rest.",
+      "Choose your first signature event, RSVP with one tap, and let the hosts take care of the rest.",
   },
 ];
 
@@ -196,7 +196,7 @@ export default async function HomePage() {
             <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-background via-card/80 to-transparent" />
           </div>
           <p className="px-6 pb-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Moments from recent salons and after-hours adventures
+            Moments from recent supper clubs and after-hours adventures
           </p>
         </section>
 
@@ -257,7 +257,7 @@ export default async function HomePage() {
         </section>
 
         <section className="space-y-4 rounded-[28px] border border-border/70 bg-card/80 p-6 text-center">
-          <h3 className="text-xl font-semibold">Ready to trade swipes for salons?</h3>
+          <h3 className="text-xl font-semibold">Ready to trade swipes for supper clubs?</h3>
           <p className="text-sm text-muted-foreground">
             Membership is capped each season to keep the chemistry high. We review applications weekly.
           </p>
@@ -369,7 +369,7 @@ export default async function HomePage() {
         </section>
 
         <section className="mx-auto mt-16 max-w-5xl rounded-[32px] border border-border/70 bg-card/80 p-8 text-center sm:p-12">
-          <h3 className="text-2xl font-semibold sm:text-3xl">Ready to trade swipes for salons?</h3>
+          <h3 className="text-2xl font-semibold sm:text-3xl">Ready to trade swipes for supper clubs?</h3>
           <p className="mt-3 text-base text-muted-foreground sm:text-lg">
             Membership is capped each season to keep the chemistry high. We review applications weekly.
           </p>
