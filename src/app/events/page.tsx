@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import type { Event, EventRsvp } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { RsvpStatus } from "@/lib/prisma-constants";
 import { Button } from "@/components/ui/button";
+
+type Event = Awaited<ReturnType<typeof prisma.event.findMany>>[number];
+type EventRsvp = Awaited<ReturnType<typeof prisma.eventRsvp.findMany>>[number];
 
 export const metadata: Metadata = {
   title: "Events",
