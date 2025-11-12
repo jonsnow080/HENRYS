@@ -1,44 +1,100 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { Role } from "@/lib/prisma-constants";
 import { auth } from "./auth";
 
+type AuthenticatedRequest = NextRequest & {
+  auth: {
+    user?: {
+      role?: Role | null;
+    } | null;
+  } | null;
+};
+
 const memberRoutes = ["/dashboard", "/events/"];
 const hostRoutes = ["/host"];
+const adminRoutes = ["/admin"];
+
 const hostRoleSet = new Set<Role>([Role.HOST, Role.ADMIN]);
 const memberRoleSet = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
+const adminRoleSet = new Set<Role>([Role.ADMIN]);
 
-export default auth((req) => {
+function logAdminAccessDenied({
+  role,
+  path,
+  requestId,
+  reason,
+}: {
+  role: string;
+  path: string;
+  requestId: string;
+  reason: "UNAUTHENTICATED" | "INSUFFICIENT_ROLE";
+}) {
+  console.warn(
+    JSON.stringify({
+      event: "admin_access_denied",
+      role,
+      path,
+      requestId,
+      reason,
+    }),
+  );
+}
+
+export function handleProtectedRoutes(req: AuthenticatedRequest) {
   const { nextUrl } = req;
   const pathname = nextUrl.pathname;
   const session = req.auth;
 
   const requiresMember = memberRoutes.some((route) => pathname.startsWith(route));
   const requiresHost = hostRoutes.some((route) => pathname.startsWith(route));
-  if (!requiresMember && !requiresHost) {
+  const requiresAdmin = adminRoutes.some((route) => pathname.startsWith(route));
+
+  if (!requiresMember && !requiresHost && !requiresAdmin) {
     return NextResponse.next();
   }
 
   if (!session?.user) {
+    if (requiresAdmin) {
+      logAdminAccessDenied({
+        role: "ANONYMOUS",
+        path: pathname,
+        requestId: req.headers.get("x-request-id") ?? "unknown",
+        reason: "UNAUTHENTICATED",
+      });
+    }
+
     const loginUrl = new URL("/login", nextUrl.origin);
     const redirectValue = nextUrl.pathname + nextUrl.search;
     loginUrl.searchParams.set("redirectTo", redirectValue);
     loginUrl.searchParams.set("callbackUrl", redirectValue);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(loginUrl, 302);
   }
 
-  const role = session.user.role;
+  const role = session.user?.role;
 
-  if (requiresHost && !hostRoleSet.has(role)) {
+  if (requiresAdmin && (!role || !adminRoleSet.has(role))) {
+    logAdminAccessDenied({
+      role: role ?? "UNKNOWN",
+      path: pathname,
+      requestId: req.headers.get("x-request-id") ?? "unknown",
+      reason: "INSUFFICIENT_ROLE",
+    });
+    return NextResponse.rewrite(new URL("/forbidden", nextUrl.origin), { status: 403 });
+  }
+
+  if (requiresHost && (!role || !hostRoleSet.has(role))) {
     return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
   }
 
-  if (requiresMember && !memberRoleSet.has(role)) {
+  if (requiresMember && (!role || !memberRoleSet.has(role))) {
     return NextResponse.redirect(new URL("/apply", nextUrl.origin));
   }
 
   return NextResponse.next();
-});
+}
+
+export default auth(handleProtectedRoutes);
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*"],
+  matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*", "/admin/:path*"],
 };
