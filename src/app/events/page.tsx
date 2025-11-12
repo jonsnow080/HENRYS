@@ -188,12 +188,12 @@ function renderEventGrid(
 }
 
 export default async function EventsPage() {
-  const events = await prisma.event.findMany({
+  const events: Event[] = await prisma.event.findMany({
     where: { visibility: true },
     orderBy: { startAt: "asc" },
   });
 
-  const goingRsvps = await prisma.eventRsvp.findMany({
+  const goingRsvps: EventRsvp[] = await prisma.eventRsvp.findMany({
     where: {
       status: { in: [RsvpStatus.GOING] },
     },
