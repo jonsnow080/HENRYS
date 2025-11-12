@@ -81,6 +81,7 @@ async function main() {
         data: {
           imageUrl: image.imageUrl,
           altText: image.altText,
+          isVisible: true,
           sortOrder: index + 1,
         },
       });

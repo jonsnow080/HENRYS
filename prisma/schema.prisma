@@ -198,6 +198,7 @@ model HomepageCarouselImage {
   id        String   @id @default(cuid())
   imageUrl  String
   altText   String?
+  isVisible Boolean  @default(true)
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

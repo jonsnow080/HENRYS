@@ -41,6 +41,7 @@ export async function createHomepageCarouselImageAction(formData: FormData) {
     data: {
       imageUrl: trimmedUrl,
       altText: trimmedAlt.length > 0 ? trimmedAlt : null,
+      isVisible: true,
       sortOrder: (highestSort?.sortOrder ?? 0) + 1,
     },
   });
@@ -59,6 +60,77 @@ export async function deleteHomepageCarouselImageAction(formData: FormData) {
   }
 
   await prisma.homepageCarouselImage.delete({ where: { id: imageId } });
+
+  revalidatePath("/admin/homepage-carousel");
+  revalidatePath("/");
+}
+
+export async function moveHomepageCarouselImageAction(formData: FormData) {
+  await requireAdmin();
+
+  const imageId = formData.get("imageId");
+  const direction = formData.get("direction");
+
+  if (typeof imageId !== "string" || imageId.trim().length === 0) {
+    throw new Error("Missing image id.");
+  }
+
+  if (direction !== "up" && direction !== "down") {
+    throw new Error("Invalid direction.");
+  }
+
+  const orderedImages = await prisma.homepageCarouselImage.findMany({
+    orderBy: { sortOrder: "asc" },
+  });
+
+  const currentIndex = orderedImages.findIndex((image) => image.id === imageId);
+  if (currentIndex === -1) {
+    throw new Error("Image not found.");
+  }
+
+  const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+  if (swapIndex < 0 || swapIndex >= orderedImages.length) {
+    // Nothing to do if at the bounds.
+    return;
+  }
+
+  const currentImage = orderedImages[currentIndex];
+  const swapImage = orderedImages[swapIndex];
+
+  await prisma.$transaction([
+    prisma.homepageCarouselImage.update({
+      where: { id: currentImage.id },
+      data: { sortOrder: swapImage.sortOrder },
+    }),
+    prisma.homepageCarouselImage.update({
+      where: { id: swapImage.id },
+      data: { sortOrder: currentImage.sortOrder },
+    }),
+  ]);
+
+  revalidatePath("/admin/homepage-carousel");
+  revalidatePath("/");
+}
+
+export async function setHomepageCarouselImageVisibilityAction(formData: FormData) {
+  await requireAdmin();
+
+  const imageId = formData.get("imageId");
+  const nextState = formData.get("nextState");
+
+  if (typeof imageId !== "string" || imageId.trim().length === 0) {
+    throw new Error("Missing image id.");
+  }
+
+  if (nextState !== "show" && nextState !== "hide") {
+    throw new Error("Invalid visibility state.");
+  }
+
+  await prisma.homepageCarouselImage.update({
+    where: { id: imageId },
+    data: { isVisible: nextState === "show" },
+  });
 
   revalidatePath("/admin/homepage-carousel");
   revalidatePath("/");
