@@ -90,8 +90,8 @@ export default async function AdminHomePage() {
         />
         <AdminLinkCard
           href="/admin/email-previews"
-          title="Email previews"
-          description="Review transactional templates before they go out."
+          title="Email studio"
+          description="Build broadcasts, automations, and keep tabs on performance."
         />
       </section>
 
