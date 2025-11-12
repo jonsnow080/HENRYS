@@ -196,13 +196,13 @@ export function EmailStudioDashboard({ performanceCards, recentCampaigns, automa
   }, [currentForm, selectedType]);
 
   function updateFormField(field: string, value: string | boolean) {
-    setForms((previous) => {
-      const next = { ...previous };
-      const current = { ...next[selectedType] } as Record<string, string | boolean>;
-      current[field] = value;
-      next[selectedType] = current as EmailFormState[EmailType];
-      return next;
-    });
+    setForms((previous) => ({
+      ...previous,
+      [selectedType]: {
+        ...previous[selectedType],
+        [field]: value,
+      },
+    }) as EmailFormState);
   }
 
   return (
