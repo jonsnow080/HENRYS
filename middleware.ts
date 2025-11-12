@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Role } from "@/lib/prisma-constants";
 import { auth } from "./auth";
 
-const memberRoutes = ["/dashboard", "/events"];
+const memberRoutes = ["/dashboard", "/events/"];
 const hostRoutes = ["/host"];
 const hostRoleSet = new Set<Role>([Role.HOST, Role.ADMIN]);
 const memberRoleSet = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
