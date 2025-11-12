@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequestWithAuth } from "next-auth/middleware";
 import { Role } from "@/lib/prisma-constants";
 import { auth } from "./auth";
 
@@ -18,7 +19,7 @@ type GeoCookieValue = {
   src: "edge";
 };
 
-export default auth((req) => {
+export default auth((req: NextRequestWithAuth) => {
   const requestHeaders = new Headers(req.headers);
   const geoPayload = deriveGeoPayload(req);
   if (geoPayload) {
@@ -34,7 +35,7 @@ export default auth((req) => {
   return response;
 });
 
-function handleAccessControl(req: NextRequest, requestHeaders: Headers) {
+function handleAccessControl(req: NextRequestWithAuth, requestHeaders: Headers) {
   const { nextUrl } = req;
   const pathname = nextUrl.pathname;
   const session = req.auth;
