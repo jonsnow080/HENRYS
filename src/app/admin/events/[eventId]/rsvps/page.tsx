@@ -65,7 +65,7 @@ export default async function EventRsvpsPage({
   }
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
   const profiles = userIds.length
-    ? await prisma.memberProfile.findMany({ where: { userId_in: userIds } })
+    ? await prisma.memberProfile.findMany({ where: { userId: { in: userIds } } })
     : [];
   const seatGroups = await prisma.seatGroup.findMany({ where: { eventId: event.id } });
 
@@ -86,7 +86,6 @@ export default async function EventRsvpsPage({
   for (const rsvp of rsvps) {
     const user = userMap.get(rsvp.userId);
     const profile = profileMap.get(rsvp.userId);
-    const data = (profile?.data ?? {}) as Record<string, unknown>;
     const seatGroup = rsvp.seatGroupId ? seatGroupMap.get(rsvp.seatGroupId) : null;
     adminRsvps.push({
       id: rsvp.id,
@@ -99,10 +98,10 @@ export default async function EventRsvpsPage({
         email: user?.email ?? "",
       },
       profile: {
-        age: typeof data.age === "number" ? data.age : undefined,
-        vibe: typeof data.vibeEnergy === "number" ? (data.vibeEnergy as number) : undefined,
-        dietary: typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : undefined,
-        dietaryNotes: typeof data.dietaryNotes === "string" ? (data.dietaryNotes as string) : undefined,
+        age: typeof profile?.age === "number" ? profile.age : undefined,
+        vibe: typeof profile?.vibeEnergy === "number" ? profile.vibeEnergy : undefined,
+        dietary: profile?.dietaryPreferences ?? undefined,
+        dietaryNotes: profile?.dietaryNotes ?? undefined,
       },
       seatGroup: seatGroup
         ? {

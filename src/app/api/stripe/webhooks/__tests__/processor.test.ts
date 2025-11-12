@@ -11,14 +11,16 @@ import { RsvpStatus } from "@/lib/prisma-constants";
 function createDeps(overrides: Partial<StripeWebhookDependencies["prisma"]> = {}) {
   const membershipPlan = {
     findUnique: vi.fn().mockResolvedValue({ id: "plan_123", name: "Founding Monthly" }),
-    ...(overrides.membershipPlan ?? {}),
   };
+  Object.assign(membershipPlan, overrides.membershipPlan ?? {});
+
   const subscription = {
     findFirst: vi.fn().mockResolvedValue(null),
     upsert: vi.fn(),
     update: vi.fn(),
-    ...(overrides.subscription ?? {}),
   };
+  Object.assign(subscription, overrides.subscription ?? {});
+
   const payment = {
     findUnique: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockImplementation(async (args: { data: Record<string, unknown> }) => ({
@@ -27,21 +29,24 @@ function createDeps(overrides: Partial<StripeWebhookDependencies["prisma"]> = {}
       ...args.data,
     })),
     update: vi.fn(),
-    ...(overrides.payment ?? {}),
   };
+  Object.assign(payment, overrides.payment ?? {});
+
   const user = {
     findUnique: vi.fn().mockResolvedValue({ id: "user_123", email: "member@example.com" }),
-    ...(overrides.user ?? {}),
   };
+  Object.assign(user, overrides.user ?? {});
+
   const event = {
     findUnique: vi.fn().mockResolvedValue({ id: "event_123", name: "Salon" }),
-    ...(overrides.event ?? {}),
   };
+  Object.assign(event, overrides.event ?? {});
+
   const eventRsvp = {
     upsert: vi.fn(),
     findFirst: vi.fn().mockResolvedValue(null),
-    ...(overrides.eventRsvp ?? {}),
   };
+  Object.assign(eventRsvp, overrides.eventRsvp ?? {});
   const deps: StripeWebhookDependencies = {
     prisma: {
       membershipPlan,

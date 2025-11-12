@@ -29,7 +29,7 @@ export async function GET(
   }
   const users = userIds.length ? await prisma.user.findMany({ where: { id: { in: userIds } } }) : [];
   const profiles = userIds.length
-    ? await prisma.memberProfile.findMany({ where: { userId_in: userIds } })
+    ? await prisma.memberProfile.findMany({ where: { userId: { in: userIds } } })
     : [];
 
   const userMap = new Map<string, (typeof users)[number]>();
@@ -54,9 +54,8 @@ export async function GET(
     for (const rsvp of assignments) {
       const user = userMap.get(rsvp.userId);
       const profile = profileMap.get(rsvp.userId);
-      const data = (profile?.data ?? {}) as Record<string, unknown>;
-      const dietary = typeof data.dietaryPreferences === "string" ? (data.dietaryPreferences as string) : "";
-      const vibe = typeof data.vibeEnergy === "number" ? `${data.vibeEnergy}/10` : "";
+      const dietary = profile?.dietaryPreferences ?? "";
+      const vibe = typeof profile?.vibeEnergy === "number" ? `${profile.vibeEnergy}/10` : "";
       rowsParts.push(
         `<tr><td>${user?.name ?? ""}</td><td>${user?.email ?? ""}</td><td>${dietary}</td><td>${vibe}</td></tr>`,
       );
