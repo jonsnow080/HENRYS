@@ -2542,43 +2542,75 @@ const preferRealClient =
   (process.env.USE_PRISMA_CLIENT === "true" ||
     (resolvedDatabaseUrl !== "" && !resolvedDatabaseUrl.startsWith("file:")));
 
-const PrismaClientCtor = await (async () => {
+const prismaRuntime = await (async () => {
   if (!preferRealClient) {
-    return PrismaClientStub;
+    return { mode: "stub" } as const;
   }
+
+  const isEdgeRuntime = Boolean(
+    typeof globalThis !== "undefined" &&
+      (globalThis as typeof globalThis & { EdgeRuntime?: string }).EdgeRuntime,
+  );
+
   try {
+    if (isEdgeRuntime) {
+      const [edgeModule, accelerateModule] = await Promise.all([
+        import("@prisma/client/edge"),
+        import("@prisma/extension-accelerate"),
+      ]);
+
+      return {
+        mode: "edge" as const,
+        PrismaClient: edgeModule.PrismaClient,
+        withAccelerate: accelerateModule.withAccelerate,
+      };
+    }
+
     const prismaModule = await import("@prisma/client");
-    return prismaModule.PrismaClient;
+    return {
+      mode: "node" as const,
+      PrismaClient: prismaModule.PrismaClient,
+    };
   } catch {
-    return PrismaClientStub;
+    return { mode: "stub" } as const;
   }
 })();
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
-function instantiatePrismaClient(): InstanceType<typeof PrismaClientCtor> {
-  if (PrismaClientCtor === PrismaClientStub) {
-    return new PrismaClientStub() as InstanceType<typeof PrismaClientCtor>;
+function instantiatePrismaClient(): PrismaClient {
+  if (prismaRuntime.mode === "stub") {
+    return new PrismaClientStub() as unknown as PrismaClient;
   }
 
+  if (prismaRuntime.mode === "edge") {
+    const { PrismaClient: PrismaCtor, withAccelerate } = prismaRuntime;
+    const datasourceUrl = resolvedDatabaseUrl || process.env.DATABASE_URL;
+    const client = new PrismaCtor({
+      ...(datasourceUrl ? { datasourceUrl } : {}),
+    }).$extends(withAccelerate());
+    return client as unknown as PrismaClient;
+  }
+
+  const PrismaCtor = prismaRuntime.PrismaClient;
+
   try {
-    return new PrismaClientCtor({
+    return new PrismaCtor({
       log:
         process.env.NODE_ENV === "development"
           ? ["query", "error", "warn"]
           : ["error"],
-    });
+    }) as unknown as PrismaClient;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes("@prisma/client did not initialize")) {
-      return new PrismaClientStub() as InstanceType<typeof PrismaClientCtor>;
+      return new PrismaClientStub() as unknown as PrismaClient;
     }
     throw error;
   }
 }
-const prismaClient =
-  globalForPrisma.prisma ?? (instantiatePrismaClient() as unknown as PrismaClient);
+const prismaClient = globalForPrisma.prisma ?? instantiatePrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prismaClient;
