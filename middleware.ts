@@ -95,6 +95,17 @@ export function handleProtectedRoutes(req: AuthenticatedRequest) {
 
 export default auth(handleProtectedRoutes);
 
+const protectedMatchers = [
+  "/dashboard",
+  "/dashboard/:path*",
+  "/events",
+  "/events/:path*",
+  "/host",
+  "/host/:path*",
+  "/admin",
+  "/admin/:path*",
+];
+
 export const config = {
-  matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*", "/admin/:path*"],
+  matcher: protectedMatchers,
 };
