@@ -1240,6 +1240,156 @@ function ensureDefaultData() {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
+      {
+        id: "carousel-5",
+        imageUrl:
+          "https://images.unsplash.com/photo-1521335629791-ce4aec67dd53?auto=format&fit=crop&w=1024&q=80",
+        altText: "Friends dancing with cocktails under club lights.",
+        isVisible: true,
+        sortOrder: 5,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-6",
+        imageUrl:
+          "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=1024&q=80",
+        altText: "Beach bonfire crew celebrating at sunset.",
+        isVisible: true,
+        sortOrder: 6,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-7",
+        imageUrl:
+          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1024&q=80",
+        altText: "Candlelit garden dinner party with wine.",
+        isVisible: true,
+        sortOrder: 7,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-8",
+        imageUrl:
+          "https://images.unsplash.com/photo-1530023367847-a683933f4177?auto=format&fit=crop&w=1024&q=80",
+        altText: "Stylish friends gathered for a rooftop supper.",
+        isVisible: true,
+        sortOrder: 8,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-9",
+        imageUrl:
+          "https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=1024&q=80",
+        altText: "DJ leading a packed nightclub dance floor.",
+        isVisible: true,
+        sortOrder: 9,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-10",
+        imageUrl:
+          "https://images.unsplash.com/photo-1520288824200-8558b1c1f34b?auto=format&fit=crop&w=1024&q=80",
+        altText: "Couple toasting at an intimate dinner party.",
+        isVisible: true,
+        sortOrder: 10,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-11",
+        imageUrl:
+          "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1024&q=80",
+        altText: "Romantic duo savoring a tasting menu.",
+        isVisible: true,
+        sortOrder: 11,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-12",
+        imageUrl:
+          "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1024&q=80",
+        altText: "Friends embracing beneath string lights at a bar.",
+        isVisible: true,
+        sortOrder: 12,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-13",
+        imageUrl:
+          "https://images.unsplash.com/photo-1515165562835-c4c34b564cdf?auto=format&fit=crop&w=1024&q=80",
+        altText: "Neon-lit club crowd celebrating together.",
+        isVisible: true,
+        sortOrder: 13,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-14",
+        imageUrl:
+          "https://images.unsplash.com/photo-1513639725746-c5d3e861f32a?auto=format&fit=crop&w=1024&q=80",
+        altText: "Friends dancing amid concert-style lighting.",
+        isVisible: true,
+        sortOrder: 14,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-15",
+        imageUrl:
+          "https://images.unsplash.com/photo-1532635241-17e820acc59f?auto=format&fit=crop&w=1024&q=80",
+        altText: "Sun-kissed friends cheering on a tropical beach.",
+        isVisible: true,
+        sortOrder: 15,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-16",
+        imageUrl:
+          "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1024&q=80",
+        altText: "Champagne toast around a luxe cocktail table.",
+        isVisible: true,
+        sortOrder: 16,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-17",
+        imageUrl:
+          "https://images.unsplash.com/photo-1528712306091-ed0763094c98?auto=format&fit=crop&w=1024&q=80",
+        altText: "Couple lounging in a candlelit speakeasy booth.",
+        isVisible: true,
+        sortOrder: 17,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-18",
+        imageUrl:
+          "https://images.unsplash.com/photo-1518976024611-28bf4b48222e?auto=format&fit=crop&w=1024&q=80",
+        altText: "Friends celebrating with surfside cocktails.",
+        isVisible: true,
+        sortOrder: 18,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "carousel-19",
+        imageUrl:
+          "https://images.unsplash.com/photo-1525286116112-b59af11adad1?auto=format&fit=crop&w=1024&q=80",
+        altText: "Rooftop lounge crowd clinking glasses at dusk.",
+        isVisible: true,
+        sortOrder: 19,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ];
 
     stubData.homepageCarouselImages.push(...defaults);
