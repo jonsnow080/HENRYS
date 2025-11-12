@@ -85,7 +85,7 @@ export default async function AdminHomepageCarouselPage() {
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {images.map((image: HomepageCarouselImage, index) => (
+            {images.map((image: HomepageCarouselImage, index: number) => (
               <Card
                 key={image.id}
                 className={cn(
