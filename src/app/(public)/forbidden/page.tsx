@@ -21,7 +21,9 @@ export default function ForbiddenPage() {
       </p>
       <nav className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center">
         <Button asChild size="lg" className="rounded-full px-6">
-          <Link href="/">Back to home</Link>
+          <Link href="/" aria-label="Return to the public home page">
+            Return to homepage
+          </Link>
         </Button>
         <Button asChild variant="secondary" size="lg" className="rounded-full px-6">
           <Link href="mailto:team@henrys.club">Contact support</Link>

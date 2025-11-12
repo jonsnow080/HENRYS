@@ -14,6 +14,13 @@ const memberRoutes = ["/dashboard", "/events/"];
 const hostRoutes = ["/host"];
 const adminRoutes = ["/admin"];
 
+function absoluteUrl(req: NextRequest, pathname: string) {
+  const url = req.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  return url;
+}
+
 const hostRoleSet = new Set<Role>([Role.HOST, Role.ADMIN]);
 const memberRoleSet = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
 const adminRoleSet = new Set<Role>([Role.ADMIN]);
@@ -63,7 +70,7 @@ export function handleProtectedRoutes(req: AuthenticatedRequest) {
       });
     }
 
-    const loginUrl = new URL("/login", nextUrl.origin);
+    const loginUrl = absoluteUrl(req, "/login");
     const redirectValue = nextUrl.pathname + nextUrl.search;
     loginUrl.searchParams.set("redirectTo", redirectValue);
     loginUrl.searchParams.set("callbackUrl", redirectValue);
@@ -79,15 +86,16 @@ export function handleProtectedRoutes(req: AuthenticatedRequest) {
       requestId: req.headers.get("x-request-id") ?? "unknown",
       reason: "INSUFFICIENT_ROLE",
     });
-    return NextResponse.rewrite(new URL("/forbidden", nextUrl.origin), { status: 403 });
+    const forbiddenUrl = absoluteUrl(req, "/forbidden");
+    return NextResponse.rewrite(forbiddenUrl, { status: 403 });
   }
 
   if (requiresHost && (!role || !hostRoleSet.has(role))) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
+    return NextResponse.redirect(absoluteUrl(req, "/dashboard"));
   }
 
   if (requiresMember && (!role || !memberRoleSet.has(role))) {
-    return NextResponse.redirect(new URL("/apply", nextUrl.origin));
+    return NextResponse.redirect(absoluteUrl(req, "/apply"));
   }
 
   return NextResponse.next();
