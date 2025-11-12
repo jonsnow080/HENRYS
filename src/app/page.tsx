@@ -136,6 +136,7 @@ const DEFAULT_EVENT_GALLERY = [
 
 export default async function HomePage() {
   const carouselRecords = await prisma.homepageCarouselImage.findMany({
+    where: { isVisible: true },
     orderBy: { sortOrder: "asc" },
   });
 

@@ -371,6 +371,7 @@ type HomepageCarouselImageStub = {
   id: string;
   imageUrl: string;
   altText: string | null;
+  isVisible: boolean;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
@@ -522,6 +523,7 @@ type PaymentUpdateArgs = {
 type SortDirection = "asc" | "desc";
 
 type HomepageCarouselImageFindManyArgs = {
+  where?: { isVisible?: boolean };
   orderBy?:
     | { sortOrder?: SortDirection; createdAt?: SortDirection }
     | { sortOrder?: SortDirection; createdAt?: SortDirection }[];
@@ -533,6 +535,17 @@ type HomepageCarouselImageCreateArgs = {
   data: {
     imageUrl: string;
     altText?: string | null;
+    isVisible?: boolean;
+    sortOrder?: number;
+  };
+};
+
+type HomepageCarouselImageUpdateArgs = {
+  where: { id: string };
+  data: {
+    imageUrl?: string;
+    altText?: string | null;
+    isVisible?: boolean;
     sortOrder?: number;
   };
 };
@@ -1192,6 +1205,7 @@ function ensureDefaultData() {
         imageUrl:
           "https://images.unsplash.com/photo-1529634898388-84d0fb4fb9b8?auto=format&fit=crop&w=1024&q=80",
         altText: "Couple clinking cocktails at a candlelit bar table.",
+        isVisible: true,
         sortOrder: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -1201,6 +1215,7 @@ function ensureDefaultData() {
         imageUrl:
           "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1024&q=80",
         altText: "Friends laughing together in a vibrant lounge.",
+        isVisible: true,
         sortOrder: 2,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -1210,6 +1225,7 @@ function ensureDefaultData() {
         imageUrl:
           "https://images.unsplash.com/photo-1544075571-21005b86c60c?auto=format&fit=crop&w=1024&q=80",
         altText: "Couple sharing a toast in a dimly lit speakeasy.",
+        isVisible: true,
         sortOrder: 3,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -1219,6 +1235,7 @@ function ensureDefaultData() {
         imageUrl:
           "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1024&q=80",
         altText: "Elegant pair posing beside the bar lights.",
+        isVisible: true,
         sortOrder: 4,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -1858,6 +1875,10 @@ class PrismaClientStub {
         cloneHomepageCarouselImage(image),
       );
 
+      if (args?.where?.isVisible !== undefined) {
+        images = images.filter((image) => image.isVisible === args.where?.isVisible);
+      }
+
       if (args?.orderBy) {
         const rules = Array.isArray(args.orderBy)
           ? args.orderBy
@@ -1887,6 +1908,7 @@ class PrismaClientStub {
     },
     findFirst: async (args?: HomepageCarouselImageFindFirstArgs) => {
       const results = await this.homepageCarouselImage.findMany({
+        where: args?.where,
         orderBy: args?.orderBy,
       });
       return results[0] ?? null;
@@ -1897,6 +1919,7 @@ class PrismaClientStub {
         id: nextId("carousel"),
         imageUrl: args.data.imageUrl,
         altText: args.data.altText ?? null,
+        isVisible: args.data.isVisible ?? true,
         sortOrder:
           args.data.sortOrder ??
           (stubData.homepageCarouselImages[stubData.homepageCarouselImages.length - 1]?.sortOrder ?? 0) +
@@ -1905,6 +1928,19 @@ class PrismaClientStub {
         updatedAt: new Date(),
       };
       stubData.homepageCarouselImages.push(image);
+      return cloneHomepageCarouselImage(image);
+    },
+    update: async (args: HomepageCarouselImageUpdateArgs) => {
+      ensureDefaultData();
+      const image = stubData.homepageCarouselImages.find((entry) => entry.id === args.where.id);
+      if (!image) {
+        throw new Error("Carousel image not found in stub");
+      }
+      if (args.data.imageUrl !== undefined) image.imageUrl = args.data.imageUrl;
+      if (args.data.altText !== undefined) image.altText = args.data.altText;
+      if (args.data.isVisible !== undefined) image.isVisible = args.data.isVisible;
+      if (args.data.sortOrder !== undefined) image.sortOrder = args.data.sortOrder;
+      image.updatedAt = new Date();
       return cloneHomepageCarouselImage(image);
     },
     delete: async (args: HomepageCarouselImageDeleteArgs) => {
