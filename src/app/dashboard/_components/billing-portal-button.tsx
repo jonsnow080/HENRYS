@@ -30,7 +30,7 @@ export function BillingPortalButton() {
 
   return (
     <Button variant="outline" onClick={openPortal} disabled={isPending}>
-      {isPending ? "Opening…" : "Manage billing"}
+      {isPending ? "Opening…" : "Manage billing in Stripe"}
     </Button>
   );
 }

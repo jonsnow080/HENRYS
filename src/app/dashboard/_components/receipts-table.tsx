@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ResendReceiptButton } from "./resend-receipt-button";
 
 export type ReceiptRow = {
   id: string;
@@ -41,18 +42,21 @@ export function ReceiptsTable({ receipts }: { receipts: ReceiptRow[] }) {
               <TableCell className="text-sm">{receipt.description}</TableCell>
               <TableCell className="text-right text-sm font-medium">{receipt.amount}</TableCell>
               <TableCell className="text-right text-sm">
-                {receipt.receiptUrl ? (
-                  <Link
-                    href={receipt.receiptUrl}
-                    className="text-foreground underline-offset-4 hover:underline"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View
-                  </Link>
-                ) : (
-                  <span className="text-muted-foreground">Pending</span>
-                )}
+                <div className="flex flex-col items-end gap-1">
+                  {receipt.receiptUrl ? (
+                    <Link
+                      href={receipt.receiptUrl}
+                      className="text-foreground underline-offset-4 hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View Stripe receipt
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">Pending</span>
+                  )}
+                  <ResendReceiptButton paymentId={receipt.id} />
+                </div>
               </TableCell>
             </TableRow>
           ))}

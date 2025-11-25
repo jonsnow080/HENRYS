@@ -120,14 +120,22 @@ export default async function DashboardPage({
 
       {hasActiveSubscription ? (
         <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-background p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">Active membership</p>
-            <h2 className="mt-1 text-2xl font-semibold">{activePlan?.name ?? "HENRYS membership"}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Status: <span className="font-medium text-foreground">{subscription?.status ?? "active"}</span>
+          <div className="space-y-2">
+            <div>
+              <p className="text-sm uppercase tracking-wide text-muted-foreground">Active membership</p>
+              <h2 className="mt-1 text-2xl font-semibold">{activePlan?.name ?? "HENRYS membership"}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Status: <span className="font-medium text-foreground">{subscription?.status ?? "active"}</span>
+              </p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Billing is handled directly in Stripe. Update cards, manage renewals, or download invoices from the portal.
             </p>
           </div>
-          <BillingPortalButton />
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <BillingPortalButton />
+            <p className="text-xs text-muted-foreground">Opens the Stripe Billing Portal</p>
+          </div>
         </div>
       ) : (
         <SubscribeCard plans={plans} />
