@@ -145,6 +145,51 @@ export function paymentReceiptTemplate({
 </mjml>`;
 }
 
+export function eventArrivalSequenceTemplate({
+  name,
+  eventName,
+  startAt,
+  venue,
+  notes,
+}: {
+  name: string;
+  eventName: string;
+  startAt: string;
+  venue: string;
+  notes: string | null;
+}) {
+  return `
+<mjml>
+  <mj-head>
+    <mj-title>${eventName} arrival details</mj-title>
+    ${baseStyles}
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section background-color="#ffffff" padding="32px" border-radius="24px">
+      <mj-column>
+        <mj-text font-size="24px" font-weight="600" css-class="body-copy">${greeting(name)}, you&apos;re on the list.</mj-text>
+        <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
+          Your spot at <strong>${eventName}</strong> is locked. Show this email to the host on arrival so we can whisk you in quickly.
+        </mj-text>
+        <mj-text font-size="16px" css-class="body-copy">
+          <strong>When:</strong> ${startAt}<br />
+          <strong>Where:</strong> ${venue}
+        </mj-text>
+        ${
+          notes
+            ? `<mj-text font-size="15px" css-class="body-copy">${notes}</mj-text>`
+            : ""
+        }
+        <mj-text font-size="14px" css-class="muted">
+          Arriving with a guest? Reply with their name so security can be ready. Running late? Text your host and we&apos;ll keep your seat warm.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    ${footer}
+  </mj-body>
+</mjml>`;
+}
+
 function greeting(name: string) {
   if (!name) return "Hey there";
   return `Hi ${name.split(" ")[0] ?? name}`;

@@ -8,7 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { SITE_COPY } from "@/lib/site-copy";
-import { toggleNoShowAction, updateRsvpStatusAction } from "./actions";
+import {
+  sendArrivalSequenceAction,
+  toggleNoShowAction,
+  updateRsvpStatusAction,
+} from "./actions";
 
 const STATUS_FILTERS = ["all", RsvpStatus.GOING, RsvpStatus.WAITLISTED, RsvpStatus.CANCELED] as const;
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -173,6 +177,13 @@ export default async function EventRsvpsPage({
             <div>Going {stats.going} · Waitlist {stats.waitlist}</div>
             <div>No-shows {stats.noShow}</div>
           </div>
+          <form action={sendArrivalSequenceAction} className="flex items-center gap-2">
+            <input type="hidden" name="eventId" value={event.id} />
+            <input type="hidden" name="redirectTo" value={redirectPath} />
+            <Button type="submit" variant="secondary" className="rounded-full">
+              Send arrival sequence
+            </Button>
+          </form>
           <Button asChild variant="outline" className="rounded-full">
             <Link href={exportUrl}>Export CSV</Link>
           </Button>
