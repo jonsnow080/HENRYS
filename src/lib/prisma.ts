@@ -2542,8 +2542,18 @@ const preferRealClient =
   (process.env.USE_PRISMA_CLIENT === "true" ||
     (resolvedDatabaseUrl !== "" && !resolvedDatabaseUrl.startsWith("file:")));
 
+const vercelEnv = process.env.VERCEL_ENV;
+const isProductionDeployment =
+  vercelEnv === "production" || (!vercelEnv && process.env.NODE_ENV === "production");
+const isPreviewDeployment = vercelEnv === "preview";
+
 const prismaRuntime = await (async () => {
   if (!preferRealClient) {
+    if (isProductionDeployment && !isPreviewDeployment) {
+      throw new Error(
+        "Prisma client stub cannot be used in production. Ensure DATABASE_URL is set and Prisma is installed.",
+      );
+    }
     return { mode: "stub" } as const;
   }
 
@@ -2571,7 +2581,13 @@ const prismaRuntime = await (async () => {
       mode: "node" as const,
       PrismaClient: prismaModule.PrismaClient,
     };
-  } catch {
+  } catch (error) {
+    if (isProductionDeployment && !isPreviewDeployment) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Failed to load Prisma client in production; stub fallback is disabled. Underlying error: ${message}`,
+      );
+    }
     return { mode: "stub" } as const;
   }
 })();
@@ -2605,6 +2621,11 @@ function instantiatePrismaClient(): PrismaClient {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes("@prisma/client did not initialize")) {
+      if (isProductionDeployment && !isPreviewDeployment) {
+        throw new Error(
+          "Prisma client failed to initialize in production; stub fallback is not allowed.",
+        );
+      }
       return new PrismaClientStub() as unknown as PrismaClient;
     }
     throw error;
