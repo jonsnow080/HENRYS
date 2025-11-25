@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import type { EventRsvp } from "@prisma/client";
 import { Role, RsvpStatus } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
 
@@ -23,7 +22,7 @@ export async function GET(
     where: { eventId: event.id },
     orderBy: { tableNumber: "asc" },
   });
-  const rsvps: EventRsvp[] = await prisma.eventRsvp.findMany({
+  const rsvps = await prisma.eventRsvp.findMany({
     where: { eventId: event.id, status: RsvpStatus.GOING },
   });
   const unassigned = rsvps.filter((rsvp) => !rsvp.seatGroupId);
