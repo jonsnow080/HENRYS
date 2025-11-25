@@ -151,8 +151,8 @@ export default async function HomePage() {
 
   return (
     <div className="px-4 pb-16 pt-12 sm:px-6 lg:px-8">
-      <section className="mx-auto flex max-w-5xl flex-col items-start gap-8 rounded-[32px] border border-border/60 bg-card/80 p-6 shadow-lg backdrop-blur-sm sm:gap-10 sm:rounded-[40px] sm:p-10">
-        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+      <section className="mx-auto flex max-w-5xl flex-col items-start gap-8 rounded-[32px] border border-border-subtle bg-gradient-beige-mint p-6 shadow-lg backdrop-blur-sm sm:gap-10 sm:rounded-[40px] sm:p-10">
+        <span className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-brand-badge px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-brand-fg">
           <Sparkles className="h-4 w-4" /> Invite-only · London
         </span>
         <div className="space-y-4 text-left sm:space-y-6">
@@ -181,10 +181,10 @@ export default async function HomePage() {
           {highlights.map((item) => (
             <li
               key={item}
-              className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 p-4"
+              className="flex items-start gap-3 rounded-2xl border border-border-subtle bg-brand-bg p-4"
             >
               <span
-                className="mt-1 inline-flex h-2 w-2 flex-none rounded-full bg-foreground"
+                className="mt-1 inline-flex h-2 w-2 flex-none rounded-full bg-brand-primary"
                 aria-hidden={true}
               />
               <span>{item}</span>
@@ -246,7 +246,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-16 w-full max-w-4xl space-y-6 rounded-[32px] border border-border/70 bg-gradient-to-br from-background via-background to-muted/40 p-6 text-center sm:rounded-[36px] sm:p-12">
+      <section className="mx-auto mt-16 w-full max-w-4xl space-y-6 rounded-[32px] border border-border-subtle bg-gradient-mint-green p-6 text-center sm:rounded-[36px] sm:p-12">
         <div className="space-y-3">
           <h2 className="text-2xl font-semibold text-foreground sm:text-4xl">How membership works</h2>
           <p className="text-sm text-muted-foreground sm:text-base">
@@ -272,7 +272,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-16 w-full max-w-5xl rounded-[32px] border border-border/70 bg-card/80 p-6 text-center sm:p-12">
+      <section className="mx-auto mt-16 w-full max-w-5xl rounded-[32px] border border-border-subtle bg-brand-bg p-6 text-center sm:p-12">
         <h2 className="text-2xl font-semibold sm:text-3xl">Ready to trade swipes for supper clubs?</h2>
         <p className="mt-3 text-sm text-muted-foreground sm:text-lg">
           Membership is capped each season to keep the chemistry high. We review applications weekly.
