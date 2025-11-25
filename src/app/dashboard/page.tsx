@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { SignOutButton } from "@/ui/SignOutButton";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency } from "@/lib/utils";
+import { formatPrice } from "@/lib/intl/formatters";
+import { resolveIntlConfig } from "@/lib/intl/resolveIntlConfig";
 import { SubscribeCard, type MembershipPlanOption } from "./_components/subscribe-card";
 import { BillingPortalButton } from "./_components/billing-portal-button";
 import { ReceiptsTable, type ReceiptRow } from "./_components/receipts-table";
@@ -37,6 +38,7 @@ export default async function DashboardPage({
     redirect("/login");
   }
 
+  const intlConfig = resolveIntlConfig();
   const userId = session.user.id;
 
   const [plansData, subscription, payments] = await Promise.all([
@@ -77,7 +79,7 @@ export default async function DashboardPage({
       id: payment.id,
       createdAt: payment.createdAt,
       description,
-      amount: formatCurrency(payment.amount, payment.currency),
+      amount: formatPrice({ amountMinor: payment.amount, currencyOverride: payment.currency, intlConfig }),
       receiptUrl: payment.receiptUrl,
     });
   }
@@ -140,7 +142,7 @@ export default async function DashboardPage({
             Every ticket and membership renewal routes through Stripe checkout. Download official receipts anytime.
           </p>
         </div>
-        <ReceiptsTable receipts={receipts} />
+        <ReceiptsTable receipts={receipts} intlConfig={intlConfig} />
       </div>
     </div>
   );

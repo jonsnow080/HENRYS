@@ -3,7 +3,8 @@ import { RsvpStatus } from "@/lib/prisma-constants";
 import type { prisma as prismaClient } from "@/lib/prisma";
 import type { sendEmail as sendEmailFn } from "@/lib/email/send";
 import { paymentReceiptTemplate } from "@/lib/email/templates";
-import { formatCurrency } from "@/lib/utils";
+import { formatPrice } from "@/lib/intl/formatters";
+import { DEFAULT_INTL_CONFIG } from "@/lib/intl/resolveIntlConfig";
 
 export type PrismaClientLike = typeof prismaClient;
 export type SendEmail = typeof sendEmailFn;
@@ -130,7 +131,11 @@ async function handleChargeSucceeded(
   const user = await deps.prisma.user.findUnique({ where: { id: userId } });
   if (!user?.email) return;
 
-  const prettyAmount = formatCurrency(payment.amount, payment.currency);
+  const prettyAmount = formatPrice({
+    amountMinor: payment.amount,
+    currencyOverride: payment.currency,
+    intlConfig: DEFAULT_INTL_CONFIG,
+  });
   const emailDescription =
     payment.description ??
     charge.description ??

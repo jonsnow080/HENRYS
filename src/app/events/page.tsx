@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatEventDateTime, formatPrice } from "@/lib/intl/formatters";
+import { resolveIntlConfig, type IntlConfig } from "@/lib/intl/resolveIntlConfig";
 import { RsvpStatus } from "@/lib/prisma-constants";
 import { Button } from "@/components/ui/button";
 
@@ -99,6 +100,7 @@ function renderEventGrid(
   events: Event[],
   rsvpMap: Map<string, EventRsvp[]>,
   highlight: "past" | "upcoming",
+  intlConfig: IntlConfig,
 ) {
   if (events.length === 0) {
     return (
@@ -129,7 +131,14 @@ function renderEventGrid(
           const genderRatio = summarizeGenderRatio(going);
           const location = event.venueName ?? event.venue ?? "Location shared with attendees";
           const priceLabel =
-            event.priceCents > 0 ? formatCurrency(event.priceCents, event.currency) : "Complimentary";
+            event.priceCents > 0
+              ? formatPrice({ amountMinor: event.priceCents, currencyOverride: event.currency, intlConfig })
+              : "Complimentary";
+          const eventDateLabels = formatEventDateTime({
+            start: event.startAt,
+            end: event.endAt,
+            intlConfig,
+          });
 
           return (
             <article
@@ -148,7 +157,7 @@ function renderEventGrid(
               <div className="flex flex-1 flex-col gap-6 p-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    <span>{formatDate(event.startAt)}</span>
+                    <span>{eventDateLabels.list}</span>
                     <span className="rounded-full bg-muted px-3 py-1 text-[0.65rem] font-semibold tracking-[0.2em] text-muted-foreground">
                       {highlight === "upcoming" ? "Upcoming" : "Past"}
                     </span>
@@ -218,6 +227,8 @@ export default async function EventsPage() {
     .filter((event) => event.startAt.getTime() < now.getTime())
     .sort((a, b) => b.startAt.getTime() - a.startAt.getTime());
 
+  const intlConfig = resolveIntlConfig();
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 sm:px-6 lg:px-8">
       <header className="space-y-4 text-center sm:text-left">
@@ -235,6 +246,7 @@ export default async function EventsPage() {
         upcoming,
         rsvpMap,
         "upcoming",
+        intlConfig,
       )}
 
       {renderEventGrid(
@@ -243,6 +255,7 @@ export default async function EventsPage() {
         past,
         rsvpMap,
         "past",
+        intlConfig,
       )}
     </div>
   );
