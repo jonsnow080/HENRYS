@@ -13,6 +13,7 @@ import {
   toggleNoShowAction,
   updateRsvpStatusAction,
 } from "./actions";
+import { buildStripeCustomerUrl } from "@/lib/stripe/dashboard";
 
 const STATUS_FILTERS = ["all", RsvpStatus.GOING, RsvpStatus.WAITLISTED, RsvpStatus.CANCELED] as const;
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -36,6 +37,10 @@ type AdminRsvp = {
   seatGroup: {
     id: string;
     tableNumber: number;
+  } | null;
+  subscription: {
+    stripeCustomerId: string;
+    status: string;
   } | null;
   createdAt: Date;
 };
@@ -71,6 +76,9 @@ export default async function EventRsvpsPage({
   const profiles = userIds.length
     ? await prisma.memberProfile.findMany({ where: { userId: { in: userIds } } })
     : [];
+  const subscriptions = userIds.length
+    ? await prisma.subscription.findMany({ where: { userId: { in: userIds } } })
+    : [];
   const seatGroups = await prisma.seatGroup.findMany({ where: { eventId: event.id } });
 
   const userMap = new Map<string, (typeof users)[number]>();
@@ -85,12 +93,17 @@ export default async function EventRsvpsPage({
   for (const group of seatGroups) {
     seatGroupMap.set(group.id, group);
   }
+  const subscriptionMap = new Map<string, (typeof subscriptions)[number]>();
+  for (const subscription of subscriptions) {
+    subscriptionMap.set(subscription.userId, subscription);
+  }
 
   const adminRsvps: AdminRsvp[] = [];
   for (const rsvp of rsvps) {
     const user = userMap.get(rsvp.userId);
     const profile = profileMap.get(rsvp.userId);
     const seatGroup = rsvp.seatGroupId ? seatGroupMap.get(rsvp.seatGroupId) : null;
+    const subscription = subscriptionMap.get(rsvp.userId);
     adminRsvps.push({
       id: rsvp.id,
       status: rsvp.status as RsvpStatus,
@@ -111,6 +124,12 @@ export default async function EventRsvpsPage({
         ? {
             id: seatGroup.id,
             tableNumber: seatGroup.tableNumber,
+          }
+        : null,
+      subscription: subscription
+        ? {
+            stripeCustomerId: subscription.stripeCustomerId,
+            status: subscription.status,
           }
         : null,
       createdAt: rsvp.createdAt,
@@ -230,6 +249,21 @@ export default async function EventRsvpsPage({
                       ) : (
                         <Badge variant="outline" className="bg-muted text-xs text-muted-foreground">Unassigned</Badge>
                       )}
+                      {entry.subscription ? (
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                          <Badge variant="outline" className="bg-muted text-[11px] uppercase tracking-wide">
+                            Billing: {entry.subscription.status}
+                          </Badge>
+                          <Link
+                            href={buildStripeCustomerUrl(entry.subscription.stripeCustomerId)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-foreground underline-offset-4 hover:underline"
+                          >
+                            Stripe customer
+                          </Link>
+                        </div>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell>
