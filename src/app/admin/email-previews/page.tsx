@@ -76,6 +76,15 @@ const recentCampaigns: EmailStudioDashboardProps["recentCampaigns"] = [
 
 const automations: EmailStudioDashboardProps["automations"] = [
   {
+    id: "event-arrival-sequence",
+    name: "Event arrival micro-commitments",
+    trigger: "Ticket purchased and event date is set",
+    action: "T-48h SMS/push → T-36h window nudge → T-24h social proof → T-3h concierge email",
+    metric: "Auto-enrolled ticket holders",
+    status: "Active",
+    lastTouched: "Aligned to next event",
+  },
+  {
     id: "new-member-onboarding",
     name: "New member onboarding",
     trigger: "When membership is approved",
