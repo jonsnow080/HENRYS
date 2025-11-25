@@ -1,22 +1,115 @@
-const store = new Map<string, { count: number; expiresAt: number }>();
+import { Ratelimit, type RatelimitResponse } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { headers as nextHeaders } from "next/headers";
+import { NextResponse, type NextRequest } from "next/server";
 
-const MAX = Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 5);
-const WINDOW = Number(process.env.RATE_LIMIT_WINDOW_SECONDS ?? 900) * 1000;
+const redis = Redis.fromEnv();
 
-export function checkRateLimit(key: string) {
-  const now = Date.now();
-  const entry = store.get(key);
+const authLimiter = new Ratelimit({
+  redis,
+  analytics: true,
+  prefix: "rate:auth",
+  limiter: Ratelimit.slidingWindow(10, "5 m"),
+});
 
-  if (!entry || entry.expiresAt < now) {
-    store.set(key, { count: 1, expiresAt: now + WINDOW });
-    return { allowed: true, remaining: MAX - 1, resetAt: now + WINDOW };
+const applicationLimiter = new Ratelimit({
+  redis,
+  analytics: true,
+  prefix: "rate:application",
+  limiter: Ratelimit.fixedWindow(3, "30 m"),
+});
+
+const checkoutLimiter = new Ratelimit({
+  redis,
+  analytics: true,
+  prefix: "rate:checkout",
+  limiter: Ratelimit.slidingWindow(8, "10 m"),
+});
+
+const allowedResult: RatelimitResponse = {
+  success: true,
+  limit: Number.MAX_SAFE_INTEGER,
+  remaining: Number.MAX_SAFE_INTEGER,
+  reset: Date.now() + 1000,
+};
+
+function extractClientIp(value?: string | null) {
+  if (!value) return null;
+
+  const [first] = value.split(",");
+  return first?.trim() || null;
+}
+
+function buildIdentifier({
+  ip,
+  forwardedFor,
+  userId,
+}: {
+  ip?: string | null;
+  forwardedFor?: string | null;
+  userId?: string | null;
+}) {
+  return userId ?? ip ?? extractClientIp(forwardedFor) ?? "anonymous";
+}
+
+async function applyLimiter(limiter: Ratelimit, identifier: string) {
+  try {
+    return await limiter.limit(identifier);
+  } catch (error) {
+    console.error("Rate limit check failed", error);
+    return allowedResult;
   }
+}
 
-  if (entry.count >= MAX) {
-    return { allowed: false, remaining: 0, resetAt: entry.expiresAt };
-  }
+export async function limitAuthRequest(req: NextRequest, userId?: string) {
+  return applyLimiter(
+    authLimiter,
+    buildIdentifier({
+      ip: req.ip,
+      forwardedFor: req.headers.get("x-forwarded-for"),
+      userId: userId ?? null,
+    }),
+  );
+}
 
-  entry.count += 1;
-  store.set(key, entry);
-  return { allowed: true, remaining: MAX - entry.count, resetAt: entry.expiresAt };
+export async function limitApplicationSubmission(userId?: string | null) {
+  const headerList = nextHeaders();
+  return applyLimiter(
+    applicationLimiter,
+    buildIdentifier({ forwardedFor: headerList.get("x-forwarded-for"), userId: userId ?? null }),
+  );
+}
+
+export async function limitCheckoutRequest(req: NextRequest, userId?: string | null) {
+  return applyLimiter(
+    checkoutLimiter,
+    buildIdentifier({
+      ip: req.ip,
+      forwardedFor: req.headers.get("x-forwarded-for"),
+      userId: userId ?? null,
+    }),
+  );
+}
+
+export function buildRateLimitHeaders(result: RatelimitResponse): Record<string, string> {
+  return {
+    "RateLimit-Limit": `${result.limit}`,
+    "RateLimit-Remaining": `${result.remaining}`,
+    "RateLimit-Reset": `${result.reset}`,
+  };
+}
+
+export function rateLimitErrorResponse(result: RatelimitResponse) {
+  const retryAfterSeconds = Math.max(0, Math.ceil((result.reset - Date.now()) / 1000));
+
+  return NextResponse.json(
+    { error: "Too many requests" },
+    {
+      status: 429,
+      headers: {
+        ...buildRateLimitHeaders(result),
+        "Retry-After": `${retryAfterSeconds}`,
+      },
+    },
+  );
 }

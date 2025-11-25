@@ -2,19 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { buildRateLimitHeaders, limitCheckoutRequest, rateLimitErrorResponse } from "@/lib/rate-limit";
 import { getStripe } from "@/lib/stripe/server";
 import { getBaseUrl } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
-export async function POST(
-  _req: NextRequest,
-  context: { params: Promise<{ eventId: string }> },
-) {
+export async function POST(req: NextRequest, context: { params: Promise<{ eventId: string }> }) {
   const { eventId } = await context.params;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rateLimitResult = await limitCheckoutRequest(req, session.user.id);
+  if (!rateLimitResult.success) {
+    return rateLimitErrorResponse(rateLimitResult);
   }
 
   const event = await prisma.event.findUnique({ where: { id: eventId } });
@@ -75,5 +78,11 @@ export async function POST(
 
   const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
 
-  return NextResponse.json({ sessionId: checkoutSession.id });
+  const response = NextResponse.json({ sessionId: checkoutSession.id });
+  const headers = buildRateLimitHeaders(rateLimitResult);
+  Object.entries(headers).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
+  return response;
 }

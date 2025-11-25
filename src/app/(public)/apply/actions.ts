@@ -6,6 +6,7 @@ import { applicationSchema } from "@/lib/application/schema";
 import { isCommonEmailDomain } from "@/lib/application/common-email-domains";
 import { ApplicationStatus, Role } from "@/lib/prisma-constants";
 import { prisma } from "@/lib/prisma";
+import { limitApplicationSubmission } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/email/send";
 import { applicationConfirmationTemplate } from "@/lib/email/templates";
 import { SITE_COPY } from "@/lib/site-copy";
@@ -20,6 +21,15 @@ export async function submitApplicationAction(
   _: ApplicationFormState,
   formData: FormData,
 ): Promise<ApplicationFormState> {
+  const rateLimitResult = await limitApplicationSubmission();
+  if (!rateLimitResult.success) {
+    return {
+      success: false,
+      message: "Too many applications from this network. Please try again soon.",
+      fieldErrors: {},
+    };
+  }
+
   const data = Object.fromEntries(formData) as Record<string, FormDataEntryValue>;
   const dealBreakers = formData.getAll("dealBreakers") as string[];
 

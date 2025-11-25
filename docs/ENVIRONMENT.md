@@ -129,11 +129,12 @@ Typical pattern:
   A secret string used when generating or verifying invite codes.  
   Changing this in production can invalidate existing codes, so treat it carefully.
 
-- `RATE_LIMIT_MAX_REQUESTS`  
-  Integer. Maximum requests allowed within the configured window.
+- `UPSTASH_REDIS_REST_URL`
+  The REST endpoint for the shared Redis instance that backs rate limiting across auth,
+  application submissions, and checkout/session creation endpoints.
 
-- `RATE_LIMIT_WINDOW_SECONDS`  
-  Integer. Time window in seconds used by the rate limiter.
+- `UPSTASH_REDIS_REST_TOKEN`
+  The access token paired with the Upstash Redis REST URL.
 
 - `USE_MJML`  
   Boolean-like (`true`/`false` as a string).  

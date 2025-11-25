@@ -131,7 +131,7 @@ At minimum you’ll need:
 - Stripe secret & publishable keys + webhook secret
 - Email provider keys (Resend or SMTP)
 - Site URL(s)
-- Misc settings like `INVITE_CODE_SALT` and rate-limit configuration
+- Misc settings like `INVITE_CODE_SALT` and shared rate-limit credentials
 
 ### 3. Run database migrations
 
