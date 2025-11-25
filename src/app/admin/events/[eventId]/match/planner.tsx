@@ -486,7 +486,7 @@ function AttendeeCard({ attendee, onUnassign, onMarkNoShow, onReinstate, isNoSho
             </Badge>
           ) : null}
           {isNoShow ? (
-            <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+            <Badge variant="accent" className="bg-amber-100 text-amber-700">
               No-show
             </Badge>
           ) : null}
