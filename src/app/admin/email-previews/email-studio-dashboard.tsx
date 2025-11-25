@@ -86,6 +86,16 @@ type PreviewSummary = {
   cta: string;
 };
 
+type AutomationStep = {
+  id: string;
+  timing: string;
+  channel: string;
+  title: string;
+  message: string;
+  cta?: string;
+  followUp?: string;
+};
+
 export type EmailStudioDashboardProps = {
   performanceCards: PerformanceCard[];
   recentCampaigns: CampaignRow[];
@@ -137,20 +147,62 @@ const initialForms: EmailFormState = {
     startDate: new Date().toISOString().slice(0, 10),
   },
   conditional: {
-    subject: "Welcome to HENRYS!",
-    previewText: "A quick tour of what to do in your first week",
-    audience: "New members",
-    body: "We're thrilled to welcome you into the community. Here are a few must-dos for your first week so you can meet other members and make the most of your membership right away.",
-    ctaLabel: "Explore onboarding",
-    ctaUrl: "https://henrys.club/onboarding",
+    subject: "Your arrival window + who you'll meet",
+    previewText: "Timed reminders run off the event date. We'll auto-enroll you after ticket purchase.",
+    audience: "Event ticket holders",
+    body: "You're in for the upcoming event. We'll handle the pre-game nudges: a T-48h vibe check with attendee snapshots, a T-36h nudge for anyone who hasn't picked an arrival window, a T-24h social proof card, and a T-3h concierge note with who to expect when you arrive.",
+    ctaLabel: "Open arrival planner",
+    ctaUrl: "https://henrys.club/events/arrival-planner",
     trackOpens: true,
     trackClicks: true,
-    trigger: "Membership approved",
-    delay: "Send immediately",
-    exitCriteria: "Stop after first event RSVP",
-    fallbackChannel: "Send SMS if unopened after 48h",
+    trigger: "Ticket purchased for an event",
+    delay: "Relative to event start (T-48h through T-3h)",
+    exitCriteria: "Stop after check-in or refund",
+    fallbackChannel: "Send SMS if unopened by T-24h",
   },
 };
+
+const eventArrivalSequence: AutomationStep[] = [
+  {
+    id: "t-48",
+    timing: "T-48h",
+    channel: "SMS / Push",
+    title: "Sneak peek + micro-commitment",
+    message:
+      "👀 Sneak peek: 70% of RSVPs are foodies, 40% play pickleball, median age 27–34. Want 3 profiles that match your vibe?",
+    cta: "Buttons: Yes, show me · Maybe later",
+    followUp:
+      "If Yes → In-app preview with 3 anonymized tiles (first name initial, tag cloud, 1 fun fact) and CTA to lock an arrival window (6:30–7:00 / 7:00–7:30). Micro-commitment #1: pick a window.",
+  },
+  {
+    id: "t-36",
+    timing: "T-36h",
+    channel: "Email",
+    title: "Arrival window nudge (non-pickers only)",
+    message: "Quick pick helps us batch intros. Most choose 7:00–7:30. Want that slot?",
+    cta: "Buttons: Grab 7:00–7:30 · Another time",
+    followUp: "Targets anyone who skipped the T-48h window picker so the sequence stays in sync.",
+  },
+  {
+    id: "t-24",
+    timing: "T-24h",
+    channel: "Email",
+    title: "Social proof card",
+    message:
+      "Headcount: 64 confirmed. Shared interests: 71% foodies · 54% entrepreneurs · 46% live music. Dress cue: smart-casual + a pop of color.",
+    cta: "CTA: Confirm I’m in (Micro-commitment #2)",
+    followUp: "Updates RSVP confidence while keeping the arrival window sticky.",
+  },
+  {
+    id: "t-3",
+    timing: "T-3h",
+    channel: "Email",
+    title: "Light personalization",
+    message:
+      "Riley, two folks marked ‘new to London foodie scene’ arrive 7:05–7:20. We’ll greet you at check-in if you come during your window.",
+    followUp: "Reinforces the arrival slot and promises a concierge-style welcome just before doors open.",
+  },
+];
 
 export function EmailStudioDashboard({ performanceCards, recentCampaigns, automations }: EmailStudioDashboardProps) {
   const [selectedType, setSelectedType] = useState<EmailType>("one-off");
@@ -180,7 +232,7 @@ export function EmailStudioDashboard({ performanceCards, recentCampaigns, automa
     }
 
     if (selectedType === "conditional" && "trigger" in currentForm) {
-      const schedule = `${currentForm.trigger} · ${currentForm.delay}`;
+      const schedule = `${currentForm.trigger} · ${currentForm.delay} · auto-enroll on purchase`;
       return {
         schedule,
         tracking: `${trackingSummary(currentForm.trackOpens, currentForm.trackClicks)} · ${currentForm.fallbackChannel}`,
@@ -294,6 +346,7 @@ function EmailBuilderCard({ selectedType, setSelectedType, currentForm, updateFo
               <SelectItem value="Prospective members">Prospective members</SelectItem>
               <SelectItem value="Hosts only">Hosts only</SelectItem>
               <SelectItem value="New members">New members</SelectItem>
+              <SelectItem value="Event ticket holders">Event ticket holders</SelectItem>
               <SelectItem value="RSVP’d members">RSVP’d members</SelectItem>
             </SelectContent>
           </Select>
@@ -408,13 +461,14 @@ function EmailBuilderCard({ selectedType, setSelectedType, currentForm, updateFo
                   <SelectValue placeholder="Select trigger" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Membership approved">Membership approved</SelectItem>
-                  <SelectItem value="Application submitted">Application submitted</SelectItem>
-                  <SelectItem value="Attended first event">Attended first event</SelectItem>
-                  <SelectItem value="Renewal upcoming">Renewal upcoming</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <SelectItem value="Membership approved">Membership approved</SelectItem>
+              <SelectItem value="Application submitted">Application submitted</SelectItem>
+              <SelectItem value="Attended first event">Attended first event</SelectItem>
+              <SelectItem value="Ticket purchased for an event">Ticket purchased for an event</SelectItem>
+              <SelectItem value="Renewal upcoming">Renewal upcoming</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
             <div className="space-y-2">
               <Label htmlFor="delay">Delay</Label>
               <Select value={currentForm.delay} onValueChange={(value) => updateFormField("delay", value)}>
@@ -446,6 +500,9 @@ function EmailBuilderCard({ selectedType, setSelectedType, currentForm, updateFo
                 onChange={(event) => updateFormField("fallbackChannel", event.target.value)}
                 placeholder="Optional backup outreach"
               />
+            </div>
+            <div className="sm:col-span-2">
+              <SequenceTimeline steps={eventArrivalSequence} />
             </div>
           </div>
         ) : null}
@@ -516,6 +573,10 @@ type EmailPreviewCardProps = {
   previewSummary: PreviewSummary;
 };
 
+type SequenceTimelineProps = {
+  steps: AutomationStep[];
+};
+
 function EmailPreviewCard({ selectedType, currentForm, previewSummary }: EmailPreviewCardProps) {
   return (
     <Card className="border border-transparent bg-gradient-to-br from-sky-50 via-white to-emerald-50 shadow-xl shadow-sky-200/40">
@@ -553,6 +614,50 @@ function EmailPreviewCard({ selectedType, currentForm, previewSummary }: EmailPr
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function SequenceTimeline({ steps }: SequenceTimelineProps) {
+  return (
+    <div className="space-y-3 rounded-2xl border border-border/60 bg-background/70 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-foreground">Event-based sequence</p>
+          <p className="text-xs text-muted-foreground">
+            Auto-enroll ticket buyers and pace the touches off the event start time.
+          </p>
+        </div>
+        <Badge variant="accent" className="rounded-full px-3 py-1 text-xs">
+          Auto-enrolled after purchase
+        </Badge>
+      </div>
+      <div className="space-y-3">
+        {steps.map((step, index) => (
+          <div key={step.id} className="space-y-2 rounded-xl border border-border/60 bg-white/80 p-3 shadow-inner">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-900/80">
+                  {step.timing}
+                </span>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">{step.title}</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{step.channel}</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                Keeps next touch in sync
+              </Badge>
+            </div>
+            <p className="text-sm text-foreground">{step.message}</p>
+            {step.cta ? <p className="text-sm text-muted-foreground">CTA: {step.cta}</p> : null}
+            {step.followUp ? <p className="text-xs text-muted-foreground">{step.followUp}</p> : null}
+            {index < steps.length - 1 ? (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">→ Feeds next send</p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
