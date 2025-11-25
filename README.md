@@ -1,49 +1,202 @@
-# HENRYS
+# HENRYS Web App
 
-Mobile-first Next.js application for the HENRYS invite-only dating club. This repository contains the marketing site, application flow, and admin tools built with the App Router and TypeScript.
+HENRYS is a mobile-first, invite-only IRL dating and members’ club.
 
-## Getting Started
+This repository contains the **web app** that powers:
 
-Install dependencies with your preferred package manager (pnpm recommended):
+- Applications → invitations → onboarding
+- Paid memberships with Stripe
+- Event discovery, RSVPs, tickets, and seating/matching
+- Admin tooling for applications, events, and homepage content
+- Transactional email (auth links, confirmations, receipts)
 
-```bash
-pnpm install
-```
+---
 
-Run the development server:
+## Features
 
-```bash
-pnpm dev
-```
+- **Application funnel**
+  - Public application form
+  - Admin triage and review notes
+  - Invite-code issuance and tracking
 
-Additional scripts:
+- **Auth & roles**
+  - Auth.js (NextAuth) with email magic links (Resend/SMTP)
+  - Optional credentials login (bcryptjs)
+  - Roles: `GUEST`, `APPLICANT`, `MEMBER`, `HOST`, `ADMIN`
+  - RBAC via Next.js middleware to guard member/host/admin routes
 
-- `pnpm lint` – static analysis using ESLint
-- `pnpm build` – production build via Next.js
-- `pnpm start` – run the compiled app
+- **Membership & billing**
+  - Membership plans backed by Stripe prices
+  - Stripe Checkout sessions for subscribing
+  - Stripe Billing Portal for self-serve management
+  - Webhooks that keep `Subscription` and `Payment` in sync
 
-## Environment Variables
+- **Events & tickets**
+  - Browse upcoming events
+  - Event detail view with capacity, pricing, and RSVP state
+  - Ticket checkout via Stripe
+  - RSVP records + optional seating assignment
+  - Host sheet export for events
 
-Copy `.env.example` to `.env.local` and populate values for database URLs, Auth.js email provider, Stripe, and Resend before running the application locally.
+- **Admin console**
+  - Application triage
+  - Event CRUD + capacity/pricing
+  - RSVPs & seating planner (seat groups / tables)
+  - Homepage carousel management
+  - Email previews (for templates already in code)
 
-When deploying on Vercel with the `prisma-postgres-henrys-db1` database, ensure the `POSTGRES_PRISMA_URL` (or `DATABASE_URL`) secret is configured. The application now automatically falls back to the Prisma-specific connection string exposed by Vercel, so no additional code changes are required once the environment variable is present. If only the generic `POSTGRES_URL` or `POSTGRES_URL_NON_POOLING` variables are set, the app will now adopt those automatically. Set `USE_PRISMA_CLIENT=false` only if you need to force the lightweight in-memory stub for local development.
+- **Email**
+  - Transactional mail via Resend or SMTP
+  - MJML templates with safe HTML fallbacks
+  - Emails for magic links, confirmations, and receipts
 
-Stripe integration requires the following keys:
+---
 
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_FOUNDING_MONTHLY_PRICE_ID`
-- `STRIPE_FOUNDING_ANNUAL_PRICE_ID`
-- `POSTGRES_PRISMA_URL` (optional locally, required in Vercel to connect Prisma to the managed Postgres database)
+## Tech Stack
 
-## Assets Policy
+- **Framework:** Next.js (App Router, TypeScript)
+- **Auth:** Auth.js (NextAuth) with Prisma adapter
+- **Database:** PostgreSQL via Prisma
+- **Payments:** Stripe (Checkout, Billing Portal, webhooks)
+- **Email:** Resend (primary) or SMTP via Nodemailer + MJML
+- **Styling:** Tailwind CSS, custom UI primitives
+- **Tooling:** pnpm, ESLint, Prettier, Vitest, Playwright (scaffolded)
 
-To keep pull requests lightweight and Codex-friendly, binary assets are not committed to this repository. Please follow these guidelines when working with imagery, video, fonts, or other rich media:
+For a deeper architectural overview, see `docs/ARCHITECTURE.md`.
 
-- **No binaries in PRs.** Files ending in `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.ico`, `.mp4`, `.webm`, `.ttf`, `.otf`, `.woff`, `.woff2`, `.sqlite`, `.db`, or `.wasm` are blocked by git hooks and `.gitignore`. Use SVGs or remote URLs instead.
-- **Use remote placeholders.** Point artwork to hosted assets such as `https://placehold.co/1200x630?text=HENRYS`. When you add a new host, extend `images.remotePatterns` in `next.config.ts` so `next/image` can load it.
-- **Fonts via CSS.** Rely on system stacks or services like Google Fonts rather than shipping font binaries.
-- **Need binaries later?** Add them with Git LFS in a separate workflow (not through Codex PRs) so the main repo stays slim.
+---
 
-The default Open Graph preview now uses `https://placehold.co/1200x630?text=HENRYS`, so you already have a patterned example to follow.
+## Core Flows (at a glance)
+
+1. **Applications**
+   - Visitor submits an application on `/apply`
+   - Application stored in the database
+   - Applicant receives confirmation email
+   - Admins review, add notes, and decide whether to issue an invite
+
+2. **Invitations & onboarding**
+   - Admin issues an invite code linked to an email (optional)
+   - Invitee signs in with magic link or password
+   - On first sign-in, profile is created; user role is updated
+
+3. **Membership**
+   - Member chooses a plan
+   - Backend creates a Stripe Checkout session
+   - On success, Stripe webhooks upsert `Subscription` + `Payment`
+   - Member can access Stripe Billing Portal from the dashboard
+
+4. **Events & tickets**
+   - Members browse events under `/events`
+   - For an event, member can RSVP / purchase tickets via Stripe
+   - Webhooks confirm payment and update `EventRsvp`
+   - Optional seat grouping and host sheet exports for hosts/admins
+
+5. **Admin operations**
+   - `/admin` is the entry point for:
+     - Application triage
+     - Events and RSVPs
+     - Seating / matching
+     - Homepage carousel
+     - Email templates & previews
+
+---
+
+## Getting Started (Local Development)
+
+### Prerequisites
+
+- Node.js (LTS recommended)
+- pnpm
+- PostgreSQL database (local or cloud)
+- Stripe account (for API keys, test mode is fine)
+- Resend account or SMTP credentials (for email)
+
+### 1. Install dependencies
+
+From the project root:
+
+- Install packages using the package manager configured in `package.json`  
+  (for example: `pnpm install`).
+
+### 2. Configure environment variables
+
+Create a local environment file (commonly `.env.local` or `.env` depending on your setup).
+
+Populate the required keys using `docs/ENVIRONMENT.md` as your source of truth.
+
+At minimum you’ll need:
+
+- Database URL(s)
+- Auth/NextAuth secrets + URL
+- Stripe secret & publishable keys + webhook secret
+- Email provider keys (Resend or SMTP)
+- Site URL(s)
+- Misc settings like `INVITE_CODE_SALT` and rate-limit configuration
+
+### 3. Run database migrations
+
+Use Prisma to bring your local database schema up to date.
+
+- Use the Prisma migration script configured in `package.json`  
+  (for example: `pnpm prisma migrate dev`).
+
+If you have a seed script configured, you can run it to bootstrap test data  
+(for example: `pnpm prisma db seed`).
+
+### 4. Start the development server
+
+Start the Next.js dev server using the script defined in `package.json`  
+(for example: `pnpm dev`).
+
+By default the app will be available on a local port (commonly `http://localhost:3000`).
+
+---
+
+## Testing
+
+The repo is set up for both unit and end-to-end tests:
+
+- **Unit / integration tests**
+  - Written with Vitest + Testing Library
+  - Use the test script configured in `package.json`  
+    (for example: `pnpm test` or `pnpm test:unit`)
+
+- **E2E tests**
+  - Playwright + axe integration is scaffolded for accessibility checks
+  - Use the E2E script configured in `package.json`  
+    (for example: `pnpm test:e2e`)
+
+---
+
+## Environments & Deployment
+
+Typical environment setup:
+
+- **Local development** – `.env.local` / `.env`, local Postgres, Stripe test keys
+- **Staging** – Hosted Next.js app, managed Postgres, Stripe test or a separate test account
+- **Production** – Hosted Next.js app (e.g., Vercel), managed Postgres, Stripe live keys
+
+Deployment notes:
+
+- Stripe webhooks must point at the `/api/stripe/webhooks` route
+- Stripe-related routes must use the **Node runtime**, not Edge
+- Run Prisma migrations as part of your deploy process
+- Consider enabling Sentry (or similar) for error tracking in both SSR and API routes
+
+See internal infra notes or your platform’s docs for the exact deployment commands.
+
+---
+
+## Documentation
+
+- `docs/ARCHITECTURE.md` – Architecture & data model overview
+- `docs/DEVELOPMENT.md` – How to work on this codebase day-to-day
+- `docs/ENVIRONMENT.md` – Environment variables and configuration
+- `docs/ADMIN_GUIDE.md` – How admins should use the product
+
+---
+
+## License
+
+This codebase is private and proprietary to HENRYS.  
+Do not distribute or reuse without explicit permission.
