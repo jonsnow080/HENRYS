@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, type ReactNode } from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -18,10 +18,12 @@ export function ApplicationNotesDialog({
   applicationId,
   applicantName,
   defaultNotes,
+  trigger,
 }: {
   applicationId: string;
   applicantName: string;
   defaultNotes: string;
+  trigger?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<ApplicationNotesState, FormData>(
@@ -38,9 +40,11 @@ export function ApplicationNotesDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="rounded-full px-3 text-xs">
-          Notes
-        </Button>
+        {trigger ?? (
+          <Button variant="outline" size="sm" className="rounded-full px-3 text-xs">
+            Notes
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>

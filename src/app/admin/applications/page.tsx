@@ -177,6 +177,15 @@ export default async function AdminApplicationsPage({
         : "Unable to update applications.")
     : null;
 
+  const buildStatusLink = (status: ApplicationStatus) => {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (selectedAgeBand) params.set("ageBand", selectedAgeBand);
+    if (sort !== "newest") params.set("sort", sort);
+    params.set("status", status);
+    return `/admin/applications?${params.toString()}`;
+  };
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
       <header className="space-y-4">
@@ -191,12 +200,17 @@ export default async function AdminApplicationsPage({
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-medium">
           {STATUS_OPTIONS.map((status) => (
-            <Badge key={status} variant="muted" className="gap-2">
-              <span>{statusLabel(status)}</span>
-              <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
-                {statusCounts[status] ?? 0}
-              </span>
-            </Badge>
+            <Link key={status} href={buildStatusLink(status)} className="group">
+              <Badge
+                variant="muted"
+                className="gap-2 transition hover:border-foreground/30 hover:text-foreground group-hover:shadow-sm"
+              >
+                <span>{statusLabel(status)}</span>
+                <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted-foreground group-hover:text-foreground">
+                  {statusCounts[status] ?? 0}
+                </span>
+              </Badge>
+            </Link>
           ))}
         </div>
       </header>
@@ -249,7 +263,7 @@ export default async function AdminApplicationsPage({
                 </TableRow>
               ) : (
                 visibleApplications.map((application) => (
-                  <TableRow key={application.id}>
+                  <TableRow key={application.id} className={statusRowClass(application.status)} data-status={application.status}>
                     <TableCell>
                       <input
                         type="checkbox"
@@ -263,13 +277,18 @@ export default async function AdminApplicationsPage({
                     <TableCell>
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground">{application.fullName}</p>
-                            <StatusBadge status={application.status} />
-                          </div>
-                          <p className="text-xs text-muted-foreground">{application.email}</p>
-                          {application.payload ? (
-                            <p className="text-xs text-muted-foreground">
-                              {application.payload.age ? `${application.payload.age} · ` : null}
+                          <p className="text-sm font-semibold text-foreground">{application.fullName}</p>
+                          <StatusBadge status={application.status} />
+                        </div>
+                        <p className="text-xs text-muted-foreground">{application.email}</p>
+                        <NotesPreview
+                          applicationId={application.id}
+                          applicantName={application.fullName}
+                          note={application.notes}
+                        />
+                        {application.payload ? (
+                          <p className="text-xs text-muted-foreground">
+                            {application.payload.age ? `${application.payload.age} · ` : null}
                               {application.payload.city}
                               {application.payload.occupation
                                 ? ` · ${application.payload.occupation}`
@@ -588,6 +607,58 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
     );
   }
   return <Badge variant="muted">Submitted</Badge>;
+}
+
+function NotesPreview({
+  applicationId,
+  applicantName,
+  note,
+}: {
+  applicationId: string;
+  applicantName: string;
+  note: string;
+}) {
+  const hasNote = note.trim().length > 0;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-background/50 px-3 py-2 text-[11px] text-muted-foreground">
+      <span className="rounded-full bg-muted px-2 py-0.5 font-semibold uppercase tracking-wide text-foreground">Notes</span>
+      <p className="text-xs leading-snug text-foreground/80">
+        {hasNote ? truncateNote(note) : "Add quick context for other reviewers."}
+      </p>
+      <ApplicationNotesDialog
+        applicationId={applicationId}
+        applicantName={applicantName}
+        defaultNotes={note}
+        trigger={
+          <Button variant="ghost" size="sm" className="h-7 rounded-full px-2 text-[11px]">
+            {hasNote ? "Edit" : "Add"} note
+          </Button>
+        }
+      />
+    </div>
+  );
+}
+
+function truncateNote(note: string, limit = 120) {
+  if (note.length <= limit) return note;
+  return `${note.slice(0, limit).trimEnd()}…`;
+}
+
+function statusRowClass(status: ApplicationStatus) {
+  switch (status) {
+    case ApplicationStatus.SUBMITTED:
+      return "bg-amber-50/60 dark:bg-amber-500/10";
+    case ApplicationStatus.IN_REVIEW:
+      return "bg-blue-50/60 dark:bg-blue-500/10";
+    case ApplicationStatus.APPROVED:
+      return "bg-emerald-50/60 dark:bg-emerald-500/10";
+    case ApplicationStatus.REJECTED:
+      return "bg-rose-50/60 dark:bg-rose-500/10";
+    case ApplicationStatus.WAITLIST:
+      return "bg-amber-100/50 dark:bg-amber-500/10";
+    default:
+      return "";
+  }
 }
 
 function determineAgeBand(age?: number): AgeBandValue {
