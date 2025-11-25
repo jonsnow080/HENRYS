@@ -13,6 +13,10 @@ export type StripeWebhookDependencies = {
   sendEmail: SendEmail;
 };
 
+export type StripeWebhookContext = {
+  log: (message: string, details?: Record<string, unknown>) => void;
+};
+
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set<string>([
   "active",
   "trialing",
@@ -22,18 +26,23 @@ const ACTIVE_SUBSCRIPTION_STATUSES = new Set<string>([
 export async function handleStripeEvent(
   event: Stripe.Event,
   deps: StripeWebhookDependencies,
+  context?: StripeWebhookContext,
 ) {
   switch (event.type) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted":
-      await handleSubscriptionEvent(event.data.object as Stripe.Subscription, deps);
+      await handleSubscriptionEvent(event.data.object as Stripe.Subscription, deps, context);
       break;
     case "charge.succeeded":
-      await handleChargeSucceeded(event.data.object as Stripe.Charge, deps);
+      await handleChargeSucceeded(event.data.object as Stripe.Charge, deps, context);
       break;
     case "checkout.session.completed":
-      await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session, deps);
+      await handleCheckoutSessionCompleted(
+        event.data.object as Stripe.Checkout.Session,
+        deps,
+        context,
+      );
       break;
     default:
       break;
@@ -43,6 +52,7 @@ export async function handleStripeEvent(
 async function handleSubscriptionEvent(
   subscription: Stripe.Subscription,
   deps: StripeWebhookDependencies,
+  context?: StripeWebhookContext,
 ) {
   const stripeCustomerId = resolveId(subscription.customer);
   if (!stripeCustomerId) return;
@@ -61,7 +71,7 @@ async function handleSubscriptionEvent(
       where: { stripeCustomerId },
     });
     if (!existing) return;
-    await deps.prisma.subscription.update({
+    const result = await deps.prisma.subscription.update({
       where: { id: existing.id },
       data: {
         planId: plan.id,
@@ -69,10 +79,16 @@ async function handleSubscriptionEvent(
         currentPeriodEnd: getCurrentPeriodEndDate(subscription),
       },
     });
+    context?.log("Stripe subscription updated", {
+      stripeCustomerId,
+      planId: plan.id,
+      subscriptionId: result.id,
+      status: subscription.status,
+    });
     return;
   }
 
-  await deps.prisma.subscription.upsert({
+  const upsertedSubscription = await deps.prisma.subscription.upsert({
     where: { stripeCustomerId },
     create: {
       userId,
@@ -88,11 +104,20 @@ async function handleSubscriptionEvent(
       currentPeriodEnd: getCurrentPeriodEndDate(subscription),
     },
   });
+
+  context?.log("Stripe subscription upserted", {
+    stripeCustomerId,
+    planId: plan.id,
+    subscriptionId: upsertedSubscription.id,
+    status: subscription.status,
+    userId,
+  });
 }
 
 async function handleChargeSucceeded(
   charge: Stripe.Charge,
   deps: StripeWebhookDependencies,
+  context?: StripeWebhookContext,
 ) {
   const paymentIntentId = resolveId(charge.payment_intent);
   if (!paymentIntentId) return;
@@ -101,12 +126,17 @@ async function handleChargeSucceeded(
     where: { stripePaymentIntentId: paymentIntentId },
   });
   if (existing) {
-    await deps.prisma.payment.update({
+    const updatedPayment = await deps.prisma.payment.update({
       where: { stripePaymentIntentId: paymentIntentId },
       data: {
         status: charge.status ?? existing.status,
         receiptUrl: charge.receipt_url ?? existing.receiptUrl ?? undefined,
       },
+    });
+    context?.log("Stripe payment updated", {
+      stripePaymentIntentId: paymentIntentId,
+      paymentId: updatedPayment.id,
+      status: updatedPayment.status,
     });
     return;
   }
@@ -125,6 +155,14 @@ async function handleChargeSucceeded(
       receiptUrl: charge.receipt_url ?? undefined,
       description,
     },
+  });
+
+  context?.log("Stripe payment created", {
+    stripePaymentIntentId: paymentIntentId,
+    paymentId: payment.id,
+    userId,
+    eventId,
+    status: payment.status,
   });
 
   const user = await deps.prisma.user.findUnique({ where: { id: userId } });
@@ -155,6 +193,7 @@ async function handleChargeSucceeded(
 async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session,
   deps: StripeWebhookDependencies,
+  context?: StripeWebhookContext,
 ) {
   const userId = session.metadata?.userId;
   const type = session.metadata?.type;
@@ -162,10 +201,15 @@ async function handleCheckoutSessionCompleted(
   if (session.mode === "payment" && session.payment_status === "paid") {
     const eventId = session.metadata?.eventId;
     if (userId && eventId) {
-      await deps.prisma.eventRsvp.upsert({
+      const rsvp = await deps.prisma.eventRsvp.upsert({
         where: { userId_eventId: { userId, eventId } },
         update: { status: RsvpStatus.GOING },
         create: { userId, eventId, status: RsvpStatus.GOING },
+      });
+      context?.log("Stripe checkout session RSVPed", {
+        eventId,
+        userId,
+        rsvpId: rsvp.id,
       });
     }
     return;
@@ -176,7 +220,7 @@ async function handleCheckoutSessionCompleted(
     const planId = session.metadata?.planId;
     const status = type === "membership" ? "active" : session.payment_status;
     if (!stripeCustomerId || !planId) return;
-    await deps.prisma.subscription.upsert({
+    const subscription = await deps.prisma.subscription.upsert({
       where: { stripeCustomerId },
       create: {
         userId,
@@ -188,6 +232,14 @@ async function handleCheckoutSessionCompleted(
       update: {
         userId,
       },
+    });
+
+    context?.log("Stripe subscription linked from checkout", {
+      stripeCustomerId,
+      subscriptionId: subscription.id,
+      planId,
+      userId,
+      status,
     });
   }
 }
