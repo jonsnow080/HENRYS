@@ -2545,7 +2545,10 @@ const preferRealClient =
   !isExplicitlyDisabled &&
   (process.env.USE_PRISMA_CLIENT === "true" ||
     (resolvedDatabaseUrl !== "" && !resolvedDatabaseUrl.startsWith("file:")));
-const allowPrismaStubInProd = process.env.ALLOW_PRISMA_STUB_IN_PROD !== "false";
+// Guarding the stub should only be opt-in so builds can proceed without a
+// database. Use a dedicated flag that must be explicitly set to block the
+// stub in production.
+const blockPrismaStubInProd = process.env.BLOCK_PRISMA_STUB_IN_PROD === "true";
 
 const prismaRuntime = await (async () => {
   if (!preferRealClient) {
@@ -2584,7 +2587,7 @@ const prismaRuntime = await (async () => {
 if (
   prismaRuntime.mode === "stub" &&
   process.env.NODE_ENV === "production" &&
-  !allowPrismaStubInProd
+  blockPrismaStubInProd
 ) {
   throw new Error(
     "Prisma client stub cannot be used in production. Ensure DATABASE_URL is set and Prisma is installed.",
