@@ -31,6 +31,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(withMDX(nextConfig), { silent: true }, {
-  hideSourceMaps: true,
+export default withSentryConfig(withMDX(nextConfig), {
+  silent: true,
 });

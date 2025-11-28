@@ -179,7 +179,13 @@ export const authConfig = {
 const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
 
 export { auth, signIn, signOut };
-export const GET = wrapRouteHandlerWithSentry(handlers.GET);
-export const POST = wrapRouteHandlerWithSentry(handlers.POST);
+export const GET = wrapRouteHandlerWithSentry(handlers.GET, {
+  method: "GET",
+  parameterizedRoute: "/api/auth/[...nextauth]",
+});
+export const POST = wrapRouteHandlerWithSentry(handlers.POST, {
+  method: "POST",
+  parameterizedRoute: "/api/auth/[...nextauth]",
+});
 
 export default authConfig;

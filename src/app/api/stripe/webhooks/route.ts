@@ -74,4 +74,7 @@ async function handler(req: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-export const POST = wrapRouteHandlerWithSentry(handler);
+export const POST = wrapRouteHandlerWithSentry(handler, {
+  method: "POST",
+  parameterizedRoute: "/api/stripe/webhooks",
+});

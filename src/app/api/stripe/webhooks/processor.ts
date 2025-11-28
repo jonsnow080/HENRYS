@@ -13,11 +13,21 @@ export type StripeWebhookDependencies = {
   sendEmail: SendEmail;
 };
 
+export type StripeWebhookLogEntry = {
+  message: string;
+  action?: string;
+  result?: Record<string, unknown>;
+  success?: boolean;
+  eventId?: string;
+  eventType?: string;
+  idempotencyKey?: string | null;
+};
+
 export type StripeWebhookContext = {
   eventId: string;
   eventType: string;
   idempotencyKey?: string | null;
-  log?: (entry: { message: string; action?: string; result?: Record<string, unknown>; success?: boolean }) => void;
+  log?: (entry: StripeWebhookLogEntry) => void;
 };
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set<string>([
@@ -290,14 +300,11 @@ async function handleCheckoutSessionCompleted(
   }
 }
 
-function logStripeWebhook(
-  context: StripeWebhookContext,
-  entry: { message: string; action?: string; result?: Record<string, unknown>; success?: boolean },
-) {
-  context.log?.({
-    ...entry,
-    eventId: context.eventId,
-    eventType: context.eventType,
+  function logStripeWebhook(context: StripeWebhookContext, entry: StripeWebhookLogEntry) {
+    context.log?.({
+      ...entry,
+      eventId: context.eventId,
+      eventType: context.eventType,
     idempotencyKey: context.idempotencyKey,
   });
 }
