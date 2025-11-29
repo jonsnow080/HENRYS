@@ -3,6 +3,7 @@ import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import { wrapRouteHandlerWithSentry } from "@sentry/nextjs";
 
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/lib/prisma-constants";
@@ -178,6 +179,13 @@ export const authConfig = {
 const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
 
 export { auth, signIn, signOut };
-export const { GET, POST } = handlers;
+export const GET = wrapRouteHandlerWithSentry(handlers.GET, {
+  method: "GET",
+  parameterizedRoute: "/api/auth/[...nextauth]",
+});
+export const POST = wrapRouteHandlerWithSentry(handlers.POST, {
+  method: "POST",
+  parameterizedRoute: "/api/auth/[...nextauth]",
+});
 
 export default authConfig;

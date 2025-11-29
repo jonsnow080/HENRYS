@@ -5,6 +5,7 @@ import {
   handleChargeSucceeded,
   handleCheckoutSessionCompleted,
   type StripeWebhookDependencies,
+  type StripeWebhookContext,
 } from "../processor";
 import { RsvpStatus } from "@/lib/prisma-constants";
 
@@ -16,8 +17,18 @@ function createDeps(overrides: Partial<StripeWebhookDependencies["prisma"]> = {}
 
   const subscription = {
     findFirst: vi.fn().mockResolvedValue(null),
-    upsert: vi.fn(),
-    update: vi.fn(),
+    upsert: vi.fn().mockResolvedValue({
+      id: "subscription_123",
+      userId: "user_123",
+      planId: "plan_123",
+      status: "active",
+      stripeCustomerId: "cus_123",
+    }),
+    update: vi.fn().mockResolvedValue({
+      id: "subscription_123",
+      planId: "plan_123",
+      status: "active",
+    }),
   };
   Object.assign(subscription, overrides.subscription ?? {});
 
@@ -28,7 +39,7 @@ function createDeps(overrides: Partial<StripeWebhookDependencies["prisma"]> = {}
       createdAt: new Date(),
       ...args.data,
     })),
-    update: vi.fn(),
+    update: vi.fn().mockResolvedValue({ id: "payment_123", status: "succeeded" }),
   };
   Object.assign(payment, overrides.payment ?? {});
 
@@ -43,7 +54,7 @@ function createDeps(overrides: Partial<StripeWebhookDependencies["prisma"]> = {}
   Object.assign(event, overrides.event ?? {});
 
   const eventRsvp = {
-    upsert: vi.fn(),
+    upsert: vi.fn().mockResolvedValue({ eventId: "event_123", userId: "user_123", status: RsvpStatus.GOING }),
     findFirst: vi.fn().mockResolvedValue(null),
   };
   Object.assign(eventRsvp, overrides.eventRsvp ?? {});
@@ -64,6 +75,10 @@ function createDeps(overrides: Partial<StripeWebhookDependencies["prisma"]> = {}
 describe("stripe webhook processor", () => {
   it("upserts subscriptions from Stripe events", async () => {
     const deps = createDeps();
+    const context: StripeWebhookContext = {
+      eventId: "evt_subscription",
+      eventType: "customer.subscription.updated",
+    };
     const subscriptionEvent = {
       customer: "cus_123",
       status: "active",
@@ -72,7 +87,7 @@ describe("stripe webhook processor", () => {
       current_period_end: Math.floor(Date.now() / 1000),
     } as unknown as Stripe.Subscription;
 
-    await handleSubscriptionEvent(subscriptionEvent, deps);
+    await handleSubscriptionEvent(subscriptionEvent, deps, context);
 
     expect(deps.prisma.membershipPlan.findUnique).toHaveBeenCalledWith({
       where: { stripePriceId: "price_123" },
@@ -86,6 +101,10 @@ describe("stripe webhook processor", () => {
 
   it("creates payments and emails receipts on successful charges", async () => {
     const deps = createDeps();
+    const context: StripeWebhookContext = {
+      eventId: "evt_payment",
+      eventType: "charge.succeeded",
+    };
     const charge = {
       payment_intent: "pi_123",
       amount: 4500,
@@ -98,7 +117,7 @@ describe("stripe webhook processor", () => {
       },
     } as unknown as Stripe.Charge;
 
-    await handleChargeSucceeded(charge, deps);
+    await handleChargeSucceeded(charge, deps, context);
 
     expect(deps.prisma.payment.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -114,6 +133,10 @@ describe("stripe webhook processor", () => {
 
   it("marks RSVP as going when checkout completes", async () => {
     const deps = createDeps();
+    const context: StripeWebhookContext = {
+      eventId: "evt_checkout",
+      eventType: "checkout.session.completed",
+    };
     const session = {
       mode: "payment",
       payment_status: "paid",
@@ -124,7 +147,7 @@ describe("stripe webhook processor", () => {
       },
     } as unknown as Stripe.Checkout.Session;
 
-    await handleCheckoutSessionCompleted(session, deps);
+    await handleCheckoutSessionCompleted(session, deps, context);
 
     expect(deps.prisma.eventRsvp.upsert).toHaveBeenCalledWith({
       where: { userId_eventId: { userId: "user_123", eventId: "event_123" } },

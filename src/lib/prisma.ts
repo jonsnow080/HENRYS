@@ -2536,16 +2536,19 @@ if (!process.env.DATABASE_URL && resolvedDatabaseUrl) {
   process.env.DATABASE_URL = resolvedDatabaseUrl;
 }
 
+const vercelEnv = process.env.VERCEL_ENV;
+const isBuildTime = process.env.NEXT_PHASE === "phase-production-build";
+const isProductionDeployment =
+  !isBuildTime &&
+  (vercelEnv === "production" || (!vercelEnv && process.env.NODE_ENV === "production"));
+const isPreviewDeployment = vercelEnv === "preview";
+
 const isExplicitlyDisabled = process.env.USE_PRISMA_CLIENT === "false";
 const preferRealClient =
+  !isBuildTime &&
   !isExplicitlyDisabled &&
   (process.env.USE_PRISMA_CLIENT === "true" ||
     (resolvedDatabaseUrl !== "" && !resolvedDatabaseUrl.startsWith("file:")));
-
-const vercelEnv = process.env.VERCEL_ENV;
-const isProductionDeployment =
-  vercelEnv === "production" || (!vercelEnv && process.env.NODE_ENV === "production");
-const isPreviewDeployment = vercelEnv === "preview";
 
 const prismaRuntime = await (async () => {
   if (!preferRealClient) {

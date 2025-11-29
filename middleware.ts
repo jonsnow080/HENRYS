@@ -1,3 +1,4 @@
+import { wrapMiddlewareWithSentry } from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { Role } from "@/lib/prisma-constants";
 import { auth } from "./auth";
@@ -7,7 +8,7 @@ const hostRoutes = ["/host"];
 const hostRoleSet = new Set<Role>([Role.HOST, Role.ADMIN]);
 const memberRoleSet = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
 
-export default auth((req) => {
+const securedMiddleware = auth((req) => {
   const { nextUrl } = req;
   const pathname = nextUrl.pathname;
   const session = req.auth;
@@ -38,6 +39,8 @@ export default auth((req) => {
 
   return NextResponse.next();
 });
+
+export default wrapMiddlewareWithSentry(securedMiddleware);
 
 export const config = {
   matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*"],

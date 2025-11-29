@@ -1,5 +1,6 @@
-import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
+import { withSentryConfig } from "@sentry/nextjs";
+import type { NextConfig } from "next";
 
 const withMDX = createMDX({
   extension: /\.mdx?$/,
@@ -30,4 +31,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withMDX(nextConfig);
+export default withSentryConfig(withMDX(nextConfig), {
+  silent: true,
+});
