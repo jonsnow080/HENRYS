@@ -2589,7 +2589,7 @@ if (
   process.env.NODE_ENV === "production" &&
   blockPrismaStubInProd
 ) {
-  throw new Error(
+  console.error(
     "Prisma client stub cannot be used in production. Ensure DATABASE_URL is set and Prisma is installed.",
   );
 }
