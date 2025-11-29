@@ -19,7 +19,6 @@ export function createStripeWebhookLogger(base: Partial<StripeWebhookLogEntry> =
       ...entry,
     } satisfies Record<string, unknown>;
 
-    // eslint-disable-next-line no-console
     console.info(JSON.stringify(payload));
   };
 }
