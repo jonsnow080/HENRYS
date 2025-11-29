@@ -101,20 +101,17 @@ const faqSections = [
 
 export default function FaqPage() {
   return (
-    <div className="space-y-16">
-      <section className="relative isolate overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-950 px-6 py-16 text-white shadow-[0_40px_120px_-40px_rgba(56,72,255,0.55)] sm:px-12">
-        <div className="absolute inset-x-0 top-0 -z-10 flex justify-center">
-          <div className="h-32 w-3/4 rounded-full bg-gradient-to-r from-indigo-500/60 via-fuchsia-400/40 to-sky-400/60 blur-3xl" />
-        </div>
-        <div className="mx-auto max-w-3xl space-y-4 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-white/80">
+    <div className="space-y-14 px-4 py-12 sm:px-6 lg:px-8">
+      <section className="rounded-[32px] border border-border bg-card px-8 py-12 text-center shadow-sm sm:px-12">
+        <div className="mx-auto max-w-3xl space-y-4">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
             <Sparkles className="h-4 w-4" aria-hidden />
             FAQ
           </span>
           <h1 className="text-balance text-4xl font-semibold sm:text-5xl">
             Everything you&apos;re curious about {SITE_COPY.name}
           </h1>
-          <p className="text-pretty text-base text-white/80 sm:text-lg">
+          <p className="text-pretty text-base text-muted-foreground sm:text-lg">
             From membership flow to event cadence, we&apos;ve gathered the essentials so you know exactly how our invite-only IRL social club runs behind the scenes.
           </p>
         </div>
@@ -123,46 +120,43 @@ export default function FaqPage() {
           {highlights.map((item) => (
             <div
               key={item.title}
-              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 text-left backdrop-blur transition hover:border-white/30 hover:bg-white/10"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-muted/60 p-5 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-md"
             >
-              <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
-              <dt className="text-sm font-semibold uppercase tracking-wide text-white/70">{item.title}</dt>
-              <dd className="mt-2 text-sm text-white/90">{item.description}</dd>
+              <div className="absolute inset-0 -z-10 bg-gradient-to-br from-foreground/5 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+              <dt className="text-sm font-semibold uppercase tracking-wide text-foreground/80">{item.title}</dt>
+              <dd className="mt-2 text-sm text-muted-foreground">{item.description}</dd>
             </div>
           ))}
         </dl>
 
-        <p className="mt-10 flex items-center justify-center gap-3 text-sm text-white/70">
+        <p className="mt-10 text-sm text-muted-foreground">
           Expect intimate dinners, roundtable conversations, and magic-hour city adventures.
         </p>
       </section>
 
-      <section className="mx-auto max-w-5xl space-y-16">
+      <section className="mx-auto max-w-5xl space-y-10">
         {faqSections.map((section) => {
           const Icon = section.icon;
 
           return (
-            <div
-              key={section.title}
-              className="rounded-3xl border border-slate-200/70 bg-white/60 p-8 shadow-[0_30px_80px_-50px_rgba(15,23,42,0.55)] backdrop-blur-sm dark:border-slate-700/70 dark:bg-slate-900/60"
-            >
+            <div key={section.title} className="rounded-3xl border border-border bg-card p-8 shadow-sm">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-400/10 dark:text-indigo-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-foreground">
                     <Icon className="h-6 w-6" aria-hidden />
                   </div>
-                  <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">{section.title}</h2>
+                  <h2 className="text-2xl font-semibold">{section.title}</h2>
                 </div>
-                <Handshake className="hidden h-7 w-7 text-slate-400 dark:text-slate-500 sm:block" aria-hidden />
+                <Handshake className="hidden h-7 w-7 text-muted-foreground sm:block" aria-hidden />
               </div>
               <dl className="mt-8 space-y-8">
                 {section.items.map((item) => (
                   <div
                     key={item.question}
-                    className="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-sm transition hover:border-indigo-200 hover:shadow-md dark:border-slate-700/60 dark:bg-slate-900/70"
+                    className="rounded-2xl border border-border bg-background/70 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <dt className="text-lg font-semibold text-slate-900 dark:text-slate-100">{item.question}</dt>
-                    <dd className="mt-2 text-base leading-relaxed text-slate-600 dark:text-slate-300">{item.answer}</dd>
+                    <dt className="text-lg font-semibold text-foreground">{item.question}</dt>
+                    <dd className="mt-2 text-base leading-relaxed text-muted-foreground">{item.answer}</dd>
                   </div>
                 ))}
               </dl>
@@ -171,10 +165,10 @@ export default function FaqPage() {
         })}
       </section>
 
-      <section className="mx-auto max-w-3xl rounded-3xl border border-indigo-200/50 bg-indigo-50/60 p-10 text-center dark:border-indigo-400/40 dark:bg-indigo-500/10">
-        <h2 className="text-2xl font-semibold text-indigo-900 dark:text-indigo-200">Still have a question?</h2>
-        <p className="mt-3 text-base text-indigo-900/80 dark:text-indigo-200/80">
-          Email <a className="font-semibold underline decoration-indigo-400/80 decoration-2 underline-offset-4" href="mailto:about@henrys.club">about@henrys.club</a> and the team will get back to you faster than you can say “see you soon.”
+      <section className="mx-auto max-w-3xl rounded-3xl border border-border bg-foreground p-10 text-center text-background shadow-sm">
+        <h2 className="text-2xl font-semibold">Still have a question?</h2>
+        <p className="mt-3 text-base opacity-90">
+          Email <a className="font-semibold underline underline-offset-4" href="mailto:about@henrys.club">about@henrys.club</a> and the team will get back to you faster than you can say “see you soon.”
         </p>
       </section>
     </div>

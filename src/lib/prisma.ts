@@ -2537,7 +2537,9 @@ if (!process.env.DATABASE_URL && resolvedDatabaseUrl) {
 }
 
 const isExplicitlyDisabled = process.env.USE_PRISMA_CLIENT === "false";
+const isCiBuild = process.env.CI === "true";
 const preferRealClient =
+  !isCiBuild &&
   !isExplicitlyDisabled &&
   (process.env.USE_PRISMA_CLIENT === "true" ||
     (resolvedDatabaseUrl !== "" && !resolvedDatabaseUrl.startsWith("file:")));
@@ -2547,9 +2549,9 @@ const isProductionDeployment =
   vercelEnv === "production" || (!vercelEnv && process.env.NODE_ENV === "production");
 const isPreviewDeployment = vercelEnv === "preview";
 
-const prismaRuntime = await (async () => {
-  if (!preferRealClient) {
-    if (isProductionDeployment && !isPreviewDeployment) {
+  const prismaRuntime = await (async () => {
+    if (!preferRealClient) {
+      if (isProductionDeployment && !isPreviewDeployment && !isCiBuild) {
       throw new Error(
         "Prisma client stub cannot be used in production. Ensure DATABASE_URL is set and Prisma is installed.",
       );
