@@ -1,4 +1,4 @@
-import { wrapMiddlewareWithSentry } from "@sentry/nextjs";
+
 import { NextResponse } from "next/server";
 import { Role } from "@/lib/prisma-constants";
 import { auth } from "./auth";
@@ -40,7 +40,7 @@ const securedMiddleware = auth((req) => {
   return NextResponse.next();
 });
 
-export default wrapMiddlewareWithSentry(securedMiddleware);
+export default securedMiddleware;
 
 export const config = {
   matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*"],
