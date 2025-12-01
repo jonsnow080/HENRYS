@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { loginWithPassword, requestMagicLink, type LoginFormState } from "./actions";
 import { Input } from "@/components/ui/input";
@@ -119,6 +120,12 @@ export function SignInForm({
             {passwordState?.fieldErrors?.password ? (
               <p className="text-sm text-destructive">{passwordState.fieldErrors.password.join(" ")}</p>
             ) : null}
+            <Link
+              href="/reset-password"
+              className="block text-sm text-muted-foreground underline-offset-4 hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
 
           <input type="hidden" name="redirectTo" value={redirectTo ?? ""} />
