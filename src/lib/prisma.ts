@@ -2614,6 +2614,12 @@ function instantiatePrismaClient(): PrismaClient {
 
   const PrismaCtor = prismaRuntime.PrismaClient;
 
+  console.log("DEBUG: Initializing Prisma Client");
+  console.log("DEBUG: POSTGRES_PRISMA_URL set:", !!process.env.POSTGRES_PRISMA_URL);
+  console.log("DEBUG: DATABASE_URL set:", !!process.env.DATABASE_URL);
+  console.log("DEBUG: resolvedDatabaseUrl:", resolvedDatabaseUrl ? "Found (starts with " + resolvedDatabaseUrl.substring(0, 15) + ")" : "Missing");
+
+
   try {
     return new PrismaCtor({
       datasources: resolvedDatabaseUrl ? { db: { url: resolvedDatabaseUrl } } : undefined,
@@ -2624,6 +2630,7 @@ function instantiatePrismaClient(): PrismaClient {
     }) as unknown as PrismaClient;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    console.error("DEBUG: Prisma initialization error:", error);
     if (message.includes("@prisma/client did not initialize")) {
       if (isProductionDeployment && !isPreviewDeployment) {
         throw new Error(
