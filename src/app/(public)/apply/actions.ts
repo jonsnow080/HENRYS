@@ -89,10 +89,7 @@ export async function submitApplicationAction(
     const existingMember = await prisma.user.findFirst({
       where: {
         email: { equals: payload.email, mode: "insensitive" },
-        OR: [
-          { role: { in: [Role.MEMBER, Role.HOST, Role.ADMIN] } },
-          { memberProfile: { isNot: null } },
-        ],
+        role: { in: [Role.MEMBER, Role.HOST, Role.ADMIN] },
       },
     });
 
@@ -107,18 +104,39 @@ export async function submitApplicationAction(
     }
 
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      let user = await tx.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+
+      if (!user) {
+        user = await tx.user.create({
+          data: {
+            email: normalizedEmail,
+            name: payload.fullName,
+            role: Role.APPLICANT,
+          },
+        });
+      } else if (user.role === Role.GUEST) {
+        user = await tx.user.update({
+          where: { id: user.id },
+          data: { role: Role.APPLICANT },
+        });
+      }
+
       await tx.application.create({
         data: {
           email: payload.email,
           fullName: payload.fullName,
           payload,
           status: ApplicationStatus.SUBMITTED,
+          applicantId: user.id,
         },
       });
 
       await tx.applicant.upsert({
         where: { email: payload.email },
         create: {
+          userId: user.id,
           email: payload.email,
           fullName: payload.fullName,
           age: payload.age,
@@ -139,6 +157,7 @@ export async function submitApplicationAction(
           consentData: payload.consentData,
         },
         update: {
+          userId: user.id,
           fullName: payload.fullName,
           age: payload.age,
           city: payload.city,

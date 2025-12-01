@@ -48,11 +48,10 @@ export const metadata: Metadata = {
   description: "Review and manage incoming HENRYS applications.",
 };
 
-export default async function AdminApplicationsPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
+export default async function AdminApplicationsPage(props: {
+  searchParams: Promise<SearchParams>;
 }) {
+  const searchParams = await props.searchParams;
   const query = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
   const statusParam = typeof searchParams.status === "string" ? searchParams.status : undefined;
   const sortParam = typeof searchParams.sort === "string" ? searchParams.sort : "newest";
@@ -102,7 +101,14 @@ export default async function AdminApplicationsPage({
   const applications = await prisma.application.findMany({
     where,
     orderBy,
-    include: { reviewer: { select: { name: true, email: true } } },
+    include: {
+      reviewer: { select: { name: true, email: true } },
+      applicant: {
+        include: {
+          applicantProfile: true,
+        },
+      },
+    },
   });
 
   const statusCountsEntries = await Promise.all(
@@ -114,7 +120,32 @@ export default async function AdminApplicationsPage({
   type ApplicationWithReviewer = (typeof applications)[number];
 
   const adminApplications: AdminApplication[] = applications.map((application: ApplicationWithReviewer) => {
-    const payload = readApplicationPayload(application.payload);
+    const jsonPayload = readApplicationPayload(application.payload);
+    const profile = application.applicant?.applicantProfile;
+
+    const payload: ApplicationFormInput | null = profile
+      ? {
+        fullName: profile.fullName,
+        email: profile.email,
+        age: profile.age,
+        city: profile.city,
+        occupation: profile.occupation,
+        linkedin: profile.linkedin ?? "",
+        instagram: profile.instagram ?? "",
+        vibe: profile.vibe,
+        motivation: profile.motivation,
+        threeWords: profile.threeWords,
+        perfectSaturday: profile.perfectSaturday,
+        dietary: profile.dietary ?? "",
+        dietaryNotes: profile.dietaryNotes ?? "",
+        alcohol: profile.alcohol,
+        availability: profile.availability ?? "",
+        dealBreakers: profile.dealBreakers as ApplicationFormInput["dealBreakers"],
+        consentCode: profile.consentCode as true,
+        consentData: profile.consentData as true,
+      }
+      : jsonPayload;
+
     const age = typeof payload?.age === "number" ? payload.age : undefined;
     return {
       id: application.id,
@@ -173,8 +204,8 @@ export default async function AdminApplicationsPage({
     : null;
   const errorMessage = typeof searchParams.error === "string"
     ? (typeof searchParams.reason === "string" && searchParams.reason.length
-        ? searchParams.reason
-        : "Unable to update applications.")
+      ? searchParams.reason
+      : "Unable to update applications.")
     : null;
 
   const buildStatusLink = (status: ApplicationStatus) => {
@@ -275,8 +306,8 @@ export default async function AdminApplicationsPage({
                       />
                     </TableCell>
                     <TableCell>
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-semibold text-foreground">{application.fullName}</p>
                           <StatusBadge status={application.status} />
                         </div>
@@ -289,116 +320,116 @@ export default async function AdminApplicationsPage({
                         {application.payload ? (
                           <p className="text-xs text-muted-foreground">
                             {application.payload.age ? `${application.payload.age} · ` : null}
-                              {application.payload.city}
-                              {application.payload.occupation
-                                ? ` · ${application.payload.occupation}`
-                                : null}
-                            </p>
-                          ) : null}
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            Age band: {AGE_BANDS.find((band) => band.value === application.ageBand)?.label ?? "Unknown"}
+                            {application.payload.city}
+                            {application.payload.occupation
+                              ? ` · ${application.payload.occupation}`
+                              : null}
                           </p>
-                          <details className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-xs text-muted-foreground">
-                            <summary className="cursor-pointer list-none text-xs font-semibold text-foreground">
-                              Read responses
-                            </summary>
-                            <div className="mt-2 space-y-3">
-                              {application.payload?.motivation ? (
-                                <ResponseBlock
-                                  label="What brings you to HENRYS?"
-                                  value={application.payload.motivation}
-                                />
-                              ) : null}
-                              {application.payload?.threeWords ? (
-                                <ResponseBlock
-                                  label="Three words friends use"
-                                  value={application.payload.threeWords}
-                                />
-                              ) : null}
-                              {application.payload?.perfectSaturday ? (
-                                <ResponseBlock
-                                  label="Perfect Saturday"
-                                  value={application.payload.perfectSaturday}
-                                />
-                              ) : null}
-                              {application.notes ? (
-                                <ResponseBlock label="Reviewer notes" value={application.notes} />
-                              ) : null}
+                        ) : null}
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          Age band: {AGE_BANDS.find((band) => band.value === application.ageBand)?.label ?? "Unknown"}
+                        </p>
+                        <details className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-xs text-muted-foreground">
+                          <summary className="cursor-pointer list-none text-xs font-semibold text-foreground">
+                            Read responses
+                          </summary>
+                          <div className="mt-2 space-y-3">
+                            {application.payload?.motivation ? (
+                              <ResponseBlock
+                                label="What brings you to HENRYS?"
+                                value={application.payload.motivation}
+                              />
+                            ) : null}
+                            {application.payload?.threeWords ? (
+                              <ResponseBlock
+                                label="Three words friends use"
+                                value={application.payload.threeWords}
+                              />
+                            ) : null}
+                            {application.payload?.perfectSaturday ? (
+                              <ResponseBlock
+                                label="Perfect Saturday"
+                                value={application.payload.perfectSaturday}
+                              />
+                            ) : null}
+                            {application.notes ? (
+                              <ResponseBlock label="Reviewer notes" value={application.notes} />
+                            ) : null}
+                          </div>
+                        </details>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-3 text-xs text-muted-foreground">
+                        {application.payload?.dealBreakers?.length ? (
+                          <div className="space-y-1">
+                            <p className="font-semibold text-foreground">Deal-breakers</p>
+                            <div className="flex flex-wrap gap-2">
+                              {application.payload.dealBreakers.map((item) => (
+                                <Badge key={item} variant="outline" className="bg-background/60 text-xs">
+                                  {item}
+                                </Badge>
+                              ))}
                             </div>
-                          </details>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-3 text-xs text-muted-foreground">
-                          {application.payload?.dealBreakers?.length ? (
-                            <div className="space-y-1">
-                              <p className="font-semibold text-foreground">Deal-breakers</p>
-                              <div className="flex flex-wrap gap-2">
-                                {application.payload.dealBreakers.map((item) => (
-                                  <Badge key={item} variant="outline" className="bg-background/60 text-xs">
-                                    {item}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          ) : null}
-                          {application.payload?.dietary ? (
-                            <p>
-                              <span className="font-semibold text-foreground">Dietary:</span> {application.payload.dietary}
-                            </p>
-                          ) : null}
-                          {application.payload?.dietaryNotes ? (
-                            <p>
-                              <span className="font-semibold text-foreground">Notes:</span> {application.payload.dietaryNotes}
-                            </p>
-                          ) : null}
-                          {application.payload?.alcohol ? (
-                            <p>
-                              <span className="font-semibold text-foreground">Alcohol:</span> {application.payload.alcohol}
-                            </p>
-                          ) : null}
-                          {typeof application.payload?.vibe === "number" ? (
-                            <p>
-                              <span className="font-semibold text-foreground">Vibe:</span> {application.payload.vibe}/10
-                            </p>
-                          ) : null}
-                          {application.payload?.availability ? (
-                            <p>
-                              <span className="font-semibold text-foreground">Availability:</span> {application.payload.availability}
-                            </p>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-2 text-xs text-muted-foreground">
+                          </div>
+                        ) : null}
+                        {application.payload?.dietary ? (
                           <p>
-                            Submitted {formatDate(application.createdAt)}
+                            <span className="font-semibold text-foreground">Dietary:</span> {application.payload.dietary}
                           </p>
-                          {application.reviewedAt ? (
-                            <p>
-                              Reviewed {formatDate(application.reviewedAt)}
-                              {application.reviewer ? ` by ${application.reviewer}` : ""}
-                            </p>
-                          ) : (
-                            <p className="text-amber-500">Awaiting review</p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <ApplicationQuickActions
-                          applicationId={application.id}
-                          applicantName={application.fullName}
-                          currentStatus={application.status}
-                          redirectPath={redirectPath}
-                          defaultNotes={application.notes}
-                          emailPreviews={emailPreviewMap.get(application.id) ?? []}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        ) : null}
+                        {application.payload?.dietaryNotes ? (
+                          <p>
+                            <span className="font-semibold text-foreground">Notes:</span> {application.payload.dietaryNotes}
+                          </p>
+                        ) : null}
+                        {application.payload?.alcohol ? (
+                          <p>
+                            <span className="font-semibold text-foreground">Alcohol:</span> {application.payload.alcohol}
+                          </p>
+                        ) : null}
+                        {typeof application.payload?.vibe === "number" ? (
+                          <p>
+                            <span className="font-semibold text-foreground">Vibe:</span> {application.payload.vibe}/10
+                          </p>
+                        ) : null}
+                        {application.payload?.availability ? (
+                          <p>
+                            <span className="font-semibold text-foreground">Availability:</span> {application.payload.availability}
+                          </p>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-2 text-xs text-muted-foreground">
+                        <p>
+                          Submitted {formatDate(application.createdAt)}
+                        </p>
+                        {application.reviewedAt ? (
+                          <p>
+                            Reviewed {formatDate(application.reviewedAt)}
+                            {application.reviewer ? ` by ${application.reviewer}` : ""}
+                          </p>
+                        ) : (
+                          <p className="text-amber-500">Awaiting review</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <ApplicationQuickActions
+                        applicationId={application.id}
+                        applicantName={application.fullName}
+                        currentStatus={application.status}
+                        redirectPath={redirectPath}
+                        defaultNotes={application.notes}
+                        emailPreviews={emailPreviewMap.get(application.id) ?? []}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
 
         <form
@@ -548,8 +579,8 @@ function buildSuccessMessage(searchParams: SearchParams, fallbackCount: number) 
   const count = Number(searchParams.updated ?? fallbackCount);
   const status = typeof searchParams.statusChange === "string"
     ? (STATUS_OPTIONS.includes(searchParams.statusChange as ApplicationStatus)
-        ? (searchParams.statusChange as ApplicationStatus)
-        : null)
+      ? (searchParams.statusChange as ApplicationStatus)
+      : null)
     : null;
   if (!count || !status) {
     return `Updated ${count || "several"} applications.`;

@@ -1,42 +1,36 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { PrismaClient } from "@prisma/client";
+import { hashPassword } from "../src/lib/password";
+import { Role } from "../src/lib/prisma-constants";
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = 'rileyhaase090@gmail.com';
-const ADMIN_ROLE = 'ADMIN' as const;
-const SALT_ROUNDS = 12;
-
 async function main() {
-  const passwordHash = await bcrypt.hash('Admin1', SALT_ROUNDS);
+  const email = "admin@henrys.club";
+  const password = "password123";
+  const hashedPassword = await hashPassword(password);
 
-  await prisma.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    create: {
-      email: ADMIN_EMAIL,
-      role: ADMIN_ROLE,
-      passwordHash,
-    },
+  const user = await prisma.user.upsert({
+    where: { email },
     update: {
-      role: ADMIN_ROLE,
-      passwordHash,
+      role: Role.ADMIN,
+      passwordHash: hashedPassword,
+    },
+    create: {
+      email,
+      name: "Admin User",
+      role: Role.ADMIN,
+      passwordHash: hashedPassword,
     },
   });
 
-  console.log(`Admin ensured for ${ADMIN_EMAIL}`);
+  console.log(`Admin user created/updated: ${user.email} / ${password}`);
 }
 
-async function run() {
-  try {
-    await main();
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error(`Failed to ensure admin user: ${message}`);
+main()
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
-  } finally {
+  })
+  .finally(async () => {
     await prisma.$disconnect();
-  }
-}
-
-void run();
+  });

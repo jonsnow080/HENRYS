@@ -173,41 +173,42 @@ export function ApplyForm() {
     });
   }, [step]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored) as FormValues;
-          setValues({ ...defaultValues, ...parsed });
-        } catch (error) {
-          console.warn("Failed to parse draft", error);
-          setStorageWarning(
-            "We found a saved draft but couldn’t load it. Autosave has been reset on this device.",
-          );
-          try {
-            window.localStorage.removeItem(STORAGE_KEY);
-          } catch (removeError) {
-            console.warn("Unable to clear invalid draft", removeError);
-          }
-        }
-      }
-    } catch (error) {
-      console.warn("Unable to restore saved application", error);
-      setStorageWarning("Autosave isn’t available in this browser. You can still submit your application.");
-    }
-  }, []);
+  // Autosave restoration removed per user request to prevent data duplication issues.
+  // useEffect(() => {
+  //   if (typeof window === "undefined") return;
+  //   try {
+  //     const stored = window.localStorage.getItem(STORAGE_KEY);
+  //     if (stored) {
+  //       try {
+  //         const parsed = JSON.parse(stored) as FormValues;
+  //         setValues({ ...defaultValues, ...parsed });
+  //       } catch (error) {
+  //         console.warn("Failed to parse draft", error);
+  //         setStorageWarning(
+  //           "We found a saved draft but couldn’t load it. Autosave has been reset on this device.",
+  //         );
+  //         try {
+  //           window.localStorage.removeItem(STORAGE_KEY);
+  //         } catch (removeError) {
+  //           console.warn("Unable to clear invalid draft", removeError);
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.warn("Unable to restore saved application", error);
+  //     setStorageWarning("Autosave isn’t available in this browser. You can still submit your application.");
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
-    } catch (error) {
-      console.warn("Unable to persist application draft", error);
-      setStorageWarning("We couldn’t save your progress to this device. Submitting still works as normal.");
-    }
-  }, [values]);
+  // useEffect(() => {
+  //   if (typeof window === "undefined") return;
+  //   try {
+  //     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+  //   } catch (error) {
+  //     console.warn("Unable to persist application draft", error);
+  //     setStorageWarning("We couldn’t save your progress to this device. Submitting still works as normal.");
+  //   }
+  // }, [values]);
 
   useEffect(() => {
     if (state?.fieldErrors) {
@@ -427,6 +428,12 @@ export function ApplyForm() {
     if (!validateStep(step)) {
       return;
     }
+
+    if (step < steps.length) {
+      setStep((prev) => Math.min(steps.length, prev + 1));
+      return;
+    }
+
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem(STORAGE_KEY);
@@ -438,12 +445,74 @@ export function ApplyForm() {
       }
     }
     startTransition(() => {
+      const formData = new FormData();
+      // Append all values from state to FormData
+      Object.entries(values).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((v) => formData.append(key, v));
+        } else {
+          formData.append(key, String(value));
+        }
+      });
+
       formAction(formData);
     });
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const elements = Array.from(form.elements) as HTMLElement[];
+      const focusableInputs = elements.filter(
+        (el) =>
+          !el.hasAttribute("disabled") &&
+          !el.hasAttribute("hidden") &&
+          (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT"),
+      ) as (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[];
+
+      const currentElement = document.activeElement as HTMLElement;
+      const currentIndex = focusableInputs.indexOf(currentElement as any);
+
+      if (currentIndex !== -1) {
+        // Find next unfilled field
+        let nextUnfilledIndex = -1;
+        for (let i = currentIndex + 1; i < focusableInputs.length; i++) {
+          const el = focusableInputs[i];
+          // Check if value is empty. For checkboxes/radios, we might want different logic,
+          // but for now let's assume "value" check works for text-like inputs.
+          // For checkboxes, .value is usually "on" or similar, so we might check .checked.
+          // However, the request specifically mentioned "blank field", implying text inputs.
+          // Let's check for empty value string.
+          if (!el.value || el.value.trim() === "") {
+            nextUnfilledIndex = i;
+            break;
+          }
+        }
+
+        if (nextUnfilledIndex !== -1) {
+          focusableInputs[nextUnfilledIndex].focus();
+        } else {
+          // No more unfilled fields, try to continue
+          // If we are on the submit button, we should probably submit, but this handler
+          // catches Enter on inputs.
+          // If the next logical step is a submit button, handleContinue/submit handles it.
+          const nextElement = elements[elements.indexOf(currentElement) + 1];
+          if (nextElement && nextElement.tagName === "BUTTON" && nextElement.getAttribute("type") === "submit") {
+            submit(new FormData(form));
+          } else {
+            handleContinue();
+          }
+        }
+      } else {
+        // Current focus is not an input (maybe a button?), default behavior or continue
+        handleContinue();
+      }
+    }
+  };
+
   return (
-    <form action={submit} className="space-y-8" noValidate>
+    <form action={submit} className="space-y-8" noValidate onKeyDown={handleKeyDown}>
       <ProgressIndicator currentStep={step} />
 
       <div className="space-y-3">
@@ -862,15 +931,15 @@ function FormMessage({ tone, title, description, details }: FormMessageProps) {
   const toneClasses =
     tone === "warning"
       ? {
-          container:
-            "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100",
-          title: "text-amber-900 dark:text-amber-50",
-        }
+        container:
+          "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100",
+        title: "text-amber-900 dark:text-amber-50",
+      }
       : {
-          container:
-            "border-destructive/40 bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/20 dark:text-destructive-foreground",
-          title: "text-destructive dark:text-destructive-foreground",
-        };
+        container:
+          "border-destructive/40 bg-destructive/10 text-destructive dark:border-destructive/60 dark:bg-destructive/20 dark:text-destructive-foreground",
+        title: "text-destructive dark:text-destructive-foreground",
+      };
 
   return (
     <div className={cn("rounded-2xl border p-4 text-sm", toneClasses.container)}>

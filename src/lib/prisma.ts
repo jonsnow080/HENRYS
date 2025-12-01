@@ -6,9 +6,9 @@ type ApplicationPayload = Record<string, unknown>;
 type StringFilter =
   | string
   | {
-      contains?: string;
-      mode?: "insensitive" | "default";
-    };
+    contains?: string;
+    mode?: "insensitive" | "default";
+  };
 
 type IdFilter = string | { in?: string[] };
 
@@ -525,8 +525,8 @@ type SortDirection = "asc" | "desc";
 type HomepageCarouselImageFindManyArgs = {
   where?: { isVisible?: boolean };
   orderBy?:
-    | { sortOrder?: SortDirection; createdAt?: SortDirection }
-    | { sortOrder?: SortDirection; createdAt?: SortDirection }[];
+  | { sortOrder?: SortDirection; createdAt?: SortDirection }
+  | { sortOrder?: SortDirection; createdAt?: SortDirection }[];
 };
 
 type HomepageCarouselImageFindFirstArgs = HomepageCarouselImageFindManyArgs;
@@ -2073,7 +2073,7 @@ class PrismaClientStub {
         sortOrder:
           args.data.sortOrder ??
           (stubData.homepageCarouselImages[stubData.homepageCarouselImages.length - 1]?.sortOrder ?? 0) +
-            1,
+          1,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -2562,7 +2562,7 @@ const prismaRuntime = await (async () => {
 
   const isEdgeRuntime = Boolean(
     typeof globalThis !== "undefined" &&
-      (globalThis as typeof globalThis & { EdgeRuntime?: string }).EdgeRuntime,
+    (globalThis as typeof globalThis & { EdgeRuntime?: string }).EdgeRuntime,
   );
 
   try {

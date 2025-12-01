@@ -46,6 +46,7 @@ model User {
   payments       Payment[]
   eventRsvps     EventRsvp[]
   auditLogs      AuditLog[]       @relation("AuditLogActor")
+  applicantProfile Applicant?
 }
 
 model Application {
@@ -71,6 +72,8 @@ model Applicant {
   id              String    @id @default(cuid())
   fullName        String
   email           String    @unique
+  userId          String?   @unique
+  user            User?     @relation(fields: [userId], references: [id])
   age             Int
   city            String
   occupation      String
