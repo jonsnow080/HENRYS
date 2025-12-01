@@ -2616,6 +2616,7 @@ function instantiatePrismaClient(): PrismaClient {
 
   try {
     return new PrismaCtor({
+      datasources: resolvedDatabaseUrl ? { db: { url: resolvedDatabaseUrl } } : undefined,
       log:
         process.env.NODE_ENV === "development"
           ? ["query", "error", "warn"]
