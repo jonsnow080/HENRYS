@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-export default function ApplySuccessPage({ searchParams }: { searchParams: { email?: string } }) {
+export default async function ApplySuccessPage(props: { searchParams: Promise<{ email?: string }> }) {
+  const searchParams = await props.searchParams;
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
       <div className="rounded-[32px] border border-border/70 bg-card/80 p-8 sm:p-12">

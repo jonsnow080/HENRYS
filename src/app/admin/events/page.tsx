@@ -91,7 +91,8 @@ export const metadata: Metadata = {
   description: "Manage RSVPs, visibility, and logistics for upcoming gatherings.",
 };
 
-export default async function AdminEventsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function AdminEventsPage(props: { searchParams: Promise<SearchParams> }) {
+  const searchParams = await props.searchParams;
   const now = new Date();
 
   const query = typeof searchParams.q === "string" ? searchParams.q.trim() : "";
@@ -745,13 +746,12 @@ function MetricCard({
         {helper ? <p className="text-sm text-muted-foreground">{helper}</p> : null}
         {delta ? (
           <p
-            className={`text-xs font-semibold ${
-              delta.tone === "positive"
+            className={`text-xs font-semibold ${delta.tone === "positive"
                 ? "text-emerald-600"
                 : delta.tone === "negative"
                   ? "text-rose-600"
                   : "text-muted-foreground"
-            }`}
+              }`}
           >
             {delta.label}
           </p>

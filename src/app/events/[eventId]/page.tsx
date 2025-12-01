@@ -10,13 +10,12 @@ export const metadata: Metadata = {
   title: "Event details",
 };
 
-export default async function EventDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { eventId: string };
-  searchParams?: Record<string, string | string[] | undefined>;
+export default async function EventDetailPage(props: {
+  params: Promise<{ eventId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined> | undefined>;
 }) {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");

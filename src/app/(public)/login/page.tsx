@@ -10,11 +10,10 @@ export const metadata: Metadata = {
   description: "Sign in with a magic link or your password to access your HENRYS dashboard and events.",
 };
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams?: { redirectTo?: string; callbackUrl?: string };
+export default async function LoginPage(props: {
+  searchParams: Promise<{ redirectTo?: string; callbackUrl?: string } | undefined>;
 }) {
+  const searchParams = await props.searchParams;
   const cookieStore = await cookies();
   const remembered = cookieStore.get("henrys-last-login")?.value ?? "";
   let initialEmail = "";

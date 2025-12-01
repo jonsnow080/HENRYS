@@ -54,8 +54,8 @@ export async function createEventAction(
   formData: FormData,
 ): Promise<CreateEventState> {
   const session = await auth();
-  if (!session?.user || session.user.role !== Role.ADMIN) {
-    return { status: "error", message: "You must be an admin to create events." };
+  if (!session?.user || (session.user.role !== Role.ADMIN && session.user.role !== Role.HOST)) {
+    return { status: "error", message: "You must be an admin or host to create events." };
   }
 
   const title = String(formData.get("title") ?? "").trim();

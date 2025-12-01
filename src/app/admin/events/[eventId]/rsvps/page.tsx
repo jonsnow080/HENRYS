@@ -45,13 +45,12 @@ type AdminRsvp = {
   createdAt: Date;
 };
 
-export default async function EventRsvpsPage({
-  params,
-  searchParams,
-}: {
-  params: { eventId: string };
-  searchParams: SearchParams;
+export default async function EventRsvpsPage(props: {
+  params: Promise<{ eventId: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return null;
@@ -122,15 +121,15 @@ export default async function EventRsvpsPage({
       },
       seatGroup: seatGroup
         ? {
-            id: seatGroup.id,
-            tableNumber: seatGroup.tableNumber,
-          }
+          id: seatGroup.id,
+          tableNumber: seatGroup.tableNumber,
+        }
         : null,
       subscription: subscription
         ? {
-            stripeCustomerId: subscription.stripeCustomerId,
-            status: subscription.status,
-          }
+          stripeCustomerId: subscription.stripeCustomerId,
+          status: subscription.status,
+        }
         : null,
       createdAt: rsvp.createdAt,
     });

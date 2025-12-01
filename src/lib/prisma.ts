@@ -2552,7 +2552,7 @@ const preferRealClient =
 
 const prismaRuntime = await (async () => {
   if (!preferRealClient) {
-    if (isProductionDeployment && !isPreviewDeployment) {
+    if (isProductionDeployment && !isPreviewDeployment && !process.env.CI) {
       throw new Error(
         "Prisma client stub cannot be used in production. Ensure DATABASE_URL is set and Prisma is installed.",
       );
@@ -2585,7 +2585,7 @@ const prismaRuntime = await (async () => {
       PrismaClient: prismaModule.PrismaClient,
     };
   } catch (error) {
-    if (isProductionDeployment && !isPreviewDeployment) {
+    if (isProductionDeployment && !isPreviewDeployment && !process.env.CI) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(
         `Failed to load Prisma client in production; stub fallback is disabled. Underlying error: ${message}`,

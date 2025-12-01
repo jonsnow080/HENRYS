@@ -27,11 +27,10 @@ function parsePerks(value: unknown): string[] {
   return [];
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams?: Record<string, string | string[] | undefined>;
+export default async function DashboardPage(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined> | undefined>;
 }) {
+  const searchParams = await props.searchParams;
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");

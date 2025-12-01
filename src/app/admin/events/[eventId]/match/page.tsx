@@ -5,7 +5,8 @@ import { Role, RsvpStatus } from "@/lib/prisma-constants";
 import { SITE_COPY } from "@/lib/site-copy";
 import { SeatingPlanner } from "./planner";
 
-export default async function SeatingMatchPage({ params }: { params: { eventId: string } }) {
+export default async function SeatingMatchPage(props: { params: Promise<{ eventId: string }> }) {
+  const params = await props.params;
   const session = await auth();
   if (!session?.user || session.user.role !== Role.ADMIN) {
     return null;

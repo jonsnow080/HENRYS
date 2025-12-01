@@ -61,7 +61,7 @@ const DEFAULT_SHARE_CHANNELS = [
 
 const DEFAULT_ATTENDEE_FIELDS = [
   { label: "Full name", type: "text", required: true },
-  { label: "Email", type: "email", required: true },
+  { label: "Email", type: "text", required: true },
 ] as const;
 
 const STEP_ORDER = [
@@ -555,7 +555,11 @@ function coverFileIsValid(file: File | null): { valid: boolean; message?: string
 }
 
 
-export function CreateEventWizard() {
+export function CreateEventWizard({
+  redirectUrlPattern,
+}: {
+  redirectUrlPattern?: string;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -749,7 +753,10 @@ export function CreateEventWizard() {
           toast({ description: "Event published." });
           closeAndReset();
           router.refresh();
-          router.push(`/admin/events/${nextState.eventId}`);
+          const targetUrl = redirectUrlPattern
+            ? redirectUrlPattern.replace(":id", nextState.eventId)
+            : `/admin/events/${nextState.eventId}`;
+          router.push(targetUrl);
         } else if (nextState.status === "error") {
           toast({
             title: "Error",
@@ -2484,7 +2491,7 @@ export function CreateEventWizard() {
                       </Button>
                     </div>
                     <div className="overflow-hidden rounded-2xl border">
-                      <div className={cn(values.previewMode === "mobile" ? "max-w-xs" : "w-full", "bg-muted/40 p-4") }>
+                      <div className={cn(values.previewMode === "mobile" ? "max-w-xs" : "w-full", "bg-muted/40 p-4")}>
                         <div className="space-y-3 rounded-xl bg-background p-4 shadow-sm">
                           {coverFile ? (
                             <img src={URL.createObjectURL(coverFile)} alt="Preview" className="h-40 w-full rounded-lg object-cover" />
