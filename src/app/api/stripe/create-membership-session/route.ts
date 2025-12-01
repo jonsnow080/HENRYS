@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   const stripe = getStripe();
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getBaseUrl();
 
   const existingSubscription = await prisma.subscription.findFirst({
     where: { userId: session.user.id },

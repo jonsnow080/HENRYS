@@ -27,7 +27,7 @@ export async function POST(
   }
 
   const stripe = getStripe();
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getBaseUrl();
 
   const sessionParams = {
     mode: "payment",

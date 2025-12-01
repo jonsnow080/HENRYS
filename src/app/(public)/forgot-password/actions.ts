@@ -50,7 +50,7 @@ export async function requestPasswordReset(_: ForgotPasswordFormState, formData:
         },
     });
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
     await sendEmail({

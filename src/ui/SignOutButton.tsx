@@ -4,7 +4,7 @@ import { cn, getBaseUrl } from "@/lib/utils";
 export function SignOutButton({ className }: { className?: string }) {
   async function handleSignOut() {
     "use server";
-    await signOut({ redirectTo: getBaseUrl() });
+    await signOut({ redirectTo: await getBaseUrl() });
   }
 
   return (
