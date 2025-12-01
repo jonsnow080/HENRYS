@@ -1,5 +1,5 @@
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type Application } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,7 @@ async function checkApplication() {
 
     const applications = await prisma.application.findMany();
     console.log(`Found ${applications.length} applications in the database:`);
-    applications.forEach(app => {
+    applications.forEach((app: Application) => {
         console.log(`- ${app.fullName} (${app.email})`);
     });
 
