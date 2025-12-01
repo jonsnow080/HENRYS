@@ -1,5 +1,4 @@
 import NextAuth from "next-auth";
-import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -8,17 +7,17 @@ import { wrapRouteHandlerWithSentry } from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/lib/prisma-constants";
 import { verifyPassword } from "@/lib/password";
+import { authConfig } from "./auth.config";
 
 const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
 
-export const authConfig = {
+console.log("DEBUG: Initializing Auth");
+console.log("DEBUG: AUTH_RESEND_KEY set:", !!process.env.AUTH_RESEND_KEY);
+console.log("DEBUG: AUTH_SECRET set:", !!process.env.AUTH_SECRET);
+
+const { auth, handlers, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/login",
-  },
   providers: [
     Resend({
       apiKey: process.env.AUTH_RESEND_KEY,
@@ -72,6 +71,7 @@ export const authConfig = {
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     async signIn({ user }) {
       if (!user?.id) {
         return false;
@@ -125,58 +125,8 @@ export const authConfig = {
       }
       return token;
     },
-    async session({ session, token }) {
-      if (session.user) {
-        if (typeof token.sub === "string") {
-          session.user.id = token.sub;
-        }
-        const role = token.role;
-        if (typeof role === "string" && Object.values(Role).includes(role as Role)) {
-          session.user.role = role as Role;
-        }
-        if (typeof token.name === "string") {
-          session.user.name = token.name;
-        }
-        if (typeof token.email === "string") {
-          session.user.email = token.email;
-        }
-      }
-      return session;
-    },
   },
-  events: {
-    async signOut(message) {
-      let email: string | null = null;
-
-      if ("token" in message) {
-        email = message.token?.email ?? null;
-      }
-
-      if (!email && "session" in message) {
-        const sessionUserId = message.session?.userId;
-        if (sessionUserId) {
-          const user = await prisma.user.findUnique({
-            where: { id: sessionUserId },
-            select: { email: true },
-          });
-          email = user?.email ?? null;
-        }
-      }
-
-      if (!email) {
-        return;
-      }
-
-      await prisma.verificationToken.deleteMany({
-        where: { identifier: email },
-      });
-    },
-  },
-  secret: process.env.AUTH_SECRET,
-  trustHost: true,
-} satisfies NextAuthConfig;
-
-const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
+});
 
 export { auth, signIn, signOut };
 export const GET = wrapRouteHandlerWithSentry(handlers.GET, {
@@ -188,4 +138,3 @@ export const POST = wrapRouteHandlerWithSentry(handlers.POST, {
   parameterizedRoute: "/api/auth/[...nextauth]",
 });
 
-export default authConfig;

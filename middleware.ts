@@ -1,7 +1,10 @@
 
 import { NextResponse } from "next/server";
 import { Role } from "@/lib/prisma-constants";
-import { auth } from "./auth";
+import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
+
+const { auth } = NextAuth(authConfig);
 
 const memberRoutes = ["/dashboard", "/events/"];
 const hostRoutes = ["/host"];
