@@ -18,7 +18,9 @@ const securedMiddleware = auth((req) => {
 
   const requiresMember = memberRoutes.some((route) => pathname.startsWith(route));
   const requiresHost = hostRoutes.some((route) => pathname.startsWith(route));
-  if (!requiresMember && !requiresHost) {
+  const requiresAdmin = pathname.startsWith("/admin");
+
+  if (!requiresMember && !requiresHost && !requiresAdmin) {
     return NextResponse.next();
   }
 
@@ -31,6 +33,10 @@ const securedMiddleware = auth((req) => {
   }
 
   const role = session.user.role;
+
+  if (requiresAdmin && role !== Role.ADMIN) {
+    return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
+  }
 
   if (requiresHost && !hostRoleSet.has(role)) {
     return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
@@ -46,5 +52,5 @@ const securedMiddleware = auth((req) => {
 export default securedMiddleware;
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*"],
+  matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*", "/admin/:path*"],
 };
