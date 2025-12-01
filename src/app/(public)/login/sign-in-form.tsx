@@ -121,7 +121,7 @@ export function SignInForm({
               <p className="text-sm text-destructive">{passwordState.fieldErrors.password.join(" ")}</p>
             ) : null}
             <Link
-              href="/reset-password"
+              href="/forgot-password"
               className="block text-sm text-muted-foreground underline-offset-4 hover:underline"
             >
               Forgot password?

@@ -7,42 +7,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string }) {
+export function ResetPasswordForm({ token }: { token: string }) {
   const [state, formAction, pending] = useActionState<ResetPasswordFormState, FormData>(resetPassword, {});
+
+  if (state.success) {
+    return (
+      <div className="rounded-2xl border border-border/70 bg-card/70 p-6 text-center">
+        <h3 className="mb-2 text-lg font-semibold">Password updated</h3>
+        <p className="text-muted-foreground">{state.message}</p>
+        <Button asChild className="mt-4 w-full">
+          <a href="/login">Sign in</a>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="space-y-6" noValidate>
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          defaultValue={initialEmail}
-          aria-invalid={state?.fieldErrors?.email ? "true" : undefined}
-        />
-        {state?.fieldErrors?.email ? (
-          <p className="text-sm text-destructive">{state.fieldErrors.email.join(" ")}</p>
-        ) : null}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="confirmEmail">Confirm email</Label>
-        <Input
-          id="confirmEmail"
-          name="confirmEmail"
-          type="email"
-          required
-          autoComplete="email"
-          defaultValue={initialEmail}
-          aria-invalid={state?.fieldErrors?.confirmEmail ? "true" : undefined}
-        />
-        {state?.fieldErrors?.confirmEmail ? (
-          <p className="text-sm text-destructive">{state.fieldErrors.confirmEmail.join(" ")}</p>
-        ) : null}
-      </div>
+      <input type="hidden" name="token" value={token} />
 
       <div className="space-y-2">
         <Label htmlFor="password">New password</Label>

@@ -10,20 +10,45 @@ export const metadata: Metadata = {
   description: "Reset your password using your email address to regain access to your HENRYS account.",
 };
 
-export default async function ResetPasswordPage() {
-  const cookieStore = await cookies();
-  const remembered = cookieStore.get("henrys-last-login")?.value ?? "";
-  let initialEmail = "";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
-  if (remembered) {
-    try {
-      const decoded = Buffer.from(remembered, "base64url").toString("utf8");
-      if (z.string().email().safeParse(decoded).success) {
-        initialEmail = decoded;
-      }
-    } catch (error) {
-      console.warn("Failed to decode remembered email", error);
-    }
+export default async function ResetPasswordPage(props: {
+  searchParams: Promise<{ token?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const token = searchParams?.token;
+
+  if (!token) {
+    return (
+      <div className="mx-auto flex max-w-md flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-destructive/50 bg-destructive/10 p-6 text-center text-destructive">
+          <h3 className="mb-2 text-lg font-semibold">Invalid Link</h3>
+          <p>This password reset link is missing a token.</p>
+          <Link href="/forgot-password" className="mt-4 inline-block underline">
+            Request a new link
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const resetToken = await prisma.passwordResetToken.findUnique({
+    where: { token },
+  });
+
+  if (!resetToken || resetToken.expiresAt < new Date()) {
+    return (
+      <div className="mx-auto flex max-w-md flex-col gap-8 px-4 py-16 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-destructive/50 bg-destructive/10 p-6 text-center text-destructive">
+          <h3 className="mb-2 text-lg font-semibold">Link Expired</h3>
+          <p>This password reset link is invalid or has expired.</p>
+          <Link href="/forgot-password" className="mt-4 inline-block underline">
+            Request a new link
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -31,23 +56,15 @@ export default async function ResetPasswordPage() {
       <header className="space-y-3 text-left">
         <h1 className="text-3xl font-semibold">Reset your password</h1>
         <p className="text-sm text-muted-foreground">
-          Enter your email address twice along with a new password. If the email matches an account we&apos;ll update the
-          password immediately.
+          Enter your new password below.
         </p>
       </header>
-      <ResetPasswordForm initialEmail={initialEmail} />
+      <ResetPasswordForm token={token} />
       <div className="space-y-2 rounded-2xl border border-border/70 bg-card/70 p-4 text-sm text-muted-foreground">
         <p>
-          Remembered your password? {" "}
+          Remembered your password?{" "}
           <Link className="font-semibold text-foreground underline" href="/login">
             Go back to sign in
-          </Link>
-          .
-        </p>
-        <p>
-          Need to create an account instead? {" "}
-          <Link className="font-semibold text-foreground underline" href="/register">
-            Register here
           </Link>
           .
         </p>

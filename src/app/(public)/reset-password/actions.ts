@@ -6,19 +6,11 @@ import { hashPassword } from "@/lib/password";
 
 const resetSchema = z
   .object({
-    email: z.string().email("Enter a valid email"),
-    confirmEmail: z.string().email("Re-enter your email"),
+    token: z.string(),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(8, "Confirm your password"),
   })
   .superRefine((value, ctx) => {
-    if (value.email !== value.confirmEmail) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Emails must match",
-        path: ["confirmEmail"],
-      });
-    }
     if (value.password !== value.confirmPassword) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -44,21 +36,30 @@ export async function resetPassword(_: ResetPasswordFormState, formData: FormDat
     };
   }
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email }, select: { id: true } });
-  if (!user) {
+  const { token, password } = parsed.data;
+
+  const resetToken = await prisma.passwordResetToken.findUnique({
+    where: { token },
+  });
+
+  if (!resetToken || resetToken.expiresAt < new Date()) {
     return {
       success: false,
-      message: "We couldn\'t find an account with that email. Double-check the address or create a new account.",
+      message: "Invalid or expired token. Please request a new password reset link.",
     };
   }
 
-  const hashedPassword = await hashPassword(parsed.data.password);
+  const hashedPassword = await hashPassword(password);
 
   await prisma.user.update({
-    where: { id: user.id },
+    where: { email: resetToken.email },
     data: {
       passwordHash: hashedPassword,
     },
+  });
+
+  await prisma.passwordResetToken.delete({
+    where: { token },
   });
 
   return {
