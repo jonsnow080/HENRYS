@@ -1,9 +1,11 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { SITE_COPY } from "@/lib/site-copy";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { CreateEventWizard } from "../admin/events/create-event-wizard";
+
+// Infer the Event type to avoid export issues
+type Event = NonNullable<Awaited<ReturnType<typeof prisma.event.findFirst>>>;
 
 export default async function HostDashboardPage() {
     const session = await auth();
@@ -37,7 +39,7 @@ export default async function HostDashboardPage() {
                     </p>
                 ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {upcomingEvents.map((event) => (
+                        {upcomingEvents.map((event: Event) => (
                             <div key={event.id} className="rounded-2xl border border-border/60 bg-card p-6">
                                 <h3 className="font-semibold">{event.name}</h3>
                                 <p className="text-sm text-muted-foreground">
