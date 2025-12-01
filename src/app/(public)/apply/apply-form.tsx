@@ -424,7 +424,7 @@ export function ApplyForm() {
     }
   }, [step, validateStep]);
 
-  const submit = (formData: FormData) => {
+  const submit = () => {
     if (!validateStep(step)) {
       return;
     }
@@ -472,7 +472,7 @@ export function ApplyForm() {
       ) as (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[];
 
       const currentElement = document.activeElement as HTMLElement;
-      const currentIndex = focusableInputs.indexOf(currentElement as any);
+      const currentIndex = focusableInputs.indexOf(currentElement as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement);
 
       if (currentIndex !== -1) {
         // Find next unfilled field
@@ -499,7 +499,7 @@ export function ApplyForm() {
           // If the next logical step is a submit button, handleContinue/submit handles it.
           const nextElement = elements[elements.indexOf(currentElement) + 1];
           if (nextElement && nextElement.tagName === "BUTTON" && nextElement.getAttribute("type") === "submit") {
-            submit(new FormData(form));
+            submit();
           } else {
             handleContinue();
           }
