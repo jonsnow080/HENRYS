@@ -50,10 +50,12 @@ export function SeatingPlanner({ eventId, attendees, seatGroups }: PlannerProps)
 
   const [baseline, setBaseline] = useState(() => new Map(initialAssignments));
   const [assignments, setAssignments] = useState(() => new Map(initialAssignments));
+  const [noShows, setNoShows] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setBaseline(new Map(initialAssignments));
     setAssignments(new Map(initialAssignments));
+    setNoShows(new Set());
   }, [initialAssignments]);
   const [ageFilter, setAgeFilter] = useState<(typeof AGE_BUCKETS)[number]["value"]>("all");
   const dietaryOptions = useMemo(() => {
@@ -92,6 +94,7 @@ export function SeatingPlanner({ eventId, attendees, seatGroups }: PlannerProps)
   }, [attendees, assignments, seatGroups]);
 
   const pool = attendees.filter((attendee) => {
+    if (noShows.has(attendee.id)) return false;
     const seat = assignments.get(attendee.id) ?? null;
     if (seat) return false;
     if (search) {
@@ -106,6 +109,19 @@ export function SeatingPlanner({ eventId, attendees, seatGroups }: PlannerProps)
     if (attendee.vibe !== undefined && attendee.vibe < minVibe) return false;
     return true;
   });
+
+  const noShowPool = attendees.filter((attendee) => noShows.has(attendee.id));
+  const totalSeats = useMemo(() => seatGroups.reduce((sum, group) => sum + group.capacity, 0), [seatGroups]);
+  const assignedCount = useMemo(
+    () =>
+      attendees.reduce((count, attendee) => {
+        const seat = assignments.get(attendee.id) ?? null;
+        if (seat) return count + 1;
+        return count;
+      }, 0),
+    [attendees, assignments],
+  );
+  const openSeats = Math.max(totalSeats - assignedCount, 0);
 
   const hasChanges = useMemo(() => {
     for (const attendee of attendees) {
@@ -127,6 +143,11 @@ export function SeatingPlanner({ eventId, attendees, seatGroups }: PlannerProps)
   };
 
   const handleDrop = (attendeeId: string, seatGroupId: string | null) => {
+    setNoShows((prev) => {
+      const next = new Set(prev);
+      next.delete(attendeeId);
+      return next;
+    });
     const attendee = attendees.find((entry) => entry.id === attendeeId);
     if (!attendee) return;
     if (seatGroupId) {
@@ -199,9 +220,41 @@ export function SeatingPlanner({ eventId, attendees, seatGroups }: PlannerProps)
     setFeedback("Auto-suggested new groupings. Review before saving.");
   };
 
+  const markNoShow = (attendeeId: string) => {
+    setNoShows((prev) => new Set(prev).add(attendeeId));
+    setAssignments((prev) => new Map(prev).set(attendeeId, null));
+    setFeedback("Seat cleared. Keep track of no-shows below.");
+  };
+
+  const reinstateAttendee = (attendeeId: string) => {
+    setNoShows((prev) => {
+      const next = new Set(prev);
+      next.delete(attendeeId);
+      return next;
+    });
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
-      <aside className="space-y-4 rounded-[28px] border border-border/60 bg-background/80 p-5">
+      <aside className="space-y-4 rounded-[28px] border border-border/60 bg-background/80 p-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-32px)] lg:overflow-y-auto">
+        <section className="space-y-2 rounded-2xl border border-border/60 bg-muted/40 p-3 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-sm font-semibold text-foreground">
+            <span>Seating status</span>
+            <span>
+              {assignedCount}/{attendees.length} seated
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-border/60 bg-background/80 p-3">
+              <p className="text-[11px] uppercase tracking-wide">Open seats</p>
+              <p className="text-lg font-semibold text-foreground">{openSeats}</p>
+            </div>
+            <div className="rounded-xl border border-border/60 bg-background/80 p-3">
+              <p className="text-[11px] uppercase tracking-wide">Unassigned</p>
+              <p className="text-lg font-semibold text-foreground">{pool.length}</p>
+            </div>
+          </div>
+        </section>
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Search attendees</p>
           <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name or email" />
@@ -279,7 +332,33 @@ export function SeatingPlanner({ eventId, attendees, seatGroups }: PlannerProps)
               <p className="text-xs text-muted-foreground">Everyone is seated. Nice work!</p>
             ) : (
               pool.map((attendee) => (
-                <AttendeeCard key={attendee.id} attendee={attendee} />
+                <AttendeeCard
+                  key={attendee.id}
+                  attendee={attendee}
+                  onMarkNoShow={() => markNoShow(attendee.id)}
+                  actionLabel="No-show"
+                />
+              ))
+            )}
+          </div>
+        </section>
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">No-shows & drops</p>
+            <span className="text-xs text-muted-foreground">{noShowPool.length}</span>
+          </div>
+          <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-background/60 p-3">
+            {noShowPool.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Mark a guest as a no-show to free a seat quickly.</p>
+            ) : (
+              noShowPool.map((attendee) => (
+                <AttendeeCard
+                  key={attendee.id}
+                  attendee={attendee}
+                  isNoShow
+                  onReinstate={() => reinstateAttendee(attendee.id)}
+                  actionLabel="Reinstate"
+                />
               ))
             )}
           </div>
@@ -346,7 +425,13 @@ export function SeatingPlanner({ eventId, attendees, seatGroups }: PlannerProps)
                   </div>
                 ) : (
                   (assignedMap.get(group.id) ?? []).map((attendee) => (
-                    <AttendeeCard key={attendee.id} attendee={attendee} />
+                    <AttendeeCard
+                      key={attendee.id}
+                      attendee={attendee}
+                      onUnassign={() => handleDrop(attendee.id, null)}
+                      onMarkNoShow={() => markNoShow(attendee.id)}
+                      actionLabel="Unseat"
+                    />
                   ))
                 )}
               </div>
@@ -366,29 +451,64 @@ export function SeatingPlanner({ eventId, attendees, seatGroups }: PlannerProps)
   );
 }
 
-function AttendeeCard({ attendee }: { attendee: Attendee }) {
+type AttendeeCardProps = {
+  attendee: Attendee;
+  onUnassign?: () => void;
+  onMarkNoShow?: () => void;
+  onReinstate?: () => void;
+  isNoShow?: boolean;
+  actionLabel?: string;
+};
+
+function AttendeeCard({ attendee, onUnassign, onMarkNoShow, onReinstate, isNoShow, actionLabel }: AttendeeCardProps) {
   return (
     <div
       draggable
       onDragStart={(event) => {
         event.dataTransfer.setData("text/plain", attendee.id);
       }}
-      className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/70 px-3 py-2 text-xs"
+      className={`flex items-start justify-between rounded-2xl border border-border/60 bg-background/70 px-3 py-2 text-xs transition ${isNoShow ? "opacity-70" : ""}`}
     >
-      <div>
+      <div className="space-y-1 pr-2">
         <p className="font-semibold text-foreground">{attendee.name}</p>
         <p className="text-muted-foreground">{attendee.email}</p>
       </div>
-      <div className="flex flex-wrap justify-end gap-2">
-        {attendee.vibe !== undefined ? (
-          <Badge variant="outline" className="bg-muted/60">
-            Vibe {attendee.vibe}/10
-          </Badge>
-        ) : null}
-        {attendee.dietary ? (
-          <Badge variant="outline" className="bg-muted/60">
-            {attendee.dietary}
-          </Badge>
+      <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          {attendee.vibe !== undefined ? (
+            <Badge variant="outline" className="bg-muted/60">
+              Vibe {attendee.vibe}/10
+            </Badge>
+          ) : null}
+          {attendee.dietary ? (
+            <Badge variant="outline" className="bg-muted/60">
+              {attendee.dietary}
+            </Badge>
+          ) : null}
+          {isNoShow ? (
+            <Badge variant="accent" className="bg-amber-100 text-amber-700">
+              No-show
+            </Badge>
+          ) : null}
+        </div>
+        {onUnassign || onMarkNoShow || onReinstate ? (
+          <div className="flex flex-wrap justify-end gap-2">
+            {onUnassign ? (
+              <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={onUnassign}>
+                Unassign
+              </Button>
+            ) : null}
+            {onMarkNoShow ? (
+              <Button type="button" size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={onMarkNoShow}>
+                {actionLabel ?? "No-show"}
+              </Button>
+            ) : null}
+            {onReinstate ? (
+              <Button type="button" size="sm" variant="secondary" className="h-7 px-2 text-[11px]" onClick={onReinstate}>
+                {actionLabel ?? "Reinstate"}
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </div>

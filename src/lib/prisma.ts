@@ -2517,6 +2517,10 @@ class PrismaClientStub {
     return callback(this);
   }
 
+  async $connect(): Promise<void> {
+    // no-op for stub
+  }
+
   async $disconnect(): Promise<void> {
     // no-op for stub
   }
@@ -2549,6 +2553,10 @@ const preferRealClient =
   !isExplicitlyDisabled &&
   (process.env.USE_PRISMA_CLIENT === "true" ||
     (resolvedDatabaseUrl !== "" && !resolvedDatabaseUrl.startsWith("file:")));
+// Guarding the stub should only be opt-in so builds can proceed without a
+// database. Use a dedicated flag that must be explicitly set to block the
+// stub in production.
+const blockPrismaStubInProd = process.env.BLOCK_PRISMA_STUB_IN_PROD === "true";
 
 const prismaRuntime = await (async () => {
   if (!preferRealClient) {
@@ -2595,6 +2603,16 @@ const prismaRuntime = await (async () => {
   }
 })();
 
+if (
+  prismaRuntime.mode === "stub" &&
+  process.env.NODE_ENV === "production" &&
+  blockPrismaStubInProd
+) {
+  console.error(
+    "Prisma client stub cannot be used in production. Ensure DATABASE_URL is set and Prisma is installed.",
+  );
+}
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
@@ -2634,7 +2652,33 @@ function instantiatePrismaClient(): PrismaClient {
     throw error;
   }
 }
-const prismaClient = globalForPrisma.prisma ?? instantiatePrismaClient();
+
+const shouldFallbackToStub = process.env.PRISMA_FALLBACK_TO_STUB !== "false";
+
+async function buildPrismaClient(): Promise<PrismaClient> {
+  const client = instantiatePrismaClient();
+
+  if (!shouldFallbackToStub || prismaRuntime.mode === "stub") {
+    return client;
+  }
+
+  try {
+    await client.$connect();
+    return client;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isConnectionIssue =
+      message.includes("Can't reach database server") || message.includes("P1001");
+
+    if (isConnectionIssue) {
+      return new PrismaClientStub() as unknown as PrismaClient;
+    }
+
+    throw error;
+  }
+}
+
+const prismaClient = globalForPrisma.prisma ?? (await buildPrismaClient());
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prismaClient;
