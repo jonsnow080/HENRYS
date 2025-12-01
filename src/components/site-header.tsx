@@ -12,7 +12,7 @@ const navItems: { href: string; label: string; roles?: Role[] }[] = [
   { href: "/faq", label: "FAQ" },
   { href: "/events", label: "Events" },
   { href: "/dashboard", label: "Dashboard", roles: [Role.MEMBER, Role.HOST, Role.ADMIN] },
-  { href: "/host", label: "Host", roles: [Role.HOST, Role.ADMIN] },
+  { href: "/host", label: "Host" },
   { href: "/admin", label: "Admin", roles: [Role.ADMIN] },
 ];
 
