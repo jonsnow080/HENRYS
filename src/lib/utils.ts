@@ -29,9 +29,8 @@ export function formatCurrency(amountInMinorUnits: number, currency: string) {
 }
 
 export function getBaseUrl() {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.SITE_URL ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.SITE_URL) return process.env.SITE_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
 }
