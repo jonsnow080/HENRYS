@@ -77,16 +77,7 @@ const { auth, handlers, signIn, signOut } = NextAuth({
         return false;
       }
 
-      const dbUser = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-
-      if (!dbUser) {
-        return false;
-      }
-
-      return allowedMemberRoles.has(dbUser.role as Role);
+      return true;
     },
     async jwt({ token, user }) {
       if (user) {

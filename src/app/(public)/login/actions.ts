@@ -5,6 +5,10 @@ import { AuthError } from "next-auth";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { Role } from "@/lib/prisma-constants";
+
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "past_due"]);
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
@@ -22,6 +26,33 @@ export type LoginFormState = {
   fieldErrors?: Record<string, string[]>;
 };
 
+async function getRedirectUrl(email: string, preferredRedirect?: string) {
+  // If a specific redirect is requested (and it's not the default dashboard), use it.
+  if (preferredRedirect && preferredRedirect !== "/dashboard" && preferredRedirect !== "/") {
+    return preferredRedirect;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { role: true, subscriptions: { select: { status: true } } },
+  });
+
+  if (!user) return "/dashboard";
+
+  if (user.role === Role.ADMIN) return "/admin";
+  if (user.role === Role.HOST) return "/host";
+
+  // For Members (and others)
+  const hasActiveSubscription = user.subscriptions.some((sub) => ACTIVE_SUBSCRIPTION_STATUSES.has(sub.status));
+
+  if (hasActiveSubscription) {
+    return "/events";
+  } else {
+    // Unsubscribed members -> dashboard (subscription offer)
+    return "/dashboard";
+  }
+}
+
 export async function requestMagicLink(_: LoginFormState, formData: FormData): Promise<LoginFormState> {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -32,12 +63,14 @@ export async function requestMagicLink(_: LoginFormState, formData: FormData): P
     };
   }
 
-  const redirectTarget =
+  const preferredRedirect =
     parsed.data.redirectTo && parsed.data.redirectTo.length > 1
       ? parsed.data.redirectTo
       : parsed.data.callbackUrl && parsed.data.callbackUrl.length > 1
         ? parsed.data.callbackUrl
-        : "/dashboard";
+        : undefined;
+
+  const redirectTarget = await getRedirectUrl(parsed.data.email, preferredRedirect);
 
   try {
     await signIn("resend", {
@@ -96,12 +129,14 @@ export async function loginWithPassword(_: LoginFormState, formData: FormData): 
     };
   }
 
-  const redirectTarget =
+  const preferredRedirect =
     parsed.data.redirectTo && parsed.data.redirectTo.length > 1
       ? parsed.data.redirectTo
       : parsed.data.callbackUrl && parsed.data.callbackUrl.length > 1
         ? parsed.data.callbackUrl
-        : "/dashboard";
+        : undefined;
+
+  const redirectTarget = await getRedirectUrl(parsed.data.email, preferredRedirect);
 
   try {
     await signIn("credentials", {

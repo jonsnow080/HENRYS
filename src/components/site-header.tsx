@@ -13,7 +13,6 @@ const navItems: { href: string; label: string; roles?: Role[] }[] = [
   { href: "/events", label: "Events" },
   { href: "/dashboard", label: "Dashboard", roles: [Role.MEMBER, Role.HOST, Role.ADMIN] },
   { href: "/host", label: "Host", roles: [Role.HOST, Role.ADMIN] },
-  { href: "/admin", label: "Admin", roles: [Role.ADMIN] },
 ];
 
 export function SiteHeader({ session }: { session: Session | null }) {
@@ -47,17 +46,16 @@ export function SiteHeader({ session }: { session: Session | null }) {
           <DarkModeToggle />
           {session?.user ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Button asChild size="sm" variant="outline">
-                <Link href="/admin">Admin View</Link>
-              </Button>
+              {role === Role.ADMIN && (
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/admin">Admin View</Link>
+                </Button>
+              )}
               <span className="hidden text-sm text-muted-foreground sm:inline">Hi, {session.user.name ?? "member"}</span>
               <SignOutButton />
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
-              <Button asChild size="sm" variant="outline">
-                <Link href="/admin">Admin View</Link>
-              </Button>
               <Button asChild size="sm">
                 <Link href="/login">Member sign-in</Link>
               </Button>
