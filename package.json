@@ -13,7 +13,8 @@
     "prepare": "husky install",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:fix-admin": "tsx scripts/ensure-production-admin.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

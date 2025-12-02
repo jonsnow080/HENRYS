@@ -1,0 +1,41 @@
+import { PrismaClient, Role } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+    const email = "rileyhaase090@gmail.com";
+
+    console.log(`Checking user: ${email}...`);
+
+    const user = await prisma.user.findUnique({
+        where: { email },
+    });
+
+    if (!user) {
+        console.error(`User with email ${email} not found.`);
+        process.exit(1);
+    }
+
+    if (user.role === Role.ADMIN) {
+        console.log(`User ${email} is already an ADMIN.`);
+        return;
+    }
+
+    console.log(`Promoting ${email} to ADMIN...`);
+
+    await prisma.user.update({
+        where: { email },
+        data: { role: Role.ADMIN },
+    });
+
+    console.log(`Successfully promoted ${email} to ADMIN.`);
+}
+
+main()
+    .catch((e) => {
+        console.error(e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
