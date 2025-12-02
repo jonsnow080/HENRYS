@@ -48,8 +48,8 @@ async function getRedirectUrl(email: string, preferredRedirect?: string) {
   if (hasActiveSubscription) {
     return "/events";
   } else {
-    // Unsubscribed members -> dashboard (subscription offer)
-    return "/dashboard";
+    // Unsubscribed members -> offers (subscription offer)
+    return "/offers";
   }
 }
 

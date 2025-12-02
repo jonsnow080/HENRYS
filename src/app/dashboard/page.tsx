@@ -137,7 +137,14 @@ export default async function DashboardPage(props: {
           </div>
         </div>
       ) : (
-        <SubscribeCard plans={plans} />
+        <div className="rounded-2xl border border-border/60 bg-card/70 p-6 text-center">
+          <p className="text-muted-foreground">
+            You do not have an active membership.{" "}
+            <a href="/offers" className="font-medium text-foreground underline">
+              View offers
+            </a>
+          </p>
+        </div>
       )}
 
       <div className="space-y-4">
