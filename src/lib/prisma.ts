@@ -2517,6 +2517,10 @@ class PrismaClientStub {
     return callback(this);
   }
 
+  async $connect(): Promise<void> {
+    // no-op for stub
+  }
+
   async $disconnect(): Promise<void> {
     // no-op for stub
   }
@@ -2642,7 +2646,33 @@ function instantiatePrismaClient(): PrismaClient {
     throw error;
   }
 }
-const prismaClient = globalForPrisma.prisma ?? instantiatePrismaClient();
+
+const shouldFallbackToStub = process.env.PRISMA_FALLBACK_TO_STUB !== "false";
+
+async function buildPrismaClient(): Promise<PrismaClient> {
+  const client = instantiatePrismaClient();
+
+  if (!shouldFallbackToStub || prismaRuntime.mode === "stub") {
+    return client;
+  }
+
+  try {
+    await client.$connect();
+    return client;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isConnectionIssue =
+      message.includes("Can't reach database server") || message.includes("P1001");
+
+    if (isConnectionIssue) {
+      return new PrismaClientStub() as unknown as PrismaClient;
+    }
+
+    throw error;
+  }
+}
+
+const prismaClient = globalForPrisma.prisma ?? (await buildPrismaClient());
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prismaClient;
