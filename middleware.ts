@@ -52,5 +52,5 @@ const securedMiddleware = auth((req) => {
 export default securedMiddleware;
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/events/:path*", "/host/:path*", "/admin/:path*"],
+  matcher: [],
 };
