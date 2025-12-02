@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getStripe } from "@/lib/stripe/server";
-import { getBaseUrl } from "@/lib/utils";
+import { getBaseUrl } from "@/lib/server-utils";
 
 export const runtime = "nodejs";
 

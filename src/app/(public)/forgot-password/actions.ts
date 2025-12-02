@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email/send";
 import { resetPasswordTemplate } from "@/lib/email/templates/reset-password";
-import { getBaseUrl } from "@/lib/utils";
+import { getBaseUrl } from "@/lib/server-utils";
 import crypto from "node:crypto";
 
 const forgotPasswordSchema = z.object({

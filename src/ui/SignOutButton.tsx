@@ -1,5 +1,6 @@
 import { signOut } from "@/auth";
-import { cn, getBaseUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { getBaseUrl } from "@/lib/server-utils";
 
 export function SignOutButton({ className }: { className?: string }) {
   async function handleSignOut() {
