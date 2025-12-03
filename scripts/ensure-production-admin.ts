@@ -17,8 +17,8 @@ async function main() {
     });
 
     if (!user) {
-        console.error(`User with email ${email} not found.`);
-        process.exit(1);
+        console.warn(`User with email ${email} not found. Skipping admin promotion.`);
+        return;
     }
 
     if (user.role === Role.ADMIN) {
