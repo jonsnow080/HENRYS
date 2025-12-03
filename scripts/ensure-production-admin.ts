@@ -3,6 +3,11 @@ import { PrismaClient, Role } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+    if (!process.env.DATABASE_URL?.startsWith("postgres")) {
+        console.log("Skipping admin fix: DATABASE_URL not found or invalid.");
+        return;
+    }
+
     const email = "rileyhaase090@gmail.com";
 
     console.log(`Checking user: ${email}...`);
