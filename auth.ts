@@ -17,7 +17,7 @@ console.log("DEBUG: AUTH_SECRET set:", !!process.env.AUTH_SECRET);
 
 const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     Resend({
       apiKey: process.env.AUTH_RESEND_KEY,
