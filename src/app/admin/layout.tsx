@@ -4,6 +4,8 @@ import { Role } from "@/lib/prisma-constants";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();
+    console.log("[AdminLayout] Session:", JSON.stringify(session, null, 2));
+    console.log("[AdminLayout] User Role:", session?.user?.role);
 
     if (!session?.user) {
         const loginUrl = new URL("/login", process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
