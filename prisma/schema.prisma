@@ -48,6 +48,7 @@ model User {
   eventRsvps     EventRsvp[]
   auditLogs      AuditLog[]       @relation("AuditLogActor")
   applicantProfile Applicant?
+  hostedEvents   Event[]          @relation("EventHost")
 }
 
 model Application {
@@ -204,6 +205,8 @@ model Event {
   rsvps         EventRsvp[]
   seatGroups    SeatGroup[]
   payments      Payment[]
+  hostId        String?
+  host          User?     @relation("EventHost", fields: [hostId], references: [id])
 }
 
 model HomepageCarouselImage {
