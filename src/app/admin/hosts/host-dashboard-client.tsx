@@ -9,8 +9,6 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    LineChart,
-    Line,
 } from "recharts";
 import { Input } from "@/components/ui/input";
 import {

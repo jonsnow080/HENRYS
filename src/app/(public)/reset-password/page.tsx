@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { z } from "zod";
 import { SITE_COPY } from "@/lib/site-copy";
 import { ResetPasswordForm } from "./reset-password-form";
 
@@ -11,7 +9,6 @@ export const metadata: Metadata = {
 };
 
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 
 export default async function ResetPasswordPage(props: {
   searchParams: Promise<{ token?: string }>;

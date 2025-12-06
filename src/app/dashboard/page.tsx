@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { SignOutButton } from "@/ui/SignOutButton";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
-import { SubscribeCard, type MembershipPlanOption } from "./_components/subscribe-card";
+import { type MembershipPlanOption } from "./_components/subscribe-card";
 import { BillingPortalButton } from "./_components/billing-portal-button";
 import { ReceiptsTable, type ReceiptRow } from "./_components/receipts-table";
 

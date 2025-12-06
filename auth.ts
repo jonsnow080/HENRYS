@@ -9,7 +9,7 @@ import { Role } from "@/lib/prisma-constants";
 import { verifyPassword } from "@/lib/password";
 import { authConfig } from "./auth.config";
 
-const allowedMemberRoles = new Set<Role>([Role.MEMBER, Role.HOST, Role.ADMIN]);
+
 
 console.log("DEBUG: Initializing Auth");
 console.log("DEBUG: AUTH_RESEND_KEY set:", !!process.env.AUTH_RESEND_KEY);
@@ -17,6 +17,7 @@ console.log("DEBUG: AUTH_SECRET set:", !!process.env.AUTH_SECRET);
 
 const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adapter: PrismaAdapter(prisma) as any,
   providers: [
     Resend({
