@@ -24,7 +24,8 @@ const securedMiddleware = auth((req) => {
     return NextResponse.next();
   }
 
-  // Debug: Allow admin access to see the in-page debug info
+  // Bypass: Allow admin routes to pass through to the Layout (Server Component)
+  // This avoids issues where Middleware (Edge) fails to decode the session but the Server successfully does.
   if (requiresAdmin) {
     return NextResponse.next();
   }
@@ -38,10 +39,6 @@ const securedMiddleware = auth((req) => {
   }
 
   const role = session.user.role;
-
-  // if (requiresAdmin && role !== Role.ADMIN) {
-  //   return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
-  // }
 
   if (requiresHost && !hostRoleSet.has(role)) {
     return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
