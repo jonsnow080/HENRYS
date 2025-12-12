@@ -79,6 +79,11 @@ export default async function AdminHomePage() {
           description="Search, filter, and decide on prospective members."
         />
         <AdminLinkCard
+          href="/admin/hosts"
+          title="Hosts"
+          description="Manage event hosts and their permissions."
+        />
+        <AdminLinkCard
           href="/admin/events"
           title="Events"
           description="Review RSVPs and spin up new gatherings in minutes."
