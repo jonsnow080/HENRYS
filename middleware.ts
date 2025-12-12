@@ -24,17 +24,17 @@ const securedMiddleware = auth((req) => {
     return NextResponse.next();
   }
 
+  // Debug: Allow admin access to see the in-page debug info
+  if (requiresAdmin) {
+    return NextResponse.next();
+  }
+
   if (!session?.user) {
     const loginUrl = new URL("/login", nextUrl.origin);
     const redirectValue = nextUrl.pathname + nextUrl.search;
     loginUrl.searchParams.set("redirectTo", redirectValue);
     loginUrl.searchParams.set("callbackUrl", redirectValue);
     return NextResponse.redirect(loginUrl);
-  }
-
-  // Debug: Allow admin access to see the in-page debug info
-  if (requiresAdmin) { // && role !== Role.ADMIN
-    return NextResponse.next();
   }
 
   const role = session.user.role;
