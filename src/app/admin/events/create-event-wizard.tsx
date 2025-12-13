@@ -568,13 +568,11 @@ export function CreateEventWizard({
   const [actionState, setActionState] = useState<CreateEventState | null>(null);
   const [isPublishing, startPublishTransition] = useTransition();
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const timeZones = useMemo(() => getSupportedTimeZones(), []);
-  const defaultTimeZone = useMemo(() => {
-    if (typeof Intl !== "undefined") {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC";
-    }
-    return "UTC";
-  }, []);
+
+  // Use UTC as the default server/initial client value to prevent hydration mismatch
+  const defaultTimeZone = "UTC";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -702,6 +700,18 @@ export function CreateEventWizard({
       }
     };
   }, []);
+
+  // Update timezone to user's local one after mount
+  useEffect(() => {
+    setMounted(true);
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC";
+    if (userTimeZone !== "UTC") {
+      const currentTimeZone = form.getValues("timeZone");
+      if (currentTimeZone === "UTC") {
+        form.setValue("timeZone", userTimeZone);
+      }
+    }
+  }, [form]);
 
   const closeAndReset = useCallback(() => {
     setOpen(false);

@@ -1,20 +1,47 @@
+"use client";
+
+import * as React from "react";
 import { getMemberGrowth, getApprovalRates, getRevenue } from "@/app/admin/actions";
 import { GrowthChart } from "./growth-chart";
 import { ApprovalRateChart } from "./approval-rate-chart";
 import { RevenueChart } from "./revenue-chart";
 
-export async function AnalyticsDashboard() {
-    const [growthData, approvalData, revenueData] = await Promise.all([
-        getMemberGrowth(),
-        getApprovalRates(),
-        getRevenue(),
-    ]);
+export function AnalyticsDashboard() {
+    const [mounted, setMounted] = React.useState(false);
+    const [data, setData] = React.useState<{ growthData: any[], approvalData: any[], revenueData: any[] } | null>(null);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        setMounted(true);
+        setLoading(true);
+        Promise.all([
+            getMemberGrowth(),
+            getApprovalRates(),
+            getRevenue(),
+        ]).then(([growthData, approvalData, revenueData]) => {
+            setData({ growthData, approvalData, revenueData });
+            setLoading(false);
+        }).catch(err => {
+            console.error("Failed to load analytics data:", err);
+            setLoading(false);
+        });
+    }, []);
+
+    if (!mounted || loading || !data) {
+        return (
+            <section className="grid gap-6 lg:grid-cols-3">
+                <div className="h-[300px] w-full animate-pulse rounded-3xl border border-border/60 bg-card/50" />
+                <div className="h-[300px] w-full animate-pulse rounded-3xl border border-border/60 bg-card/50" />
+                <div className="h-[300px] w-full animate-pulse rounded-3xl border border-border/60 bg-card/50" />
+            </section>
+        );
+    }
 
     return (
         <section className="grid gap-6 lg:grid-cols-3">
-            <GrowthChart data={growthData} />
-            <ApprovalRateChart data={approvalData} />
-            <RevenueChart data={revenueData} />
+            <GrowthChart data={data.growthData} />
+            <ApprovalRateChart data={data.approvalData} />
+            <RevenueChart data={data.revenueData} />
         </section>
     );
 }
