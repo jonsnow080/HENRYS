@@ -19,9 +19,9 @@ async function getTransporter() {
     secure: Number(process.env.SMTP_PORT ?? 587) === 465,
     auth: process.env.SMTP_USER
       ? {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASSWORD,
-        }
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      }
       : undefined,
   });
 
@@ -50,7 +50,7 @@ export async function sendEmail({
     : undefined;
 
   if (resendClient) {
-    await resendClient.emails.send({
+    const { error } = await resendClient.emails.send({
       from: process.env.RESEND_FROM_EMAIL ?? process.env.AUTH_EMAIL_FROM ?? "HENRYS <mail@henrys.club>",
       to: recipients,
       bcc,
@@ -59,6 +59,11 @@ export async function sendEmail({
       text,
       tags,
     });
+
+    if (error) {
+      console.error("Resend API Error:", error);
+      throw new Error(`Email delivery failed: ${error.message}`);
+    }
     return;
   }
 

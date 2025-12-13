@@ -35,9 +35,7 @@ yarn-error.log*
 .env*
 !.env.example
 
-# TEMP: keep dev envs in Git
-!.env
-!.env.development
+
 
 
 # vercel

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CreateEventWizard } from "../admin/events/create-event-wizard";
 
 // Infer the Event type to avoid export issues
@@ -9,10 +10,17 @@ type Event = NonNullable<Awaited<ReturnType<typeof prisma.event.findFirst>>>;
 
 export default async function HostDashboardPage() {
     const session = await auth();
+    if (!session?.user?.id) {
+        redirect("/login?callbackUrl=/host");
+    }
+
     const now = new Date();
 
     const upcomingEvents = await prisma.event.findMany({
-        where: { startAt: { gte: now } },
+        where: {
+            startAt: { gte: now },
+            hostId: session.user.id,
+        },
         orderBy: { startAt: "asc" },
         take: 10,
     });
