@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { CreateEventWizard } from "./events/create-event-wizard";
 import { approveApplicationAction } from "./actions";
 
+import { AnalyticsDashboard } from "@/components/admin/analytics/analytics-dashboard";
+
 export const metadata: Metadata = {
   title: `Admin · ${SITE_COPY.name}`,
   description: "Operational controls for the HENRYS team.",
@@ -71,6 +73,8 @@ export default async function AdminHomePage() {
         <StatCard label="Approved" value={approved} description="Invited members" />
         <StatCard label="Upcoming events" value={upcomingEvents} description="On the calendar" />
       </section>
+
+      <AnalyticsDashboard />
 
       <section className="grid gap-4 rounded-[32px] border border-border/70 bg-card/70 p-6 sm:grid-cols-2 lg:grid-cols-3">
         <AdminLinkCard

@@ -806,7 +806,10 @@ export function CreateEventWizard({
     return <span className="text-xs text-muted-foreground">Draft not yet saved</span>;
   };
 
-  const coverFile = values.coverImage instanceof FileList ? values.coverImage[0] : (values.coverImage as File | null);
+  const coverFile =
+    typeof FileList !== "undefined" && values.coverImage instanceof FileList
+      ? values.coverImage[0]
+      : (values.coverImage as File | null);
   const coverValidation = coverFileIsValid(coverFile ?? null);
 
 

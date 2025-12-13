@@ -176,3 +176,55 @@ export async function sendArrivalSequenceAction(formData: FormData) {
   revalidatePath(`/admin/events/${eventId}/rsvps`);
   redirect(redirectTo);
 }
+
+export async function toggleAttendedAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== Role.ADMIN) {
+    redirect("/login");
+  }
+
+  const rsvpIdEntry = formData.get("rsvpId");
+  const eventIdEntry = formData.get("eventId");
+  const redirectToEntry = formData.get("redirectTo");
+
+  const redirectTo = typeof redirectToEntry === "string" ? redirectToEntry : "/admin/events";
+  const rsvpId = typeof rsvpIdEntry === "string" ? rsvpIdEntry : null;
+  const eventId = typeof eventIdEntry === "string" ? eventIdEntry : null;
+
+  if (!rsvpId || !eventId) {
+    redirect(redirectTo);
+  }
+
+  const rsvp = await prisma.eventRsvp.findUnique({ where: { id: rsvpId } });
+  if (!rsvp || rsvp.eventId !== eventId) {
+    redirect(redirectTo);
+  }
+
+  const nextAttended = !rsvp.attended;
+  const nextNoShow = nextAttended ? false : rsvp.noShow; // If checking in, clear no-show
+
+  await prisma.eventRsvp.update({
+    where: { id: rsvpId },
+    data: {
+      attended: nextAttended,
+      noShow: nextNoShow,
+    },
+  });
+
+  await recordAuditLog({
+    actorId: session.user.id,
+    actorEmail: session.user.email ?? null,
+    action: "event.rsvp.attended",
+    targetType: "eventRsvp",
+    targetId: rsvpId,
+    diff: {
+      previous: { attended: rsvp.attended, noShow: rsvp.noShow },
+      next: { attended: nextAttended, noShow: nextNoShow },
+    },
+  });
+
+  revalidatePath(`/admin/events/${eventId}/rsvps`);
+  revalidatePath(`/admin/events/${eventId}/check-in`);
+  redirect(redirectTo);
+}
+

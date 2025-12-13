@@ -114,6 +114,7 @@ export async function createEventAction(
       venueNotes: venueNotes || null,
       venueHiddenUntil,
       rsvpDeadline,
+      hostId: session.user.id,
     },
   });
 

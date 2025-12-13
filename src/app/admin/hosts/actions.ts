@@ -6,6 +6,8 @@ import { Role } from "@/lib/prisma-constants";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { recordAuditLog } from "@/lib/audit-log";
+import { sendEmail } from "@/lib/email/send";
+import { HostInvitationTemplate } from "@/lib/email/templates";
 
 export async function addHostAction(formData: FormData) {
     const session = await auth();
@@ -28,7 +30,25 @@ export async function addHostAction(formData: FormData) {
     });
 
     if (!user) {
-        return { error: "User not found" };
+        // Invite new host
+        const invite = await prisma.inviteCode.create({
+            data: {
+                code: crypto.randomUUID(),
+                createdById: session.user.id,
+                role: Role.HOST,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            },
+        });
+
+        await sendEmail({
+            to: email,
+            subject: "You're invited to be a host on HENRYS",
+            mjml: HostInvitationTemplate({
+                inviteCode: invite.code,
+            }),
+        });
+
+        return { success: true, message: "Invitation sent" };
     }
 
     if (user.role === Role.HOST || user.role === Role.ADMIN) {

@@ -121,6 +121,7 @@ export async function requestMagicLink(_: LoginFormState, formData: FormData): P
 
 export async function loginWithPassword(_: LoginFormState, formData: FormData): Promise<LoginFormState> {
   const parsed = passwordLoginSchema.safeParse(Object.fromEntries(formData));
+
   if (!parsed.success) {
     return {
       success: false,

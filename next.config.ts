@@ -34,3 +34,5 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(withMDX(nextConfig), {
   silent: true,
 });
+
+// Force restart

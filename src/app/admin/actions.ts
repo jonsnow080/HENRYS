@@ -50,3 +50,84 @@ export async function approveApplicationAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/applications");
 }
+
+export async function getMemberGrowth() {
+  const session = await auth();
+  if (session?.user?.role !== Role.ADMIN) return [];
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const users = await prisma.user.findMany({
+    where: {
+      role: { in: [Role.MEMBER, Role.HOST] },
+      createdAt: { gte: sixMonthsAgo },
+    },
+    select: { createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const monthlyData = users.reduce((acc, user) => {
+    const month = user.createdAt.toLocaleString("default", { month: "short" });
+    acc[month] = (acc[month] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(monthlyData).map(([name, value]) => ({ name, value }));
+}
+
+export async function getApprovalRates() {
+  const session = await auth();
+  if (session?.user?.role !== Role.ADMIN) return [];
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const applications = await prisma.application.findMany({
+    where: { createdAt: { gte: sixMonthsAgo } },
+    select: { status: true, createdAt: true },
+  });
+
+  const monthlyStats = applications.reduce((acc, app) => {
+    const month = app.createdAt.toLocaleString("default", { month: "short" });
+    if (!acc[month]) acc[month] = { total: 0, approved: 0 };
+
+    acc[month].total++;
+    if (app.status === ApplicationStatus.APPROVED) {
+      acc[month].approved++;
+    }
+    return acc;
+  }, {} as Record<string, { total: number; approved: number }>);
+
+  return Object.entries(monthlyStats).map(([name, stats]) => ({
+    name,
+    rate: Math.round((stats.approved / stats.total) * 100),
+  }));
+}
+
+export async function getRevenue() {
+  const session = await auth();
+  if (session?.user?.role !== Role.ADMIN) return [];
+
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const payments = await prisma.payment.findMany({
+    where: {
+      status: "succeeded",
+      createdAt: { gte: sixMonthsAgo },
+    },
+    select: { amount: true, createdAt: true },
+  });
+
+  const monthlyRevenue = payments.reduce((acc, payment) => {
+    const month = payment.createdAt.toLocaleString("default", { month: "short" });
+    acc[month] = (acc[month] || 0) + payment.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(monthlyRevenue).map(([name, value]) => ({
+    name,
+    value: value / 100,
+  }));
+}

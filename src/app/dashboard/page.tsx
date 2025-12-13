@@ -4,9 +4,11 @@ import { auth } from "@/auth";
 import { SignOutButton } from "@/ui/SignOutButton";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
+import { RsvpStatus } from "@/lib/prisma-constants";
 import { type MembershipPlanOption } from "./_components/subscribe-card";
 import { BillingPortalButton } from "./_components/billing-portal-button";
 import { ReceiptsTable, type ReceiptRow } from "./_components/receipts-table";
+import { MyEventsList, type EventRsvpRow } from "./_components/my-events-list";
 
 export const metadata: Metadata = {
   title: "Member dashboard",
@@ -37,13 +39,31 @@ export default async function DashboardPage(props: {
   }
 
   const userId = session.user.id;
+  const now = new Date();
 
-  const [plansData, subscription, payments] = await Promise.all([
+  const [plansData, subscription, payments, upcomingRsvpsData] = await Promise.all([
     prisma.membershipPlan.findMany(),
     prisma.subscription.findFirst({ where: { userId } }),
     prisma.payment.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.eventRsvp.findMany({
+      where: {
+        userId,
+        status: { in: [RsvpStatus.GOING, RsvpStatus.WAITLISTED] },
+        event: {
+          startAt: { gte: now },
+        },
+      },
+      include: {
+        event: true,
+      },
+      orderBy: {
+        event: {
+          startAt: "asc",
+        },
+      },
     }),
   ]);
 
@@ -59,6 +79,14 @@ export default async function DashboardPage(props: {
     ? plans.find((plan) => plan.id === subscription.planId) ?? null
     : null;
   const hasActiveSubscription = subscription ? ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status) : false;
+
+  const rsvps: EventRsvpRow[] = upcomingRsvpsData.map((rsvp) => ({
+    eventId: rsvp.eventId,
+    eventName: rsvp.event.name,
+    startAt: rsvp.event.startAt,
+    status: rsvp.status,
+    venue: rsvp.event.venueName ?? rsvp.event.venue ?? null,
+  }));
 
   const receipts: ReceiptRow[] = [];
   for (const payment of payments) {
@@ -85,15 +113,7 @@ export default async function DashboardPage(props: {
   const billingStatus = typeof searchParams?.billing === "string" ? searchParams?.billing : undefined;
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-10 sm:px-6">
-      <div className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Signed in as</p>
-          <p className="text-sm font-medium text-foreground">{session.user.email ?? session.user.name ?? "Member"}</p>
-        </div>
-        <SignOutButton className="self-start sm:self-auto" />
-      </div>
-
+    <div className="flex flex-col gap-10">
       <div className="space-y-4">
         <h1 className="text-3xl font-semibold">Welcome back{session.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}</h1>
         <p className="text-sm text-muted-foreground">
@@ -115,6 +135,11 @@ export default async function DashboardPage(props: {
             Billing portal closed. Changes may take a moment to sync from Stripe.
           </div>
         )}
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">My Events</h2>
+        <MyEventsList rsvps={rsvps} />
       </div>
 
       {hasActiveSubscription ? (

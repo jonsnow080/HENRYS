@@ -133,11 +133,10 @@ export function paymentReceiptTemplate({
         <mj-text font-size="14px" css-class="muted">
           Tickets and memberships do not include food or drink. We'll have curated options available for purchase on the night.
         </mj-text>
-        ${
-          receiptUrl
-            ? `<mj-button background-color="#111827" color="#ffffff" href="${receiptUrl}" padding="12px 0" border-radius="24px">View Stripe receipt</mj-button>`
-            : ""
-        }
+        ${receiptUrl
+      ? `<mj-button background-color="#111827" color="#ffffff" href="${receiptUrl}" padding="12px 0" border-radius="24px">View Stripe receipt</mj-button>`
+      : ""
+    }
       </mj-column>
     </mj-section>
     ${footer}
@@ -175,11 +174,10 @@ export function eventArrivalSequenceTemplate({
           <strong>When:</strong> ${startAt}<br />
           <strong>Where:</strong> ${venue}
         </mj-text>
-        ${
-          notes
-            ? `<mj-text font-size="15px" css-class="body-copy">${notes}</mj-text>`
-            : ""
-        }
+        ${notes
+      ? `<mj-text font-size="15px" css-class="body-copy">${notes}</mj-text>`
+      : ""
+    }
         <mj-text font-size="14px" css-class="muted">
           Arriving with a guest? Reply with their name so security can be ready. Running late? Text your host and we&apos;ll keep your seat warm.
         </mj-text>
@@ -193,4 +191,38 @@ export function eventArrivalSequenceTemplate({
 function greeting(name: string) {
   if (!name) return "Hey there";
   return `Hi ${name.split(" ")[0] ?? name}`;
+}
+
+export function HostInvitationTemplate({
+  inviteCode,
+}: {
+  inviteCode: string;
+}) {
+  return `
+<mjml>
+  <mj-head>
+    <mj-title>You're invited to host on ${SITE_COPY.name}</mj-title>
+    ${baseStyles}
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section background-color="#ffffff" padding="32px" border-radius="24px">
+      <mj-column>
+        <mj-text font-size="24px" font-weight="600" css-class="body-copy">You've been invited to host.</mj-text>
+        <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
+          We'd love for you to join the ${SITE_COPY.name} team as an event host.
+        </mj-text>
+        <mj-text font-size="16px" css-class="body-copy">
+          Your exclusive invite code is: <strong>${inviteCode}</strong>
+        </mj-text>
+        <mj-button background-color="#111827" color="#ffffff" href="${process.env.NEXT_PUBLIC_URL}/host/accept-invite?code=${inviteCode}" padding="12px 0" border-radius="24px">
+          Accept Invitation
+        </mj-button>
+        <mj-text font-size="14px" css-class="muted">
+           or visit ${process.env.NEXT_PUBLIC_URL}/host/accept-invite and enter your code manually.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    ${footer}
+  </mj-body>
+</mjml>`;
 }

@@ -49,6 +49,18 @@ model User {
   auditLogs      AuditLog[]       @relation("AuditLogActor")
   applicantProfile Applicant?
   hostedEvents   Event[]          @relation("EventHost")
+  hostProfile    HostProfile?
+}
+
+model HostProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  availability String?
+  cities       String[] @default([])
+  phoneNumber  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Application {
@@ -116,6 +128,7 @@ model MemberProfile {
   personalityTags       String[]  @default([])
   dietaryNotes          String?
   availabilityWindows   Json?
+  isPublic              Boolean   @default(false)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 }
@@ -131,6 +144,7 @@ model InviteCode {
   user           User?      @relation("InviteRedeemer", fields: [userId], references: [id])
   expiresAt      DateTime?
   redeemedAt     DateTime?
+  role           Role       @default(MEMBER)
   createdAt      DateTime   @default(now())
 }
 
