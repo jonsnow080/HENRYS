@@ -62,6 +62,9 @@ export function AddHostDialog() {
                     {state.error ? (
                         <p className="text-sm text-destructive">{state.error}</p>
                     ) : null}
+                    {state.success && (
+                        <p className="text-sm text-green-600">Invitation sent successfully!</p>
+                    )}
                     <DialogFooter>
                         <Button type="submit" disabled={pending}>
                             {pending ? "Adding…" : "Add host"}

@@ -12,10 +12,12 @@ async function main() {
         data: {
             code: crypto.randomUUID(),
             role: Role.HOST,
+            email: "test@example.com",
             expiresAt: new Date(Date.now() + 100000),
         },
     });
     console.log("✅ InviteCode created with HOST role:", invite.id);
+    if (invite.email !== "test@example.com") throw new Error("Invite email mismatch");
 
     // 2. Test User creation with HostProfile
     const user = await prisma.user.create({

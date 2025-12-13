@@ -22,7 +22,7 @@ export type EventRsvpRow = {
     venue: string | null;
 };
 
-export function MyEventsList({ rsvps }: { rsvps: EventRsvpRow[] }) {
+export function MyEventsList({ rsvps, allowCancel = true }: { rsvps: EventRsvpRow[]; allowCancel?: boolean }) {
     const [isPending, startTransition] = useTransition();
 
     if (rsvps.length === 0) {
@@ -62,31 +62,44 @@ export function MyEventsList({ rsvps }: { rsvps: EventRsvpRow[] }) {
                             </TableCell>
                             <TableCell>
                                 <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${rsvp.status === 'GOING'
-                                        ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20'
-                                        : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-500/10 dark:text-yellow-400 dark:ring-yellow-500/20'
+                                    ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20'
+                                    : 'bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-500/10 dark:text-yellow-400 dark:ring-yellow-500/20'
                                     }`}>
                                     {rsvp.status}
                                 </span>
                             </TableCell>
                             <TableCell className="text-right">
-                                <form
-                                    action={() => {
-                                        if (confirm("Are you sure you want to cancel your RSVP?")) {
-                                            startTransition(async () => {
-                                                await cancelRsvp(rsvp.eventId);
-                                            });
-                                        }
-                                    }}
-                                >
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                        disabled={isPending}
+                                {allowCancel && (
+                                    <form
+                                        action={() => {
+                                            const now = new Date();
+                                            const eventStart = new Date(rsvp.startAt);
+                                            const hoursUntilStart = (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+                                            let message;
+                                            if (hoursUntilStart < 24) {
+                                                message = "Warning: It is within 24 hours of the event.\n\n- If you paid for a ticket, it is non-refundable.\n- If you are a member, you may be charged a $10 late cancellation fee.\n\nDo you still want to cancel?";
+                                            } else {
+                                                message = "Since it is more than 24 hours in advance, your ticket will be fully refunded (if applicable).\n\nDo you want to proceed?";
+                                            }
+
+                                            if (confirm(message)) {
+                                                startTransition(async () => {
+                                                    await cancelRsvp(rsvp.eventId);
+                                                });
+                                            }
+                                        }}
                                     >
-                                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel"}
-                                    </Button>
-                                </form>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                            disabled={isPending}
+                                        >
+                                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel"}
+                                        </Button>
+                                    </form>
+                                )}
                             </TableCell>
                         </TableRow>
                     ))}

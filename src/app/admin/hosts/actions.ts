@@ -36,6 +36,7 @@ export async function addHostAction(formData: FormData) {
                 code: crypto.randomUUID(),
                 createdById: session.user.id,
                 role: Role.HOST,
+                email, // Persist email
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
             },
         });

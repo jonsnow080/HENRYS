@@ -145,6 +145,7 @@ model InviteCode {
   expiresAt      DateTime?
   redeemedAt     DateTime?
   role           Role       @default(MEMBER)
+  email          String?
   createdAt      DateTime   @default(now())
 }
 

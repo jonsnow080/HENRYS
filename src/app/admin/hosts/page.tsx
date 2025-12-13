@@ -101,6 +101,21 @@ export default async function AdminHostsPage() {
         };
     });
 
+    const pendingInvites = await prisma.inviteCode.findMany({
+        where: {
+            role: Role.HOST,
+            redeemedAt: null,
+            expiresAt: { gt: new Date() }
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            email: true,
+            createdAt: true,
+            expiresAt: true,
+        }
+    });
+
     return (
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
             <header className="flex flex-wrap items-center justify-between gap-4">
@@ -110,6 +125,20 @@ export default async function AdminHostsPage() {
                 </div>
                 <AddHostDialog />
             </header>
+
+            {pendingInvites.length > 0 && (
+                <section className="space-y-4">
+                    <h2 className="text-xl font-semibold">Pending Invitations</h2>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {pendingInvites.map(invite => (
+                            <div key={invite.id} className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+                                <p className="font-medium">{invite.email || "No email recorded"}</p>
+                                <p className="text-sm text-muted-foreground">Expires {invite.expiresAt?.toLocaleDateString()}</p>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <HostDashboardClient hosts={hostsWithMetrics} />
         </div>

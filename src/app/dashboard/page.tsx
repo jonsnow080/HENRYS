@@ -41,7 +41,7 @@ export default async function DashboardPage(props: {
   const userId = session.user.id;
   const now = new Date();
 
-  const [plansData, subscription, payments, upcomingRsvpsData] = await Promise.all([
+  const [plansData, subscription, payments, upcomingRsvpsData, pastRsvpsData] = await Promise.all([
     prisma.membershipPlan.findMany(),
     prisma.subscription.findFirst({ where: { userId } }),
     prisma.payment.findMany({
@@ -65,6 +65,23 @@ export default async function DashboardPage(props: {
         },
       },
     }),
+    prisma.eventRsvp.findMany({
+      where: {
+        userId,
+        status: { in: [RsvpStatus.GOING] },
+        event: {
+          startAt: { lt: now }
+        }
+      },
+      include: {
+        event: true
+      },
+      orderBy: {
+        event: {
+          startAt: 'desc'
+        }
+      }
+    })
   ]);
 
   const plansRaw = plansData as MembershipPlanRecord[];
@@ -81,6 +98,14 @@ export default async function DashboardPage(props: {
   const hasActiveSubscription = subscription ? ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status) : false;
 
   const rsvps: EventRsvpRow[] = upcomingRsvpsData.map((rsvp) => ({
+    eventId: rsvp.eventId,
+    eventName: rsvp.event.name,
+    startAt: rsvp.event.startAt,
+    status: rsvp.status,
+    venue: rsvp.event.venueName ?? rsvp.event.venue ?? null,
+  }));
+
+  const pastRsvps: EventRsvpRow[] = pastRsvpsData.map((rsvp) => ({
     eventId: rsvp.eventId,
     eventName: rsvp.event.name,
     startAt: rsvp.event.startAt,
@@ -140,6 +165,11 @@ export default async function DashboardPage(props: {
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">My Events</h2>
         <MyEventsList rsvps={rsvps} />
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Past Events</h2>
+        <MyEventsList rsvps={pastRsvps} allowCancel={false} />
       </div>
 
       {hasActiveSubscription ? (

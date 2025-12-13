@@ -202,11 +202,14 @@ export default async function EventRsvpsPage(props: {
               Send arrival sequence
             </Button>
           </form>
-          <Button asChild variant="outline" className="rounded-full">
-            <Link href={exportUrl}>Export CSV</Link>
-          </Button>
-        </div>
-      </header>
+          <Link href={exportUrl}>Export CSV</Link>
+        </Button>
+        <Button asChild className="rounded-full">
+          <Link href={`/admin/events/${event.id}/check-in`}>Check-in Mode</Link>
+        </Button>
+    </div>
+
+      </header >
 
       <FilterForm
         defaultQuery={query}
@@ -338,7 +341,7 @@ export default async function EventRsvpsPage(props: {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </div >
   );
 }
 
