@@ -48,8 +48,10 @@ model User {
   eventRsvps     EventRsvp[]
   auditLogs      AuditLog[]       @relation("AuditLogActor")
   applicantProfile Applicant?
-  hostedEvents   Event[]          @relation("EventHost")
-  hostProfile    HostProfile?
+  hostedEvents    Event[]          @relation("EventHost")
+  hostProfile     HostProfile?
+  receivedMatches MatchSuggestion[] @relation("MatchReceiver")
+  suggestedIn     MatchSuggestion[] @relation("MatchSuggested")
 }
 
 model HostProfile {
@@ -222,6 +224,7 @@ model Event {
   payments      Payment[]
   hostId        String?
   host          User?     @relation("EventHost", fields: [hostId], references: [id])
+  matchSuggestions MatchSuggestion[]
 }
 
 model HomepageCarouselImage {
@@ -239,9 +242,27 @@ model MembershipPlan {
   name          String
   stripePriceId String         @unique
   perksJSON     Json
+  monthlyEventLimit Int?       // Null means unlimited
+  includesMatchmaking Boolean  @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   subscriptions Subscription[]
+}
+
+model MatchSuggestion {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  suggestedUserId String
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation("MatchReceiver", fields: [userId], references: [id])
+  event     Event    @relation(fields: [eventId], references: [id])
+  suggestedUser User @relation("MatchSuggested", fields: [suggestedUserId], references: [id])
+
+  @@unique([userId, eventId, suggestedUserId])
 }
 
 model Subscription {

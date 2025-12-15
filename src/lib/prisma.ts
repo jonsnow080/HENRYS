@@ -2580,6 +2580,16 @@ const prismaRuntime = await (async () => {
     }
 
     const prismaModule = await import("@prisma/client");
+
+    if (resolvedDatabaseUrl.startsWith("prisma+")) {
+      const accelerateModule = await import("@prisma/extension-accelerate");
+      return {
+        mode: "edge" as const,
+        PrismaClient: prismaModule.PrismaClient,
+        withAccelerate: accelerateModule.withAccelerate,
+      };
+    }
+
     return {
       mode: "node" as const,
       PrismaClient: prismaModule.PrismaClient,
