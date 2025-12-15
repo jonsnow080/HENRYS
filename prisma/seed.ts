@@ -6,21 +6,30 @@ const prisma = new PrismaClient();
 async function main() {
   const plans = [
     {
-      name: "Founding Monthly",
-      stripePriceId:
-        process.env.STRIPE_FOUNDING_MONTHLY_PRICE_ID ?? "price_founding_monthly",
-      perks: ["Priority RSVPs", "Members-only salons", "Invite credits"],
+      name: "Standard",
+      stripePriceId: process.env.STRIPE_STANDARD_PRICE_ID ?? "price_standard",
+      perks: ["1 event per month", "Community access"],
+      monthlyEventLimit: 1,
+      includesMatchmaking: false,
     },
     {
-      name: "Founding Annual",
-      stripePriceId:
-        process.env.STRIPE_FOUNDING_ANNUAL_PRICE_ID ?? "price_founding_annual",
+      name: "Unlimited",
+      stripePriceId: process.env.STRIPE_UNLIMITED_PRICE_ID ?? "price_unlimited",
+      perks: ["Unlimited events", "Priority RSVPs", "Community access"],
+      monthlyEventLimit: null,
+      includesMatchmaking: false,
+    },
+    {
+      name: "VIP",
+      stripePriceId: process.env.STRIPE_VIP_PRICE_ID ?? "price_vip",
       perks: [
+        "Unlimited events",
+        "Handpicked match suggestions",
         "Priority RSVPs",
-        "Guest invitations",
         "Founders' supper",
-        "Concierge introductions",
       ],
+      monthlyEventLimit: null,
+      includesMatchmaking: true,
     },
   ];
 
@@ -30,11 +39,15 @@ async function main() {
       update: {
         name: plan.name,
         perksJSON: plan.perks,
+        monthlyEventLimit: plan.monthlyEventLimit,
+        includesMatchmaking: plan.includesMatchmaking,
       },
       create: {
         name: plan.name,
         stripePriceId: plan.stripePriceId,
         perksJSON: plan.perks,
+        monthlyEventLimit: plan.monthlyEventLimit,
+        includesMatchmaking: plan.includesMatchmaking,
       },
     });
   }
