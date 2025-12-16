@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function getMatchSuggestions(userId: string, eventId: string) {
     // Try to find existing manual suggestions
-    let suggestions = await prisma.matchSuggestion.findMany({
+    const suggestions = await prisma.matchSuggestion.findMany({
         where: {
             userId,
             eventId,

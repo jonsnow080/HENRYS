@@ -7,12 +7,18 @@ import { ApprovalRateChart } from "./approval-rate-chart";
 import { RevenueChart } from "./revenue-chart";
 
 export function AnalyticsDashboard() {
-    const [mounted, setMounted] = React.useState(false);
-    const [data, setData] = React.useState<{ growthData: any[], approvalData: any[], revenueData: any[] } | null>(null);
+    type GrowthData = { name: string; value: number };
+    type ApprovalData = { name: string; rate: number };
+    type RevenueData = { name: string; value: number };
+
+    const [data, setData] = React.useState<{
+        growthData: GrowthData[],
+        approvalData: ApprovalData[],
+        revenueData: RevenueData[]
+    } | null>(null);
     const [loading, setLoading] = React.useState(true);
 
     React.useEffect(() => {
-        setMounted(true);
         setLoading(true);
         Promise.all([
             getMemberGrowth(),
@@ -27,7 +33,7 @@ export function AnalyticsDashboard() {
         });
     }, []);
 
-    if (!mounted || loading || !data) {
+    if (loading || !data) {
         return (
             <section className="grid gap-6 lg:grid-cols-3">
                 <div className="h-[300px] w-full animate-pulse rounded-3xl border border-border/60 bg-card/50" />

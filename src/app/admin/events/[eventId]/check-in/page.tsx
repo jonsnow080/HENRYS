@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toggleAttendedAction } from "../rsvps/actions";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 
 export default async function EventCheckInPage(props: {
     params: Promise<{ eventId: string }>;
@@ -127,8 +127,8 @@ export default async function EventCheckInPage(props: {
                                         size="lg"
                                         variant={rsvp.attended ? "default" : "outline"}
                                         className={`h-12 w-12 rounded-full p-0 transition-all ${rsvp.attended
-                                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                                : "border-2 border-muted-foreground/20 hover:border-primary hover:bg-muted/50 hover:text-primary"
+                                            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                            : "border-2 border-muted-foreground/20 hover:border-primary hover:bg-muted/50 hover:text-primary"
                                             }`}
                                     >
                                         {rsvp.attended ? (

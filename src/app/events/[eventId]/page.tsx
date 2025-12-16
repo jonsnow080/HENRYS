@@ -42,7 +42,8 @@ export default async function EventDetailPage(props: {
   const priceLabel = event.priceCents > 0 ? formatCurrency(event.priceCents, event.currency) : "complimentary";
   const checkoutStatus = typeof searchParams?.checkout === "string" ? searchParams?.checkout : undefined;
 
-  let matchSuggestions: any[] = [];
+  type MatchSuggestion = { id: string; suggestedUser: { name: string | null }; reason: string | null };
+  let matchSuggestions: MatchSuggestion[] = [];
   if (status === RsvpStatus.GOING && subscription?.plan?.includesMatchmaking) {
     matchSuggestions = await getMatchSuggestions(session.user.id, event.id);
   }
@@ -90,7 +91,7 @@ export default async function EventDetailPage(props: {
           <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">Handpicked Connections</h3>
           <p className="mb-4 text-sm text-muted-foreground">Based on your interests, we think you should meet:</p>
           <div className="grid gap-4 sm:grid-cols-2">
-            {matchSuggestions.map((match: any) => (
+            {matchSuggestions.map((match: MatchSuggestion) => (
               <div key={match.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3">
                 <div className="h-10 w-10 rounded-full bg-muted" />
                 <div>
