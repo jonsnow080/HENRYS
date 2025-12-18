@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { auth } from "@/auth";
-import { SignOutButton } from "@/ui/SignOutButton";
+
 import { prisma } from "@/lib/prisma";
 import { formatCurrency } from "@/lib/utils";
 import { RsvpStatus } from "@/lib/prisma-constants";

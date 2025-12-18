@@ -7,7 +7,7 @@ import { RsvpStatus, Role } from "@/lib/prisma-constants";
 import { getStripe } from "@/lib/stripe/server";
 
 const CANCELLATION_WINDOW_HOURS = 24;
-const LATE_CANCELLATION_FEE_CENTS = 1000; // $10.00
+
 
 export async function cancelRsvp(eventId: string) {
     const session = await auth();

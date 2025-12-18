@@ -568,7 +568,7 @@ export function CreateEventWizard({
   const [actionState, setActionState] = useState<CreateEventState | null>(null);
   const [isPublishing, startPublishTransition] = useTransition();
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-  const [mounted, setMounted] = useState(false);
+
   const timeZones = useMemo(() => getSupportedTimeZones(), []);
 
   // Use UTC as the default server/initial client value to prevent hydration mismatch
@@ -703,7 +703,7 @@ export function CreateEventWizard({
 
   // Update timezone to user's local one after mount
   useEffect(() => {
-    setMounted(true);
+
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC";
     if (userTimeZone !== "UTC") {
       const currentTimeZone = form.getValues("timeZone");

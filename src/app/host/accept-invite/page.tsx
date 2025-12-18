@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
+
 import { HostSignUpForm } from "./host-sign-up-form";
 
 export default async function AcceptInvitePage(props: {

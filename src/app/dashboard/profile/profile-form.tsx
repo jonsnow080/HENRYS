@@ -72,7 +72,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                     description: result.error || "Something went wrong. Please try again.",
                 });
             }
-        } catch (error) {
+        } catch {
             toast({
                 title: "Error",
                 description: "An unexpected error occurred.",

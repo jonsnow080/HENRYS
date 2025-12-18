@@ -43,7 +43,7 @@ export async function getMatchSuggestions(userId: string, eventId: string) {
     return otherAttendees.map(rsvp => {
         const profile = rsvp.user.memberProfile;
         const occupation = profile?.occupation ? profile.occupation : null;
-        const about = profile?.about ? profile.about : null;
+
 
         return {
             id: `temp-${rsvp.userId}`,

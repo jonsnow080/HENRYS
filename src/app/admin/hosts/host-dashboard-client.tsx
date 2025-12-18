@@ -191,9 +191,12 @@ export function HostDashboardClient({ hosts }: { hosts: HostMetric[] }) {
                                             <TableCell className="font-medium text-foreground">
                                                 <div className="flex items-center gap-3">
                                                     {host.image ? (
-                                                        <img
+                                                        <Image
                                                             src={host.image}
                                                             alt=""
+                                                            width={40}
+                                                            height={40}
+                                                            unoptimized
                                                             className="h-10 w-10 rounded-full object-cover"
                                                         />
                                                     ) : (
@@ -259,3 +262,4 @@ export function HostDashboardClient({ hosts }: { hosts: HostMetric[] }) {
         </div>
     );
 }
+import Image from "next/image";
