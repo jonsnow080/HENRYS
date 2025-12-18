@@ -40,14 +40,23 @@ export async function getMatchSuggestions(userId: string, eventId: string) {
     });
 
     // Map to suggestion format (not saving to DB, just returning)
-    return otherAttendees.map(rsvp => ({
-        id: `temp-${rsvp.userId}`,
-        userId,
-        eventId,
-        suggestedUserId: rsvp.userId,
-        reason: "Shared interests in arts and culture", // Placeholder reason
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        suggestedUser: rsvp.user
-    }));
+    return otherAttendees.map(rsvp => {
+        const profile = rsvp.user.memberProfile;
+        const occupation = profile?.occupation ? profile.occupation : null;
+        const about = profile?.about ? profile.about : null;
+
+        return {
+            id: `temp-${rsvp.userId}`,
+            userId,
+            eventId,
+            suggestedUserId: rsvp.userId,
+            reason: occupation ? `Also works in ${occupation}` : "Shared interests in arts and culture",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            suggestedUser: {
+                ...rsvp.user,
+                memberProfile: profile
+            }
+        };
+    });
 }

@@ -85,23 +85,65 @@ export default async function EventDetailPage(props: {
         </div>
       )}
 
-      {/* Match Suggestions for VIPs */}
-      {matchSuggestions.length > 0 && (
-        <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-6">
-          <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">Handpicked Connections</h3>
-          <p className="mb-4 text-sm text-muted-foreground">Based on your interests, we think you should meet:</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {matchSuggestions.map((match: MatchSuggestion) => (
-              <div key={match.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3">
-                <div className="h-10 w-10 rounded-full bg-muted" />
-                <div>
-                  <p className="font-medium">{match.suggestedUser.name ?? "Member"}</p>
-                  {match.reason && <p className="text-xs text-muted-foreground">{match.reason}</p>}
+      {/* Match Suggestions & Upsell */}
+      {status === RsvpStatus.GOING && (
+        <>
+          {subscription?.plan?.includesMatchmaking ? (
+            /* VIP VIEW: Real Matches */
+            matchSuggestions.length > 0 && (
+              <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-6">
+                <h3 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">Handpicked Connections</h3>
+                <p className="mb-4 text-sm text-muted-foreground">Based on your interests, we think you should meet:</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {matchSuggestions.map((match: any) => (
+                    <div key={match.id} className="flex items-start gap-4 rounded-xl border border-border/60 bg-card p-4 shadow-sm transition-colors hover:bg-muted/50">
+                      <div className="h-12 w-12 shrink-0 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400" />
+                      <div>
+                        <p className="font-semibold text-foreground">{match.suggestedUser.name}</p>
+                        {/* Show occupation if available, fallback to nothing */}
+                        {match.suggestedUser.memberProfile?.occupation && (
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{match.suggestedUser.memberProfile.occupation}</p>
+                        )}
+                        {match.reason && <p className="mt-1 text-sm text-muted-foreground">{match.reason}</p>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+            )
+          ) : (
+            /* STANDARD VIEW: Upsell / Locked State */
+            <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+              <div className="flex flex-col gap-4 filter blur-[2px] opacity-50 select-none" aria-hidden="true">
+                <h3 className="text-lg font-semibold">Handpicked Connections</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3">
+                      <div className="h-10 w-10 rounded-full bg-muted" />
+                      <div className="space-y-2 w-full">
+                        <div className="h-4 w-24 bg-muted rounded" />
+                        <div className="h-3 w-32 bg-muted rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 p-6 text-center backdrop-blur-[1px]">
+                <div className="max-w-xs space-y-3">
+                  <p className="text-sm font-medium text-foreground">Unlock 3 curated matches for this event.</p>
+                  <p className="text-xs text-muted-foreground">Upgrade to VIP to get handpicked introductions based on your profile.</p>
+                  <a
+                    href="/dashboard/profile" // Eventually link to upgrade flow, using profile for now as placeholder or maybe offers
+                    className="inline-flex h-9 items-center justify-center rounded-full bg-foreground px-4 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+                  >
+                    Upgrade Membership
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Action Area */}
