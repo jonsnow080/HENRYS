@@ -68,7 +68,7 @@ export async function getMemberGrowth() {
   });
 
   const monthlyData = users.reduce((acc, user) => {
-    const month = user.createdAt.toLocaleString("default", { month: "short" });
+    const month = user.createdAt.toLocaleString("en-US", { month: "short" });
     acc[month] = (acc[month] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -89,7 +89,7 @@ export async function getApprovalRates() {
   });
 
   const monthlyStats = applications.reduce((acc, app) => {
-    const month = app.createdAt.toLocaleString("default", { month: "short" });
+    const month = app.createdAt.toLocaleString("en-US", { month: "short" });
     if (!acc[month]) acc[month] = { total: 0, approved: 0 };
 
     acc[month].total++;
@@ -121,7 +121,7 @@ export async function getRevenue() {
   });
 
   const monthlyRevenue = payments.reduce((acc, payment) => {
-    const month = payment.createdAt.toLocaleString("default", { month: "short" });
+    const month = payment.createdAt.toLocaleString("en-US", { month: "short" });
     acc[month] = (acc[month] || 0) + payment.amount;
     return acc;
   }, {} as Record<string, number>);
