@@ -198,6 +198,9 @@ export function HostInvitationTemplate({
 }: {
   inviteCode: string;
 }) {
+  const baseUrl = process.env.SITE_URL ?? process.env.NEXTAUTH_URL ?? "https://www.henrysdating.com";
+  const url = `${baseUrl}/host/accept-invite?code=${inviteCode}`;
+
   return `
 <mjml>
   <mj-head>
@@ -209,16 +212,24 @@ export function HostInvitationTemplate({
       <mj-column>
         <mj-text font-size="24px" font-weight="600" css-class="body-copy">You've been invited to host.</mj-text>
         <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
-          We'd love for you to join the ${SITE_COPY.name} team as an event host.
+          We'd love for you to join ${SITE_COPY.name} as an event host.
+        </mj-text>
+        <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
+          <strong>What is ${SITE_COPY.name}?</strong><br/>
+          We are an invite-only IRL dating club for wildly interesting people. We bring people together through curated experiences, not swiping.
+        </mj-text>
+        <mj-text font-size="16px" line-height="1.6" css-class="body-copy">
+          <strong>What hosting entails:</strong><br/>
+          As a host, you are the face of our events. You'll facilitate introductions, ensure the vibe is right, and help members connect in meaningful ways. It's paid, fun, and you're at the center of the action.
         </mj-text>
         <mj-text font-size="16px" css-class="body-copy">
-          Your exclusive invite code is: <strong>${inviteCode}</strong>
+          Your exclusive invite code: <strong>${inviteCode}</strong>
         </mj-text>
-        <mj-button background-color="#111827" color="#ffffff" href="${process.env.NEXT_PUBLIC_URL}/host/accept-invite?code=${inviteCode}" padding="12px 0" border-radius="24px">
+        <mj-button background-color="#111827" color="#ffffff" href="${url}" padding="12px 0" border-radius="24px">
           Accept Invitation
         </mj-button>
         <mj-text font-size="14px" css-class="muted">
-           or visit ${process.env.NEXT_PUBLIC_URL}/host/accept-invite and enter your code manually.
+           or visit ${baseUrl}/host/accept-invite and enter your code manually.
         </mj-text>
       </mj-column>
     </mj-section>

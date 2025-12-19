@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { SITE_COPY } from "@/lib/site-copy";
 import { AddHostDialog } from "./add-host-dialog";
 import { HostDashboardClient } from "./host-dashboard-client";
+import { HostMetricsTiles, type HostHighlights } from "./host-metrics-tiles";
+import { PendingInvitesTable } from "./pending-invites-table";
 
 export const metadata: Metadata = {
     title: `Hosts · ${SITE_COPY.name}`,
@@ -35,18 +37,34 @@ export default async function AdminHostsPage() {
                             createdAt: true,
                         },
                     },
+                    rsvps: {
+                        select: {
+                            status: true,
+                            noShow: true,
+                            attended: true,
+                        },
+                    },
                 },
             },
         },
     });
 
+    // Helper to extract name safely
+    const getHostName = (h: { name: string | null; email: string }) => h.name || h.email;
+
+    let bestUpcoming: HostHighlights["mostUpcoming"] = null;
+    let bestPast: HostHighlights["mostPast"] = null;
+    let bestRevenue: HostHighlights["highestRevenue"] = null;
+    let bestNoShow: HostHighlights["lowestNoShowRate"] = null;
+
     const hostsWithMetrics = hosts.map((host) => {
         const totalEvents = host.hostedEvents.length;
         const pastEvents = host.hostedEvents.filter((e) => e.endAt < now).length;
-        const upcomingEvents = host.hostedEvents.filter(
+        const upcomingEventsCount = host.hostedEvents.filter(
             (e) => e.startAt >= now && e.startAt <= thirtyDaysFromNow
         ).length;
 
+        // -- Revenue Calc --
         const totalRevenueCents = host.hostedEvents.reduce((sum, event) => {
             const eventRevenue = event.payments
                 .filter((p) => p.status === "succeeded")
@@ -54,14 +72,59 @@ export default async function AdminHostsPage() {
             return sum + eventRevenue;
         }, 0);
 
-        // Calculate revenue by month for the last 12 months
+        // -- No Show Calc --
+        // Rate = NoShows / Total 'Confirmed/Going' RSVPs
+        // Only consider events that have happened (past events) to be fair?
+        // Or just all Rsvps where attended/noShow flags could be set.
+        let totalGoing = 0;
+        let totalNoShows = 0;
+
+        host.hostedEvents.forEach(event => {
+            event.rsvps.forEach(rsvp => {
+                // Assuming stored status 'GOING' means they were expected
+                if (rsvp.status === "GOING") {
+                    totalGoing++;
+                    if (rsvp.noShow) {
+                        totalNoShows++;
+                    }
+                }
+            });
+        });
+
+        const noShowRate = totalGoing > 0 ? totalNoShows / totalGoing : 0;
+
+        // -- Global High Score Logic --
+        const hostName = getHostName(host);
+
+        // Most Upcoming
+        if (!bestUpcoming || upcomingEventsCount > bestUpcoming.count) {
+            bestUpcoming = { name: hostName, count: upcomingEventsCount };
+        }
+
+        // Most Past
+        if (!bestPast || pastEvents > bestPast.count) {
+            bestPast = { name: hostName, count: pastEvents };
+        }
+
+        // Highest Revenue
+        if (!bestRevenue || totalRevenueCents > bestRevenue.amountCents) {
+            bestRevenue = { name: hostName, amountCents: totalRevenueCents };
+        }
+
+        // Lowest No Show Rate (Must have at least 10 RSVPs to qualify for "best" to avoid 1 event 0% winners)
+        if (totalGoing >= 10) {
+            if (!bestNoShow || noShowRate < bestNoShow.rate) {
+                bestNoShow = { name: hostName, rate: noShowRate, totalRsvps: totalGoing };
+            }
+        }
+
+        // Calculate revenue by month for the last 12 months (chart data)
         const revenueByMonthMap = new Map<string, number>();
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
         twelveMonthsAgo.setDate(1);
         twelveMonthsAgo.setHours(0, 0, 0, 0);
 
-        // Initialize last 12 months with 0
         for (let i = 0; i < 12; i++) {
             const d = new Date(twelveMonthsAgo);
             d.setMonth(d.getMonth() + i);
@@ -94,12 +157,19 @@ export default async function AdminHostsPage() {
             metrics: {
                 totalEvents,
                 pastEvents,
-                upcomingEvents,
+                upcomingEvents: upcomingEventsCount,
                 totalRevenueCents,
                 revenueByMonth,
             },
         };
     });
+
+    const highlights: HostHighlights = {
+        mostUpcoming: bestUpcoming,
+        mostPast: bestPast,
+        highestRevenue: bestRevenue,
+        lowestNoShowRate: bestNoShow,
+    };
 
     const pendingInvites = await prisma.inviteCode.findMany({
         where: {
@@ -126,19 +196,9 @@ export default async function AdminHostsPage() {
                 <AddHostDialog />
             </header>
 
-            {pendingInvites.length > 0 && (
-                <section className="space-y-4">
-                    <h2 className="text-xl font-semibold">Pending Invitations</h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {pendingInvites.map(invite => (
-                            <div key={invite.id} className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-                                <p className="font-medium">{invite.email || "No email recorded"}</p>
-                                <p className="text-sm text-muted-foreground">Expires {invite.expiresAt?.toLocaleDateString()}</p>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
+            <HostMetricsTiles highlights={highlights} />
+
+            <PendingInvitesTable invites={pendingInvites} />
 
             <HostDashboardClient hosts={hostsWithMetrics} />
         </div>

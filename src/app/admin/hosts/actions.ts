@@ -124,3 +124,38 @@ export async function removeHostAction(formData: FormData) {
 
     revalidatePath("/admin/hosts");
 }
+
+export async function resendHostInviteAction(prevState: any, formData: FormData) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== Role.ADMIN) {
+        return { error: "Unauthorized" };
+    }
+
+    const inviteId = formData.get("inviteId");
+    if (!inviteId || typeof inviteId !== "string") {
+        return { error: "Missing invite ID" };
+    }
+
+    const invite = await prisma.inviteCode.findUnique({
+        where: { id: inviteId },
+    });
+
+    if (!invite || !invite.email) {
+        return { error: "Invite not found or missing email" };
+    }
+
+    try {
+        await sendEmail({
+            to: invite.email,
+            subject: "Reminder: You're invited to be a host on HENRYS",
+            mjml: HostInvitationTemplate({
+                inviteCode: invite.code,
+            }),
+        });
+        return { success: true, message: "Invitation resent" };
+    } catch (error) {
+        console.error("Failed to resend invite:", error);
+        return { error: "Failed to send email" };
+    }
+}
