@@ -23,7 +23,10 @@ export function PurchaseTicketForm({
   const startCheckout = () => {
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/events/${eventId}/checkout`, { method: "POST" });
+        const response = await fetch(`/api/stripe/create-event-session`, {
+          method: "POST",
+          body: JSON.stringify({ eventId: eventId }),
+        });
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
           throw new Error(payload.error ?? "Unable to start checkout");

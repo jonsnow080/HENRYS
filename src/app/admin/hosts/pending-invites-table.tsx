@@ -25,7 +25,7 @@ type Invite = {
 
 function ResendButton({ inviteId }: { inviteId: string }) {
     const { toast } = useToast();
-    const [state, action, pending] = useActionState(resendHostInviteAction, null as any);
+    const [state, action, pending] = useActionState(resendHostInviteAction, null);
 
     useEffect(() => {
         if (state?.success) {

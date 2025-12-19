@@ -125,7 +125,7 @@ export async function removeHostAction(formData: FormData) {
     revalidatePath("/admin/hosts");
 }
 
-export async function resendHostInviteAction(prevState: any, formData: FormData) {
+export async function resendHostInviteAction(prevState: unknown, formData: FormData) {
     const session = await auth();
 
     if (!session?.user || session.user.role !== Role.ADMIN) {
